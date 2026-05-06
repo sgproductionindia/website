@@ -1,0 +1,7 @@
+{
+  "advertising": {
+    "enabled": true,
+    "mediaUrl": "assets/ad-sample.jpg",
+    "mediaType": "image"
+  }
+}

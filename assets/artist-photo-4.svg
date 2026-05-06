@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Hindi Wave artist photo">
+  <defs>
+    <radialGradient id="spot" cx="68%" cy="24%" r="72%">
+      <stop offset="0" stop-color="#8fe8ff"/>
+      <stop offset=".38" stop-color="#162c56"/>
+      <stop offset="1" stop-color="#010408"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#spot)"/>
+  <path d="M0 415c142-60 267-59 394 5 95 48 166 51 246 19v201H0z" fill="#030508" opacity=".62"/>
+  <circle cx="330" cy="244" r="88" fill="#0e1117"/>
+  <path d="M165 610c24-117 88-182 165-182s141 65 165 182z" fill="#0e1117"/>
+  <path d="M120 104h400M91 537h458" stroke="#10d9ff" stroke-opacity=".28" stroke-width="4"/>
+</svg>

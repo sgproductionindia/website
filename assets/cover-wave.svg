@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <radialGradient id="burst" cx="50%" cy="50%">
+      <stop offset="0" stop-color="#fff7c4"/>
+      <stop offset=".18" stop-color="#ffd66e"/>
+      <stop offset=".34" stop-color="#172431"/>
+      <stop offset="1" stop-color="#04070b"/>
+    </radialGradient>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="url(#burst)"/>
+  <g opacity=".28" stroke="#50708a" stroke-width="4" filter="url(#soft)">
+    <path d="M400 0 0 800M445 0 45 800M490 0 90 800M535 0 135 800M580 0 180 800M625 0 225 800M670 0 270 800M715 0 315 800M760 0 360 800"/>
+    <path d="M0 0 400 800M45 0 445 800M90 0 490 800M135 0 535 800M180 0 580 800M225 0 625 800M270 0 670 800M315 0 715 800M360 0 760 800"/>
+  </g>
+  <g fill="none" stroke="#f3c66a" stroke-width="3" opacity=".78" filter="url(#glow)">
+    <path d="M0 400 C28 350 42 450 70 400 S112 350 140 400 182 450 210 400 252 350 280 400 322 450 350 400 392 350 420 400 462 450 490 400 532 350 560 400 602 450 630 400 672 350 700 400 742 450 770 400 812 350 840 400"/>
+    <path d="M0 400 C32 305 38 495 70 400 S108 305 140 400 178 495 210 400 248 305 280 400 318 495 350 400 388 305 420 400 458 495 490 400 528 305 560 400 598 495 630 400 668 305 700 400 738 495 770 400 808 305 840 400"/>
+    <path d="M0 400 C40 250 30 550 70 400 S100 250 140 400 170 550 210 400 240 250 280 400 310 550 350 400 380 250 420 400 450 550 490 400 520 250 560 400 590 550 630 400 660 250 700 400 730 550 770 400 800 250 840 400"/>
+    <path d="M0 400 C45 185 25 615 70 400 S95 185 140 400 165 615 210 400 235 185 280 400 305 615 350 400 375 185 420 400 445 615 490 400 515 185 560 400 585 615 630 400 655 185 700 400 725 615 770 400 795 185 840 400"/>
+  </g>
+  <rect y="385" width="800" height="30" fill="#fff1a0" opacity=".78" filter="url(#glow)"/>
+</svg>

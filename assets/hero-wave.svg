@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 260" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="blueBars" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#0b1118"/>
+      <stop offset=".52" stop-color="#112536"/>
+      <stop offset="1" stop-color="#0b1118"/>
+    </linearGradient>
+    <linearGradient id="goldLine" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#8a6b3d" stop-opacity=".18"/>
+      <stop offset=".5" stop-color="#f0c572" stop-opacity=".62"/>
+      <stop offset="1" stop-color="#8a6b3d" stop-opacity=".18"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1800" height="260" fill="url(#blueBars)"/>
+  <g opacity=".35">
+    <path d="M0 130 C110 60 190 230 300 130 S490 62 600 130 790 224 900 130 1090 36 1200 130 1390 220 1500 130 1690 62 1800 130" fill="none" stroke="#d4a761" stroke-width="3"/>
+    <path d="M0 128 C120 82 180 180 300 128 S480 82 600 128 780 178 900 128 1080 76 1200 128 1380 182 1500 128 1680 82 1800 128" fill="none" stroke="#f4d895" stroke-width="2"/>
+    <path d="M0 136 C125 40 175 220 300 136 S475 38 600 136 775 228 900 136 1075 28 1200 136 1375 236 1500 136 1675 38 1800 136" fill="none" stroke="#7b6040" stroke-width="2"/>
+  </g>
+  <g opacity=".42" filter="url(#glow)">
+    <path d="M0 132 C115 100 190 164 300 132 S490 96 600 132 790 166 900 132 1090 90 1200 132 1390 174 1500 132 1690 96 1800 132" fill="none" stroke="url(#goldLine)" stroke-width="8"/>
+  </g>
+  <g opacity=".2" stroke="#14dfff" stroke-width="1">
+    <path d="M86 0v260M112 30v185M138 0v260M192 52v132M230 0v260M334 18v228M392 0v260M430 50v155M520 0v260M580 18v220M644 0v260M732 35v190M790 0v260M850 55v145M930 0v260M994 20v230M1050 0v260M1135 36v176M1194 0v260M1276 42v176M1340 0v260M1400 24v220M1488 0v260M1548 36v186M1610 0v260M1684 28v206M1745 0v260"/>
+  </g>
+</svg>
