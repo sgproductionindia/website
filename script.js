@@ -341,6 +341,18 @@ async function loadSiteSettings() {
   }
 }
 
+function preloadAdMedia(advertising) {
+  if (!advertising || !advertising.enabled || !advertising.mediaUrl) {
+    return;
+  }
+
+  const preload = document.createElement("link");
+  preload.rel = "preload";
+  preload.href = advertising.mediaUrl;
+  preload.as = advertising.mediaType === "video" ? "video" : "image";
+  document.head.append(preload);
+}
+
 function icon(name) {
   const icons = {
     play: '<svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"></path></svg><svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14"></path><path d="M16 5v14"></path></svg>',
@@ -919,6 +931,7 @@ function renderSongAd() {
   const enabled = Boolean(advertising.enabled && advertising.mediaUrl);
 
   songPage.classList.toggle("no-ad", !enabled);
+  songAd.classList.remove("is-loaded", "is-failed");
   songAd.replaceChildren();
 
   if (!enabled) {
@@ -928,19 +941,39 @@ function renderSongAd() {
   const media = document.createElement(advertising.mediaType === "video" ? "video" : "img");
   media.className = "song-ad-media";
 
+  const markLoaded = () => {
+    songAd.classList.add("is-loaded");
+    songAd.classList.remove("is-failed");
+  };
+  const markFailed = () => {
+    songAd.classList.add("is-failed");
+    songAd.classList.remove("is-loaded");
+    songPage.classList.add("no-ad");
+    songAd.replaceChildren();
+  };
+
   if (advertising.mediaType === "video") {
     media.src = advertising.mediaUrl;
     media.muted = true;
     media.loop = true;
     media.autoplay = true;
     media.playsInline = true;
-    media.preload = "metadata";
+    media.preload = "auto";
     media.setAttribute("muted", "");
     media.setAttribute("playsinline", "");
     media.setAttribute("disablepictureinpicture", "");
+    media.addEventListener("loadeddata", markLoaded, { once: true });
+    media.addEventListener("canplay", markLoaded, { once: true });
+    media.addEventListener("error", markFailed, { once: true });
+    media.addEventListener("stalled", () => songAd.classList.remove("is-loaded"), { once: true });
   } else {
     media.src = advertising.mediaUrl;
     media.alt = "Advertisement";
+    media.loading = "eager";
+    media.decoding = "async";
+    media.fetchPriority = "high";
+    media.addEventListener("load", markLoaded, { once: true });
+    media.addEventListener("error", markFailed, { once: true });
   }
 
   songAd.append(media);
@@ -1038,6 +1071,7 @@ async function initializeCatalog() {
   ]);
 
   siteSettings = loadedSettings;
+  preloadAdMedia(siteSettings.advertising);
 
   if (uploadedTracks.length > 0) {
     tracks.unshift(...uploadedTracks);

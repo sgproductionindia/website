@@ -687,8 +687,8 @@ body.search-open {
 
 .artist-profile-back {
   position: absolute;
-  top: 24px;
-  left: clamp(24px, 5vw, 72px);
+  top: clamp(32px, 5vh, 56px);
+  left: clamp(28px, 5vw, 76px);
   min-height: 34px;
   display: inline-flex;
   align-items: center;
@@ -1488,9 +1488,7 @@ body.search-open {
   overflow: hidden;
   padding: 0;
   color: #f4f8fb;
-  background:
-    linear-gradient(135deg, rgba(16, 217, 255, 0.08), transparent 38%),
-    #05070a;
+  background: transparent;
 }
 
 .song-ad-media {
@@ -1502,8 +1500,18 @@ body.search-open {
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #020305;
+  background: transparent;
   box-shadow: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.song-ad.is-loaded .song-ad-media {
+  opacity: 1;
+}
+
+.song-ad.is-failed {
+  display: none;
 }
 
 .song-ad-media img,
@@ -2088,7 +2096,7 @@ body.search-open {
     height: auto;
     min-height: 0;
     place-items: stretch;
-    background: #020304;
+    background: transparent;
   }
 
   .song-ad-media {
@@ -2323,6 +2331,11 @@ body.search-open {
     grid-template-columns: 1fr;
     gap: 22px;
     padding-top: 84px;
+  }
+
+  .artist-profile-back {
+    top: 28px;
+    left: 18px;
   }
 
   .artist-profile-portrait {
