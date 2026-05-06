@@ -27,6 +27,8 @@ If uploads should survive redeploys, configure a Coolify persistent volume for:
 /var/www/html/data
 ```
 
+The Docker container also fixes ownership for those folders at startup so Apache/PHP can write uploaded covers, audio, ads, and JSON data after Coolify mounts the volumes.
+
 Files:
 
 - `index.html` - page layout and sections

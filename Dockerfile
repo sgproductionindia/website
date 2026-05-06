@@ -8,3 +8,7 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql \
     && chown -R www-data:www-data /var/www/html/uploads /var/www/html/data
 
 EXPOSE 80
+
+CMD mkdir -p /var/www/html/uploads/covers /var/www/html/uploads/audio /var/www/html/uploads/ads /var/www/html/data \
+    && chown -R www-data:www-data /var/www/html/uploads /var/www/html/data \
+    && apache2-foreground

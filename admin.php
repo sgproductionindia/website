@@ -27,6 +27,10 @@ function ensureStorage(): void
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
+
+        if (!is_writable($directory)) {
+            @chmod($directory, 0775);
+        }
     }
 
     if (!file_exists(TRACKS_FILE)) {
@@ -36,6 +40,19 @@ function ensureStorage(): void
     if (!file_exists(SETTINGS_FILE)) {
         file_put_contents(SETTINGS_FILE, json_encode(defaultSettings(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
+}
+
+function uploadErrorMessage(int $code): string
+{
+    return match ($code) {
+        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'The uploaded file is larger than the server upload limit.',
+        UPLOAD_ERR_PARTIAL => 'The file upload was interrupted before it finished.',
+        UPLOAD_ERR_NO_FILE => 'Please choose a file to upload.',
+        UPLOAD_ERR_NO_TMP_DIR => 'The server is missing a temporary upload folder.',
+        UPLOAD_ERR_CANT_WRITE => 'The server could not write the uploaded file to disk.',
+        UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload.',
+        default => 'Upload failed. Please try again.',
+    };
 }
 
 function slugify(string $value): string
@@ -121,11 +138,11 @@ function uploadFile(string $field, array $extensions, array $mimeTypes, int $max
     $file = $_FILES[$field];
 
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        throw new RuntimeException('Upload failed. Please try again.');
+        throw new RuntimeException(uploadErrorMessage((int) $file['error']));
     }
 
     if ($file['size'] <= 0 || $file['size'] > $maxBytes) {
-        throw new RuntimeException('File is too large for this upload.');
+        throw new RuntimeException('File is too large for this upload. Maximum allowed here is ' . (int) floor($maxBytes / 1024 / 1024) . ' MB.');
     }
 
     $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
@@ -137,14 +154,18 @@ function uploadFile(string $field, array $extensions, array $mimeTypes, int $max
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file((string) $file['tmp_name']);
 
-    if (!in_array($mime, $mimeTypes, true)) {
+    if ($mime !== false && !in_array($mime, $mimeTypes, true)) {
         throw new RuntimeException('The uploaded file does not match the expected format.');
     }
 
     $target = uniqueTargetPath($directory, $baseName, $extension);
 
+    if (!is_writable($directory)) {
+        throw new RuntimeException('Upload folder is not writable: ' . basename($directory) . '. Check the Coolify volume permissions.');
+    }
+
     if (!move_uploaded_file((string) $file['tmp_name'], $target)) {
-        throw new RuntimeException('Could not move the uploaded file.');
+        throw new RuntimeException('Could not save the uploaded file. Check that the Coolify volume for uploads is writable by PHP.');
     }
 
     return str_replace(__DIR__ . '/', '', $target);
