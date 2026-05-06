@@ -993,7 +993,7 @@ function closeSongPage(updateUrl = true) {
 function getTrackFromLocation() {
   if (window.location.hash.startsWith("#song-")) {
     const songId = window.location.hash.replace("#song-", "");
-    return allTracks.find((item) => item.id === songId) || tracks.find((item) => item.id === songId) || null;
+    return allTracks.find((item) => item.id === songId || trackSlug(item) === songId) || tracks.find((item) => item.id === songId || trackSlug(item) === songId) || null;
   }
 
   if (!canUseCleanUrls()) {

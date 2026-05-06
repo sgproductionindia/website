@@ -377,6 +377,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
 
 $isAuthed = !empty($_SESSION['sg_admin']);
 
+if (isset($_SESSION['flash_success'])) {
+    $success = (string) $_SESSION['flash_success'];
+    unset($_SESSION['flash_success']);
+}
+
 if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'upload') {
     try {
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -400,6 +405,20 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         }
 
         $tracks = readTracks();
+
+        foreach ($tracks as $track) {
+            if (!is_array($track)) {
+                continue;
+            }
+
+            $sameTitle = slugify((string) ($track['title'] ?? '')) === slugify($title);
+            $sameDownload = (string) ($track['downloadUrl'] ?? '') === $downloadUrl;
+
+            if ($sameTitle && $sameDownload) {
+                throw new RuntimeException('This song is already published.');
+            }
+        }
+
         $trackId = uniqueTrackId($title, $tracks);
         $cover = uploadFile('cover', ['jpg', 'jpeg', 'png', 'webp'], ['image/jpeg', 'image/png', 'image/webp'], MAX_COVER_BYTES, COVER_DIR, $trackId);
         $previewAudio = uploadFile('audio', ['wav', 'mp3'], ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/x-pn-wav', 'audio/mpeg', 'audio/mp3', 'audio/x-mpeg'], MAX_AUDIO_BYTES, AUDIO_DIR, $trackId);
@@ -429,7 +448,9 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         ]);
 
         writeTracks($tracks);
-        $success = 'Song uploaded successfully.';
+        $_SESSION['flash_success'] = 'Song uploaded successfully.';
+        header('Location: admin.php#uploaded-songs');
+        exit;
     } catch (Throwable $error) {
         $errors[] = $error->getMessage();
     }
@@ -463,7 +484,9 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 
         $settings['advertising'] = $advertising;
         writeSettings($settings);
-        $success = 'Advertising settings saved.';
+        $_SESSION['flash_success'] = 'Advertising settings saved.';
+        header('Location: admin.php#global-settings');
+        exit;
     } catch (Throwable $error) {
         $errors[] = $error->getMessage();
     }
@@ -712,6 +735,14 @@ $tracks = readTracks();
         font-size: 0.86rem;
       }
 
+      .track-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
       .ad-preview {
         display: grid;
         grid-template-columns: minmax(90px, 140px) minmax(0, 1fr);
@@ -759,8 +790,9 @@ $tracks = readTracks();
           grid-template-columns: 48px minmax(0, 1fr);
         }
 
-        .track-row .button {
+        .track-actions {
           grid-column: 1 / -1;
+          justify-content: flex-start;
         }
 
         .ad-preview {
@@ -880,7 +912,7 @@ $tracks = readTracks();
           </form>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="global-settings">
           <h1>Global Settings</h1>
           <p class="muted">Advertisement controls for the single song page.</p>
           <h2 style="margin-top: 20px;">Advertisement</h2>
@@ -922,7 +954,7 @@ $tracks = readTracks();
           </form>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="uploaded-songs">
           <h2>Uploaded Songs</h2>
           <?php if ($tracks === []): ?>
             <p class="muted">No uploaded songs yet.</p>
@@ -935,14 +967,16 @@ $tracks = readTracks();
                     <strong><?= e((string) ($track['title'] ?? 'Untitled Track')) ?></strong>
                     <span><?= e((string) ($track['artist'] ?? 'SG Production')) ?> · <?= e((string) ($track['genre'] ?? 'Soundcheck')) ?> · <?= e((string) ($track['duration'] ?? '0:0')) ?></span>
                   </div>
-                  <?php if (!empty($track['previewUrl'])): ?>
-                    <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Preview</a>
-                  <?php elseif (!empty($track['downloadUrl']) && !isHttpUrl((string) $track['downloadUrl'])): ?>
-                    <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Preview</a>
-                  <?php endif; ?>
-                  <?php if (!empty($track['downloadUrl'])): ?>
-                    <a class="button" href="<?= e((string) $track['downloadUrl']) ?>" target="_blank" rel="noreferrer">Download</a>
-                  <?php endif; ?>
+                  <div class="track-actions">
+                    <?php if (!empty($track['previewUrl'])): ?>
+                      <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Preview</a>
+                    <?php elseif (!empty($track['downloadUrl']) && !isHttpUrl((string) $track['downloadUrl'])): ?>
+                      <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Preview</a>
+                    <?php endif; ?>
+                    <?php if (!empty($track['downloadUrl'])): ?>
+                      <a class="button" href="<?= e((string) $track['downloadUrl']) ?>" target="_blank" rel="noreferrer">Download</a>
+                    <?php endif; ?>
+                  </div>
                 </div>
               <?php endforeach; ?>
             </div>
