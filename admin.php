@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 session_start();
 
-const ADMIN_PASSWORD = 'change-this-password';
+const ADMIN_PASSWORD = 'hyqhyp-viKfa3-timfaw';
 const TRACKS_FILE = __DIR__ . '/data/tracks.json';
 const SETTINGS_FILE = __DIR__ . '/data/settings.json';
 const COVER_DIR = __DIR__ . '/uploads/covers';

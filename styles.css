@@ -1208,6 +1208,10 @@ body.search-open {
   line-height: 1.55;
 }
 
+.info-band h2 {
+  font-size: 1.05rem;
+}
+
 .youtube-subscribe {
   min-height: 44px;
   display: inline-flex;
