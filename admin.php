@@ -64,6 +64,35 @@ function slugify(string $value): string
     return $slug !== '' ? $slug : 'track';
 }
 
+function uniqueTrackId(string $title, array $tracks): string
+{
+    $baseId = slugify($title);
+    $existingIds = array_flip(array_map(static fn ($track): string => is_array($track) ? (string) ($track['id'] ?? '') : '', $tracks));
+
+    if (!isset($existingIds[$baseId])) {
+        return $baseId;
+    }
+
+    $counter = 2;
+
+    while (isset($existingIds[$baseId . '-' . $counter])) {
+        $counter += 1;
+    }
+
+    return $baseId . '-' . $counter;
+}
+
+function isHttpUrl(string $value): bool
+{
+    if (!filter_var($value, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+
+    return in_array($scheme, ['http', 'https'], true);
+}
+
 function readTracks(): array
 {
     ensureStorage();
@@ -154,7 +183,9 @@ function uploadFile(string $field, array $extensions, array $mimeTypes, int $max
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file((string) $file['tmp_name']);
 
-    if ($mime !== false && !in_array($mime, $mimeTypes, true)) {
+    $genericUploadMimes = ['application/octet-stream', 'binary/octet-stream'];
+
+    if ($mime !== false && !in_array($mime, $mimeTypes, true) && !in_array($mime, $genericUploadMimes, true)) {
         throw new RuntimeException('The uploaded file does not match the expected format.');
     }
 
@@ -352,6 +383,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         $artist = trim((string) ($_POST['artist'] ?? 'SG Production'));
         $genre = trim((string) ($_POST['genre'] ?? 'Soundcheck'));
         $duration = trim((string) ($_POST['duration'] ?? ''));
+        $downloadUrl = trim((string) ($_POST['downloadUrl'] ?? ''));
         $bpm = (int) ($_POST['bpm'] ?? 124);
         $wave = trim((string) ($_POST['wave'] ?? 'sine'));
 
@@ -359,14 +391,19 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             throw new RuntimeException('Track title is required.');
         }
 
+        if ($downloadUrl === '' || !isHttpUrl($downloadUrl)) {
+            throw new RuntimeException('Add a valid WAV download URL that starts with http:// or https://.');
+        }
+
         if ($bpm < 40 || $bpm > 240) {
             throw new RuntimeException('BPM must be between 40 and 240.');
         }
 
-        $trackId = slugify($title) . '-' . date('YmdHis');
+        $tracks = readTracks();
+        $trackId = uniqueTrackId($title, $tracks);
         $cover = uploadFile('cover', ['jpg', 'jpeg', 'png', 'webp'], ['image/jpeg', 'image/png', 'image/webp'], MAX_COVER_BYTES, COVER_DIR, $trackId);
-        $audio = uploadFile('audio', ['wav', 'mp3'], ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/x-pn-wav', 'audio/mpeg', 'audio/mp3'], MAX_AUDIO_BYTES, AUDIO_DIR, $trackId);
-        $detectedDuration = detectAudioDuration(__DIR__ . '/' . $audio);
+        $previewAudio = uploadFile('audio', ['wav', 'mp3'], ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/x-pn-wav', 'audio/mpeg', 'audio/mp3', 'audio/x-mpeg'], MAX_AUDIO_BYTES, AUDIO_DIR, $trackId);
+        $detectedDuration = detectAudioDuration(__DIR__ . '/' . $previewAudio);
 
         if ($detectedDuration !== null) {
             $duration = formatDurationSeconds($detectedDuration);
@@ -376,7 +413,6 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             throw new RuntimeException('Could not detect the song duration. Please try a different WAV or MP3 file.');
         }
 
-        $tracks = readTracks();
         array_unshift($tracks, [
             'id' => $trackId,
             'title' => $title,
@@ -384,7 +420,8 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             'genre' => $genre !== '' ? $genre : 'Soundcheck',
             'duration' => $duration,
             'cover' => $cover,
-            'downloadUrl' => $audio,
+            'previewUrl' => $previewAudio,
+            'downloadUrl' => $downloadUrl,
             'isNew' => isset($_POST['isNew']),
             'bpm' => $bpm,
             'tone' => 146.83,
@@ -735,7 +772,7 @@ $tracks = readTracks();
   <body>
     <main class="admin-shell">
       <header class="admin-header">
-        <a class="brand" href="index.html">
+        <a class="brand" href="/">
           <span class="logo" aria-hidden="true">
             <svg viewBox="0 0 924.99 924.99">
               <path d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"></path>
@@ -747,7 +784,7 @@ $tracks = readTracks();
           </span>
         </a>
         <div class="admin-actions">
-          <a class="button" href="index.html">View Site</a>
+          <a class="button" href="/">View Site</a>
           <?php if ($isAuthed): ?>
             <form method="post">
               <input type="hidden" name="action" value="logout">
@@ -783,7 +820,7 @@ $tracks = readTracks();
       <?php else: ?>
         <section class="panel">
           <h1>Upload New Song</h1>
-          <p class="muted">Add a cover image and WAV or MP3 file. New uploads appear first on the website.</p>
+          <p class="muted">Add a cover, an MP3/WAV preview for playback, and a separate WAV download URL.</p>
           <form class="grid" method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="upload">
             <label>
@@ -826,8 +863,12 @@ $tracks = readTracks();
               <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required>
             </label>
             <label>
-              Song File
+              Preview Song File
               <input id="audioInput" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" required>
+            </label>
+            <label class="full">
+              WAV Download URL
+              <input type="url" name="downloadUrl" placeholder="https://example.com/downloads/nagin-theme.wav" required>
             </label>
             <label class="check-row full">
               <input type="checkbox" name="isNew" checked>
@@ -840,8 +881,10 @@ $tracks = readTracks();
         </section>
 
         <section class="panel">
-          <h2>Advertising</h2>
-          <p class="muted">Use a vertical 9:16 image or video. Recommended size is 1080 × 1920.</p>
+          <h1>Global Settings</h1>
+          <p class="muted">Advertisement controls for the single song page.</p>
+          <h2 style="margin-top: 20px;">Advertisement</h2>
+          <p class="muted">Use a vertical 9:16 image or video. Recommended size is 1080 × 1920. Videos autoplay muted and loop without controls.</p>
           <?php
             $advertising = is_array($settings['advertising'] ?? null) ? $settings['advertising'] : [];
             $adMediaUrl = (string) ($advertising['mediaUrl'] ?? '');
@@ -852,7 +895,7 @@ $tracks = readTracks();
             <div class="ad-preview">
               <div class="ad-preview-media">
                 <?php if ($adMediaType === 'video'): ?>
-                  <video src="<?= e($adMediaUrl) ?>" muted playsinline controls></video>
+                  <video src="<?= e($adMediaUrl) ?>" muted playsinline autoplay loop></video>
                 <?php else: ?>
                   <img src="<?= e($adMediaUrl) ?>" alt="Current advertising media">
                 <?php endif; ?>
@@ -892,8 +935,13 @@ $tracks = readTracks();
                     <strong><?= e((string) ($track['title'] ?? 'Untitled Track')) ?></strong>
                     <span><?= e((string) ($track['artist'] ?? 'SG Production')) ?> · <?= e((string) ($track['genre'] ?? 'Soundcheck')) ?> · <?= e((string) ($track['duration'] ?? '0:0')) ?></span>
                   </div>
+                  <?php if (!empty($track['previewUrl'])): ?>
+                    <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Preview</a>
+                  <?php elseif (!empty($track['downloadUrl']) && !isHttpUrl((string) $track['downloadUrl'])): ?>
+                    <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Preview</a>
+                  <?php endif; ?>
                   <?php if (!empty($track['downloadUrl'])): ?>
-                    <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Audio</a>
+                    <a class="button" href="<?= e((string) $track['downloadUrl']) ?>" target="_blank" rel="noreferrer">Download</a>
                   <?php endif; ?>
                 </div>
               <?php endforeach; ?>

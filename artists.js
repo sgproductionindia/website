@@ -98,6 +98,14 @@ function escapeHTML(value) {
   });
 }
 
+function slugClass(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function trackUrl(track) {
+  return /^https?:$/.test(window.location.protocol) ? `/${slugClass(track.title || track.id)}` : `index.html#song-${track.id}`;
+}
+
 function renderArtistCard(artist) {
   const card = document.createElement("article");
   card.className = "artist-card";
@@ -404,7 +412,7 @@ function writeWav(samples) {
 }
 
 function downloadTrack(track) {
-  window.location.href = `index.html#song-${track.id}`;
+  window.location.href = trackUrl(track);
 }
 
 function routeArtistPage() {

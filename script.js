@@ -247,6 +247,22 @@ function slugClass(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function canUseCleanUrls() {
+  return /^https?:$/.test(window.location.protocol);
+}
+
+function trackSlug(track) {
+  return slugClass(track.title || track.id);
+}
+
+function trackUrl(track) {
+  return canUseCleanUrls() ? `/${trackSlug(track)}` : `#song-${track.id}`;
+}
+
+function isLocalAudioPath(url) {
+  return /^uploads\/audio\//.test(url);
+}
+
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -263,6 +279,8 @@ function normalizeUploadedTrack(track) {
   }
 
   const id = track.id || slugClass(track.title);
+  const rawDownloadUrl = track.downloadUrl || "";
+  const previewUrl = track.previewUrl || track.audioUrl || (isLocalAudioPath(rawDownloadUrl) ? rawDownloadUrl : "");
 
   return {
     id,
@@ -271,7 +289,8 @@ function normalizeUploadedTrack(track) {
     genre: track.genre || "Soundcheck",
     duration: track.duration || "0:0",
     cover: track.cover || "assets/cover-1.jpg",
-    downloadUrl: track.downloadUrl || "",
+    previewUrl,
+    downloadUrl: rawDownloadUrl,
     isNew: Boolean(track.isNew),
     bpm: Number(track.bpm) || 124,
     tone: Number(track.tone) || 146.83,
@@ -345,6 +364,10 @@ function formatTimer(seconds) {
 
 function buildCreditText(track) {
   return `Song: ${track.artist} - ${track.title}\nGenre: ${track.genre}\nFree Download / Stream: sgproduction.example/${track.id}\nCredit: Music provided by SG Production`;
+}
+
+function getPreviewUrl(track) {
+  return track.previewUrl || (isLocalAudioPath(track.downloadUrl || "") ? track.downloadUrl : "");
 }
 
 function getSearchMatches(query) {
@@ -595,8 +618,10 @@ function playTrack(track) {
   stopCurrent(!sameTrack);
   selectedTrack = track;
 
-  if (track.downloadUrl) {
-    activeAudio = new Audio(track.downloadUrl);
+  const previewUrl = getPreviewUrl(track);
+
+  if (previewUrl) {
+    activeAudio = new Audio(previewUrl);
     activeAudio.currentTime = resumeOffset;
     activeAudio.addEventListener("ended", () => {
       isPlaying = false;
@@ -744,7 +769,7 @@ function updateProgress() {
   animationFrame = requestAnimationFrame(updateProgress);
 }
 
-function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(selectedTrack.downloadUrl)) {
+function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(selectedTrack))) {
   const totalSeconds = durationToSeconds(selectedTrack.duration);
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
@@ -773,7 +798,7 @@ function setPlayerProgress(fraction) {
     return;
   }
 
-  if (selectedTrack.downloadUrl) {
+  if (getPreviewUrl(selectedTrack)) {
     pausedAt = clamped * durationToSeconds(selectedTrack.duration);
     updatePlayerTimer(pausedAt, true);
     return;
@@ -853,7 +878,8 @@ function downloadTrack(track) {
   if (track.downloadUrl) {
     const link = document.createElement("a");
     link.href = track.downloadUrl;
-    link.download = "";
+    link.download = `${trackSlug(track)}.wav`;
+    link.rel = "noreferrer";
     document.body.append(link);
     link.click();
     link.remove();
@@ -908,7 +934,10 @@ function renderSongAd() {
     media.loop = true;
     media.autoplay = true;
     media.playsInline = true;
-    media.controls = true;
+    media.preload = "metadata";
+    media.setAttribute("muted", "");
+    media.setAttribute("playsinline", "");
+    media.setAttribute("disablepictureinpicture", "");
   } else {
     media.src = advertising.mediaUrl;
     media.alt = "Advertisement";
@@ -945,7 +974,7 @@ function openSongPage(track, updateUrl = true) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   if (updateUrl) {
-    history.pushState({ songId: track.id }, "", `#song-${track.id}`);
+    history.pushState({ songId: track.id }, "", trackUrl(track));
   }
 }
 
@@ -954,19 +983,51 @@ function closeSongPage(updateUrl = true) {
   songPage.hidden = true;
 
   if (updateUrl) {
-    history.pushState(null, "", "#all-tracks");
+    history.pushState(null, "", canUseCleanUrls() ? "/#all-tracks" : "#all-tracks");
   }
 
   document.querySelector("#all-tracks").scrollIntoView({ block: "start" });
   updateActiveNav();
 }
 
-function openSongFromHash() {
-  const songId = window.location.hash.replace("#song-", "");
-  const track = allTracks.find((item) => item.id === songId) || tracks.find((item) => item.id === songId);
+function getTrackFromLocation() {
+  if (window.location.hash.startsWith("#song-")) {
+    const songId = window.location.hash.replace("#song-", "");
+    return allTracks.find((item) => item.id === songId) || tracks.find((item) => item.id === songId) || null;
+  }
+
+  if (!canUseCleanUrls()) {
+    return null;
+  }
+
+  const slug = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, "");
+
+  if (!slug || slug === "index.html") {
+    return null;
+  }
+
+  return allTracks.find((item) => trackSlug(item) === slug || item.id === slug) || tracks.find((item) => trackSlug(item) === slug || item.id === slug) || null;
+}
+
+function openSongFromLocation() {
+  const track = getTrackFromLocation();
 
   if (track) {
+    if (canUseCleanUrls() && window.location.hash.startsWith("#song-")) {
+      history.replaceState({ songId: track.id }, "", trackUrl(track));
+    }
+
     openSongPage(track, false);
+  }
+}
+
+function normalizeInitialUrl() {
+  if (!canUseCleanUrls()) {
+    return;
+  }
+
+  if (window.location.pathname.endsWith("/index.html")) {
+    history.replaceState(null, "", `/${window.location.hash}`);
   }
 }
 
@@ -984,10 +1045,11 @@ async function initializeCatalog() {
 
   selectedTrack = tracks[0];
   allTracks = buildDemoTrackPages(tracks);
+  normalizeInitialUrl();
   renderTracks(tracks.slice(0, 5), latestGrid);
   renderAllTracksPage(1);
   syncPlayer();
-  openSongFromHash();
+  openSongFromLocation();
 }
 
 initializeCatalog();
@@ -1043,7 +1105,7 @@ playerToggle.addEventListener("click", () => {
 });
 
 playerDownload.addEventListener("click", () => {
-  openSongPage(selectedTrack);
+  downloadTrack(selectedTrack);
 });
 
 progressShell.addEventListener("pointerdown", startPlayerSeek);
@@ -1108,13 +1170,28 @@ trackPagination.addEventListener("click", (event) => {
   renderAllTracksPage(Number(button.dataset.page), true);
 });
 
-document.querySelectorAll('.side-nav a[href^="#"]').forEach((link) => {
-  link.addEventListener("click", () => {
+document.querySelectorAll('.side-nav a[href^="#"], .mobile-brand[href^="#"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
     setMobileMenu(false);
 
     if (document.body.classList.contains("song-view")) {
       document.body.classList.remove("song-view");
       songPage.hidden = true;
+    }
+
+    if (canUseCleanUrls()) {
+      event.preventDefault();
+      const targetHash = link.getAttribute("href") || "#top";
+      const target = document.querySelector(targetHash);
+      const nextUrl = targetHash === "#top" ? "/" : `/${targetHash}`;
+
+      history.pushState(null, "", nextUrl);
+
+      if (target) {
+        target.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+
+      updateActiveNav();
     }
   });
 });
@@ -1141,8 +1218,10 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("popstate", () => {
-  if (window.location.hash.startsWith("#song-")) {
-    openSongFromHash();
+  const track = getTrackFromLocation();
+
+  if (track) {
+    openSongPage(track, false);
     return;
   }
 

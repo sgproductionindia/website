@@ -2,7 +2,7 @@
 
 This is a music catalog based on your screenshot, with an optional PHP admin panel for hosting.
 
-Open `index.html` in a browser to preview it. In production, this site is deployed through Coolify on an Ubuntu VPS using Docker and Apache/PHP. Uploaded tracks are saved to `data/tracks.json`, covers go to `uploads/covers/`, audio files go to `uploads/audio/`, and advertising media goes to `uploads/ads/`.
+Open `index.html` in a browser to preview it. In production, this site is deployed through Coolify on an Ubuntu VPS using Docker and Apache/PHP. Uploaded tracks are saved to `data/tracks.json`, covers go to `uploads/covers/`, preview audio files go to `uploads/audio/`, and advertising media goes to `uploads/ads/`.
 
 Before publishing, change the password at the top of `admin.php`:
 
@@ -27,7 +27,14 @@ If uploads should survive redeploys, configure a Coolify persistent volume for:
 /var/www/html/data
 ```
 
-The Docker container also fixes ownership for those folders at startup so Apache/PHP can write uploaded covers, audio, ads, and JSON data after Coolify mounts the volumes.
+The Docker container also fixes ownership for those folders at startup so Apache/PHP can write uploaded covers, preview audio, ads, and JSON data after Coolify mounts the volumes.
+
+Song uploads use two audio fields:
+
+- Preview Song File: MP3 or WAV uploaded to the site for browser playback.
+- WAV Download URL: external or hosted WAV link used by the Download buttons.
+
+Clean song URLs are handled by Apache rewrite rules in `.htaccess`, so a song like `Nagin Theme` can open at `/nagin-theme` after Coolify rebuilds the Docker image.
 
 Files:
 
