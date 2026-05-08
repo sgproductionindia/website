@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SG Production — Admin Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --surface: #0f1419;
+    --surface2: #161d26;
+    --surface3: #1e2835;
+    --border: #1f2d3d;
+    --cyan: #00d4ff;
+    --cyan-dim: rgba(0,212,255,0.12);
+    --cyan-glow: rgba(0,212,255,0.35);
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,0.1);
+    --red: #ff4560;
+    --red-dim: rgba(255,69,96,0.12);
+    --orange: #ff9f43;
+    --orange-dim: rgba(255,159,67,0.12);
+    --purple: #a855f7;
+    --text: #e2eaf5;
+    --text-dim: #7a8fa6;
+    --text-faint: #3d5168;
+    --sidebar: 220px;
+    --header: 56px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display:flex; height:100vh; overflow:hidden; font-size:15px; font-weight:400; line-height:1.45; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:var(--sidebar); min-width:var(--sidebar);
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    padding:0 0 16px;
+    overflow-y:auto;
+  }
+  .brand {
+    padding:20px 18px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-avatar {
+    width:34px; height:34px; border-radius:8px;
+    background:linear-gradient(135deg,#00d4ff,#a855f7);
+    display:flex; align-items:center; justify-content:center;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:16px; color:#fff;
+    flex-shrink:0;
+  }
+  .brand-text .name { font-weight:600; font-size:13px; letter-spacing:.3px; }
+  .brand-text .role { font-size:10px; color:var(--text-dim); letter-spacing:.5px; text-transform:uppercase; }
+
+  .nav-section { padding:12px 10px 4px; }
+  .nav-label { font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1.5px; padding:0 8px 6px; font-weight:600; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:8px; cursor:pointer;
+    font-size:13px; color:var(--text-dim); font-weight:500;
+    transition:all .15s; position:relative;
+    text-decoration:none;
+  }
+  .nav-item:hover { background:var(--surface2); color:var(--text); }
+  .nav-item.active { background:var(--cyan-dim); color:var(--cyan); }
+  .nav-item.active::before {
+    content:''; position:absolute; left:-10px; top:50%; transform:translateY(-50%);
+    width:3px; height:18px; background:var(--cyan); border-radius:0 3px 3px 0;
+  }
+  .nav-item svg { width:15px; height:15px; flex-shrink:0; }
+  .badge {
+    margin-left:auto; background:var(--red); color:#fff;
+    font-size:9px; font-weight:700; padding:2px 6px; border-radius:10px;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .badge.new { background:var(--green); color:#000; }
+
+  .sidebar-footer {
+    margin-top:auto; padding:12px 10px 0;
+    border-top:1px solid var(--border);
+  }
+
+  /* MAIN */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* TOPBAR */
+  .topbar {
+    height:var(--header); border-bottom:1px solid var(--border);
+    background:var(--surface); padding:0 24px;
+    display:flex; align-items:center; gap:16px;
+    flex-shrink:0;
+  }
+  .topbar-title { font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:22px; letter-spacing:0; color:var(--text); }
+  .topbar-sub { font-size:12px; color:var(--text-dim); margin-left:4px; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .btn {
+    padding:7px 16px; border-radius:8px; border:none; cursor:pointer;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:12px; font-weight:600;
+    letter-spacing:.3px; transition:all .15s;
+  }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-dim); }
+  .btn-outline:hover { border-color:var(--cyan); color:var(--cyan); }
+  .btn-primary { background:var(--cyan); color:#000; }
+  .btn-primary:hover { box-shadow:0 0 16px var(--cyan-glow); }
+  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .btn-ghost:hover { background:var(--surface2); color:var(--text); }
+
+  /* CONTENT */
+  .content { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; }
+  .view-section { display:none; flex-direction:column; gap:20px; }
+  .view-section.active { display:flex; }
+  .section-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .section-note { color:var(--text-dim); line-height:1.6; max-width:720px; }
+
+  /* DATE RANGE */
+  .filter-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .filter-chip {
+    padding:6px 14px; border-radius:20px; border:1px solid var(--border);
+    font-size:11px; font-weight:600; cursor:pointer; color:var(--text-dim);
+    background:transparent; transition:all .15s; letter-spacing:.3px;
+  }
+  .filter-chip:hover { border-color:var(--cyan-dim); color:var(--text); }
+  .filter-chip.active { border-color:var(--cyan); color:var(--cyan); background:var(--cyan-dim); }
+  .filter-sep { color:var(--text-faint); font-size:11px; }
+
+  /* STAT CARDS */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .stat-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:18px 20px;
+    position:relative; overflow:hidden;
+    transition:border-color .2s;
+  }
+  .stat-card:hover { border-color:var(--border); }
+  .stat-card::after {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  }
+  .stat-card.cyan::after { background:linear-gradient(90deg,var(--cyan),transparent); }
+  .stat-card.green::after { background:linear-gradient(90deg,var(--green),transparent); }
+  .stat-card.orange::after { background:linear-gradient(90deg,var(--orange),transparent); }
+  .stat-card.purple::after { background:linear-gradient(90deg,var(--purple),transparent); }
+  .stat-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:600; margin-bottom:10px; }
+  .stat-value { font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:36px; letter-spacing:0; line-height:1; margin-bottom:6px; }
+  .stat-value.cyan { color:var(--cyan); }
+  .stat-value.green { color:var(--green); }
+  .stat-value.orange { color:var(--orange); }
+  .stat-value.purple { color:var(--purple); }
+  .stat-change { font-size:11px; display:flex; align-items:center; gap:4px; }
+  .stat-change.up { color:var(--green); }
+  .stat-change.down { color:var(--red); }
+  .stat-icon { position:absolute; top:16px; right:16px; opacity:.15; font-size:28px; }
+
+  /* TWO COL */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+  /* PANEL */
+  .panel {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px;
+  }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .panel-title { font-size:13px; font-weight:600; color:var(--text); letter-spacing:.3px; }
+  .panel-action { font-size:11px; color:var(--cyan); cursor:pointer; background:none; border:none; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight:600; }
+  .panel-action:hover { text-decoration:underline; }
+
+  /* SONG ROWS */
+  .song-table { width:100%; border-collapse:collapse; }
+  .song-table th {
+    text-align:left; font-size:9px; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:1.2px; font-weight:700;
+    padding:0 12px 10px; border-bottom:1px solid var(--border);
+  }
+  .song-table td { padding:12px 12px; border-bottom:1px solid var(--border); font-size:12px; vertical-align:middle; }
+  .song-table tr:last-child td { border-bottom:none; }
+  .song-table tr:hover td { background:var(--surface2); }
+  .song-cover {
+    width:36px; height:36px; border-radius:6px;
+    background:linear-gradient(135deg,#1a2a40,#0f1e30);
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .song-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+  .song-info { display:flex; align-items:center; gap:10px; }
+  .song-name { font-weight:600; font-size:12px; color:var(--text); }
+  .song-meta { font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .mono { font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:11px; }
+  .pill {
+    display:inline-block; padding:2px 8px; border-radius:20px;
+    font-size:10px; font-weight:700; letter-spacing:.3px;
+  }
+  .pill.green { background:var(--green-dim); color:var(--green); }
+  .pill.orange { background:var(--orange-dim); color:var(--orange); }
+  .pill.red { background:var(--red-dim); color:var(--red); }
+
+  /* MINI BAR CHART */
+  .bar-chart { display:flex; align-items:flex-end; gap:4px; height:50px; }
+  .bar {
+    flex:1; border-radius:3px 3px 0 0;
+    background:var(--cyan-dim); position:relative;
+    transition:all .3s;
+    cursor:pointer;
+  }
+  .bar:hover { background:var(--cyan); }
+  .bar span {
+    position:absolute; bottom:-16px; left:50%; transform:translateX(-50%);
+    font-size:8px; color:var(--text-faint); white-space:nowrap;
+  }
+  .chart-wrap { padding-bottom:20px; }
+
+  /* AD STATS */
+  .ad-stat-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .ad-stat-row:last-child { border-bottom:none; }
+  .ad-stat-label { font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:8px; }
+  .ad-stat-label .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .ad-stat-val { font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:13px; font-weight:600; }
+
+  /* PROGRESS BAR */
+  .prog-bar { height:4px; background:var(--surface3); border-radius:2px; overflow:hidden; margin-top:6px; }
+  .prog-fill { height:100%; border-radius:2px; }
+
+  /* EXPORT BOX */
+  .export-box {
+    background:linear-gradient(135deg, rgba(0,212,255,0.06), rgba(168,85,247,0.06));
+    border:1px solid var(--border); border-radius:12px; padding:20px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .export-box-text .title { font-size:13px; font-weight:600; margin-bottom:4px; }
+  .export-box-text .sub { font-size:11px; color:var(--text-dim); }
+  .export-btns { display:flex; gap:8px; flex-shrink:0; }
+
+  /* QUICK ACTIONS */
+  .quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .quick-card {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:14px 12px; cursor:pointer;
+    transition:all .15s; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    color:inherit; font:inherit;
+  }
+  .quick-card:hover { border-color:var(--cyan); background:var(--cyan-dim); }
+  .quick-card .icon { font-size:20px; }
+  .quick-card .label { font-size:10px; font-weight:600; color:var(--text-dim); letter-spacing:.3px; line-height:1.3; }
+  .quick-card:hover .label { color:var(--cyan); }
+
+  /* ACTIVITY FEED */
+  .activity-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .activity-text { font-size:12px; color:var(--text-dim); line-height:1.5; }
+  .activity-text strong { color:var(--text); }
+  .activity-time { font-size:10px; color:var(--text-faint); margin-top:2px; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* TABS */
+  .tabs { display:flex; gap:2px; background:var(--surface2); padding:3px; border-radius:8px; }
+  .tab {
+    padding:5px 14px; border-radius:6px; font-size:11px; font-weight:600;
+    cursor:pointer; color:var(--text-dim); transition:all .15s; border:none;
+    background:transparent; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .tab.active { background:var(--surface); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+
+  /* NOTIFICATION DOT */
+  .notif { position:relative; }
+  .notif::after {
+    content:''; position:absolute; top:-2px; right:-2px;
+    width:7px; height:7px; border-radius:50%;
+    background:var(--red); border:1px solid var(--bg);
+  }
+
+  /* Typography tuned to match the main SG Production website. */
+  body,
+  button,
+  input,
+  select,
+  .brand-avatar,
+  .topbar-title,
+  .stat-value,
+  .mono,
+  .badge,
+  .ad-stat-val,
+  .activity-time {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .brand-text .name { font-size:15px; font-weight:700; }
+  .brand-text .role { font-size:11px; }
+  .nav-label { font-size:10px; letter-spacing:1.2px; }
+  .nav-item { font-size:14px; font-weight:500; }
+  .topbar-title { font-size:23px; font-weight:800; letter-spacing:0; }
+  .topbar-sub { font-size:13px; }
+  .btn { font-size:13px; border-radius:999px; }
+  .filter-chip { font-size:12px; }
+  .stat-label { font-size:11px; }
+  .stat-value { font-size:32px; font-weight:800; }
+  .stat-change { font-size:12px; }
+  .panel-title { font-size:15px; font-weight:700; }
+  .panel-action { font-size:12px; }
+  .song-table th { font-size:10px; }
+  .song-table td { font-size:13px; }
+  .song-name { font-size:14px; }
+  .song-meta { font-size:11px; }
+  .mono,
+  .ad-stat-val { font-size:12px; }
+  .status { font-size:11px; }
+  .chart-label { font-size:9px; }
+  .ad-stat-label,
+  .activity-text { font-size:13px; }
+  .export-box-text .title { font-size:14px; }
+  .export-box-text .sub,
+  .quick-card .label,
+  .activity-time { font-size:11px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-avatar">SG</div>
+    <div class="brand-text">
+      <div class="name">SG Production</div>
+      <div class="role">Admin Studio</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <a class="nav-item active" href="#dashboard" data-section="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#analytics" data-section="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Music</div>
+      <a class="nav-item" href="#upload" data-section="upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        Upload New Song
+      </a>
+      <a class="nav-item" href="#songs" data-section="songs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Uploaded Songs
+      </a>
+      <a class="nav-item" href="#artists" data-section="artists">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Artist Management
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Monetization</div>
+      <a class="nav-item" href="#advertising" data-section="advertising">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        Advertising
+      </a>
+      <a class="nav-item" href="#brand-deals" data-section="brand-deals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Brand Deals
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Site</div>
+      <a class="nav-item" href="#settings" data-section="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M1 12h2M21 12h2M12 1v2M12 21v2"/></svg>
+        Website Settings
+      </a>
+      <a class="nav-item notif" href="#notifications" data-section="notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Notifications
+      </a>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a class="nav-item" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      View Live Site
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <span class="topbar-title">Dashboard</span>
+      <span class="topbar-sub">— May 2026</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-left:20px;">
+      <div class="tabs">
+        <button class="tab active">7 Days</button>
+        <button class="tab">30 Days</button>
+        <button class="tab">90 Days</button>
+        <button class="tab">All Time</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="exportReport()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Report
+      </button>
+      <button class="btn btn-primary" data-action-section="upload">+ Upload Song</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <section class="view-section active" id="dashboard-section" data-title="Dashboard" data-subtitle="May 2026">
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card cyan">
+        <div class="stat-icon"></div>
+        <div class="stat-label">Total Downloads</div>
+        <div class="stat-value cyan">3,847</div>
+        <div class="stat-change up">▲ 18% vs last period</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon"></div>
+        <div class="stat-label">Ad Impressions</div>
+        <div class="stat-value green">12,440</div>
+        <div class="stat-change up">▲ 32% vs last period</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon"></div>
+        <div class="stat-label">Ad Clicks (CTR)</div>
+        <div class="stat-value orange">284 <span style="font-size:16px;color:var(--text-dim)">/ 2.3%</span></div>
+        <div class="stat-change up">▲ 7% vs last period</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon"></div>
+        <div class="stat-label">Song Page Views</div>
+        <div class="stat-value purple">8,120</div>
+        <div class="stat-change down">▼ 4% vs last period</div>
+      </div>
+    </div>
+
+    <!-- MIDDLE ROW -->
+    <div class="two-col">
+
+      <!-- TOP SONGS BY DOWNLOADS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Top Songs by Downloads</span>
+          <button class="panel-action" data-action-section="songs">See All →</button>
+        </div>
+        <table class="song-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Song</th>
+              <th>Downloads</th>
+              <th>Ad Clicks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono" style="color:var(--cyan)">01</td>
+              <td>
+                <div class="song-info">
+                  <div class="song-cover"><img src="assets/cover-1.jpg" alt="Hype cover"></div>
+                  <div>
+                    <div class="song-name">Hype</div>
+                    <div class="song-meta">Original Mix · 2:28</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mono" style="color:var(--green)">1,204</span></td>
+              <td><span class="mono" style="color:var(--orange)">92</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--text-dim)">02</td>
+              <td>
+                <div class="song-info">
+                  <div class="song-cover"><img src="assets/cover-2.jpg" alt="Neon Pulse cover"></div>
+                  <div>
+                    <div class="song-name">Neon Pulse</div>
+                    <div class="song-meta">Soundcheck · 2:55</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mono" style="color:var(--green)">987</span></td>
+              <td><span class="mono" style="color:var(--orange)">71</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--text-dim)">03</td>
+              <td>
+                <div class="song-info">
+                  <div class="song-cover"><img src="assets/cover-3.jpg" alt="Night Drive cover"></div>
+                  <div>
+                    <div class="song-name">Night Drive</div>
+                    <div class="song-meta">Hindi · 3:12</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mono" style="color:var(--green)">763</span></td>
+              <td><span class="mono" style="color:var(--orange)">48</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--text-dim)">04</td>
+              <td>
+                <div class="song-info">
+                  <div class="song-cover"><img src="assets/cover-4.jpg" alt="Focus Mode cover"></div>
+                  <div>
+                    <div class="song-name">Focus Mode</div>
+                    <div class="song-meta">Marathi · 2:44</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mono" style="color:var(--green)">542</span></td>
+              <td><span class="mono" style="color:var(--orange)">41</span></td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:var(--text-dim)">05</td>
+              <td>
+                <div class="song-info">
+                  <div class="song-cover"><img src="assets/cover-5.jpg" alt="Purple Rain cover"></div>
+                  <div>
+                    <div class="song-name">Purple Rain</div>
+                    <div class="song-meta">Original Mix · 3:30</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mono" style="color:var(--green)">351</span></td>
+              <td><span class="mono" style="color:var(--orange)">32</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- AD PERFORMANCE -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Ad Performance Breakdown</span>
+          <button class="panel-action" onclick="alert('CSV export preview. This will connect to real data inside admin.php.')">Export CSV →</button>
+        </div>
+        <div class="ad-stat-row">
+          <div class="ad-stat-label">
+            <div class="dot" style="background:var(--cyan)"></div>
+            Total Impressions
+          </div>
+          <div>
+            <div class="ad-stat-val" style="color:var(--cyan)">12,440</div>
+            <div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:85%;background:var(--cyan)"></div></div>
+          </div>
+        </div>
+        <div class="ad-stat-row">
+          <div class="ad-stat-label">
+            <div class="dot" style="background:var(--green)"></div>
+            Unique Viewers
+          </div>
+          <div>
+            <div class="ad-stat-val" style="color:var(--green)">8,120</div>
+            <div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:65%;background:var(--green)"></div></div>
+          </div>
+        </div>
+        <div class="ad-stat-row">
+          <div class="ad-stat-label">
+            <div class="dot" style="background:var(--orange)"></div>
+            Total Ad Clicks
+          </div>
+          <div>
+            <div class="ad-stat-val" style="color:var(--orange)">284</div>
+            <div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:25%;background:var(--orange)"></div></div>
+          </div>
+        </div>
+        <div class="ad-stat-row">
+          <div class="ad-stat-label">
+            <div class="dot" style="background:var(--purple)"></div>
+            Click-Through Rate
+          </div>
+          <div>
+            <div class="ad-stat-val" style="color:var(--purple)">2.28%</div>
+            <div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:45%;background:var(--purple)"></div></div>
+          </div>
+        </div>
+        <div class="ad-stat-row">
+          <div class="ad-stat-label">
+            <div class="dot" style="background:var(--red)"></div>
+            Avg. Time-on-Ad-Page
+          </div>
+          <div>
+            <div class="ad-stat-val" style="color:var(--red)">1m 42s</div>
+            <div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:55%;background:var(--red)"></div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Downloads Trend (7 days)</div>
+          <div class="chart-wrap">
+            <div class="bar-chart">
+              <div class="bar" style="height:40%"><span>Mon</span></div>
+              <div class="bar" style="height:60%"><span>Tue</span></div>
+              <div class="bar" style="height:45%"><span>Wed</span></div>
+              <div class="bar" style="height:80%"><span>Thu</span></div>
+              <div class="bar" style="height:65%"><span>Fri</span></div>
+              <div class="bar" style="height:100%"><span>Sat</span></div>
+              <div class="bar" style="height:72%"><span>Sun</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="three-col">
+      <!-- QUICK ACTIONS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Quick Actions</span>
+        </div>
+        <div class="quick-grid">
+          <button class="quick-card" type="button" data-action-section="upload">
+            <div class="icon"></div>
+            <div class="label">Upload Song</div>
+          </button>
+          <button class="quick-card" type="button" data-action-section="advertising">
+            <div class="icon"></div>
+            <div class="label">Update Ad</div>
+          </button>
+          <button class="quick-card" type="button" data-action-section="songs">
+            <div class="icon"></div>
+            <div class="label">Feature Song</div>
+          </button>
+          <button class="quick-card" type="button" onclick="alert('CSV export preview. This will connect to real data inside admin.php.')">
+            <div class="icon"></div>
+            <div class="label">Export CSV</div>
+          </button>
+          <button class="quick-card" type="button" data-action-section="artists">
+            <div class="icon"></div>
+            <div class="label">Add Artist</div>
+          </button>
+          <button class="quick-card" type="button" onclick="alert('WAV download link copied preview.')">
+            <div class="icon"></div>
+            <div class="label">Copy WAV Link</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Activity</span>
+          <button class="panel-action">Clear</button>
+        </div>
+        <div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--green)"></div>
+            <div>
+              <div class="activity-text"><strong>Hype</strong> downloaded 12 times in last hour</div>
+              <div class="activity-time">2 mins ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--cyan)"></div>
+            <div>
+              <div class="activity-text">Ad clicked from <strong>Neon Pulse</strong> song page</div>
+              <div class="activity-time">11 mins ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--orange)"></div>
+            <div>
+              <div class="activity-text"><strong>Night Drive</strong> featured on homepage</div>
+              <div class="activity-time">1 hour ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--purple)"></div>
+            <div>
+              <div class="activity-text">New artist <strong>SG Soundcheck</strong> added</div>
+              <div class="activity-time">3 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background:var(--text-faint)"></div>
+            <div>
+              <div class="activity-text">Website settings saved</div>
+              <div class="activity-time">Yesterday</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADVERTISER EXPORT -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Advertiser Report</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
+          Share this report with brands to show your ad performance. Includes impressions, clicks, CTR, and top songs.
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;">
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Report Preview</div>
+          <div style="font-size:11px;color:var(--text-dim);display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between"><span>Period</span><span class="mono" style="color:var(--text)">May 1–8, 2026</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Impressions</span><span class="mono" style="color:var(--cyan)">12,440</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Clicks</span><span class="mono" style="color:var(--orange)">284</span></div>
+            <div style="display:flex;justify-content:space-between"><span>CTR</span><span class="mono" style="color:var(--green)">2.28%</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="btn btn-primary" style="width:100%;text-align:center;padding:9px;" onclick="alert('Downloading PDF report...')">Download PDF Report</button>
+          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;" onclick="alert('Downloading CSV...')">Export as CSV</button>
+          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;color:var(--cyan);border-color:var(--cyan-dim);" onclick="alert('Link copied!')">Copy Shareable Link</button>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <section class="view-section" id="analytics-section" data-title="Analytics" data-subtitle="Performance overview">
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">Downloads</div>
+          <div class="stat-value cyan">3,847</div>
+          <div class="stat-change up">18% vs last period</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Unique Visitors</div>
+          <div class="stat-value green">8,120</div>
+          <div class="stat-change up">12% vs last period</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Ad Clicks</div>
+          <div class="stat-value orange">284</div>
+          <div class="stat-change up">7% vs last period</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">CTR</div>
+          <div class="stat-value purple">2.28%</div>
+          <div class="stat-change down">4% vs last period</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Traffic Snapshot</span>
+        </div>
+        <p class="section-note">This preview shows where the live admin can display song views, downloads, ad impressions, ad clicks, and date range reports after connecting the PHP tracking counters.</p>
+      </div>
+    </section>
+
+    <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add a release">
+      <div class="section-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Song Details</span>
+          </div>
+          <p class="section-note">Upload preview MP3, cover artwork, title, artist, genre, duration, and WAV download URL from this section in the live PHP admin.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Publishing</span>
+          </div>
+          <p class="section-note">Control homepage visibility, featured placement, artist assignment, and SEO song URL before publishing.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="songs-section" data-title="Uploaded Songs" data-subtitle="Manage releases">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Uploaded Songs</span>
+          <button class="panel-action" data-action-section="upload">Upload New</button>
+        </div>
+        <table class="song-table">
+          <tbody>
+            <tr>
+              <td><div class="song-info"><div class="song-cover"><img src="assets/cover-1.jpg" alt="Midnight Echo cover"></div><div><div class="song-name">Midnight Echo</div><div class="song-meta">SG Production · Marathi</div></div></div></td>
+              <td><button class="btn btn-outline">Edit</button></td>
+              <td><button class="btn btn-primary">Preview</button></td>
+            </tr>
+            <tr>
+              <td><div class="song-info"><div class="song-cover"><img src="assets/cover-2.jpg" alt="Neon Pulse cover"></div><div><div class="song-name">Neon Pulse</div><div class="song-meta">SG Production · Soundcheck</div></div></div></td>
+              <td><button class="btn btn-outline">Edit</button></td>
+              <td><button class="btn btn-primary">Preview</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Profiles and pages">
+      <div class="section-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Artist Profiles</span>
+          </div>
+          <p class="section-note">Add artist name, profile image, and assign songs to each artist page.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Artist Page Preview</span>
+          </div>
+          <p class="section-note">Use this area to preview artist pages before pushing the same structure into the live admin panel.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Global ad controls">
+      <div class="section-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Advertisement Media</span>
+          </div>
+          <p class="section-note">Upload or select ad image/video, set the destination link, and turn advertising on or off globally.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Ad Tracking</span>
+          </div>
+          <p class="section-note">Track impressions, clicks, CTR, and generate advertiser reports from the live website.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="brand-deals-section" data-title="Brand Deals" data-subtitle="Coming soon">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Brand Deals</span>
+        </div>
+        <p class="section-note">A future area for advertiser details, campaign pricing, and report links.</p>
+      </div>
+    </section>
+
+    <section class="view-section" id="settings-section" data-title="Website Settings" data-subtitle="Site controls">
+      <div class="section-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Website Content</span>
+          </div>
+          <p class="section-note">Edit website title, YouTube subscribe link, social links, and global homepage text.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">SEO</span>
+          </div>
+          <p class="section-note">Manage clean URLs, page titles, meta descriptions, and sharing images.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="notifications-section" data-title="Notifications" data-subtitle="Recent alerts">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Notifications</span>
+        </div>
+        <p class="section-note">Song uploads, ad clicks, failed media loads, and report exports can appear here after live backend wiring.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      tab.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  const sections = document.querySelectorAll('.view-section');
+  const navItems = document.querySelectorAll('.nav-item[data-section]');
+  const titleEl = document.querySelector('.topbar-title');
+  const subEl = document.querySelector('.topbar-sub');
+
+  function openSection(sectionName) {
+    const target = document.querySelector(`#${sectionName}-section`);
+    if (!target) return;
+
+    sections.forEach(section => section.classList.remove('active'));
+    target.classList.add('active');
+
+    navItems.forEach(item => {
+      item.classList.toggle('active', item.dataset.section === sectionName);
+    });
+
+    titleEl.textContent = target.dataset.title || 'Dashboard';
+    subEl.textContent = `— ${target.dataset.subtitle || 'Admin Studio'}`;
+    history.replaceState(null, '', `#${sectionName}`);
+  }
+
+  navItems.forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      openSection(item.dataset.section);
+    });
+  });
+
+  document.querySelectorAll('[data-action-section]').forEach(button => {
+    button.addEventListener('click', () => openSection(button.dataset.actionSection));
+  });
+
+  const initialSection = location.hash.replace('#', '');
+  if (initialSection) openSection(initialSection);
+
+  function exportReport() {
+    const options = ['PDF Report (for brands/advertisers)', 'CSV Data (for spreadsheets)', 'JSON (for developers)'];
+    const choice = confirm('Export Performance Report?\n\nClick OK for PDF, Cancel to skip.');
+    if (choice) alert('PDF report generated.\nIncludes: impressions, clicks, CTR, top songs by downloads.');
+  }
+
+  // Animate bars on load
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.bar').forEach((bar, i) => {
+      bar.style.opacity = '0';
+      setTimeout(() => {
+        bar.style.transition = 'opacity .3s, height .5s';
+        bar.style.opacity = '1';
+      }, i * 60);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const artists = [
+const defaultArtists = [
   {
     id: "sg-production",
     name: "SG Production",
@@ -46,7 +46,7 @@ const artists = [
   }
 ];
 
-const tracks = [
+const defaultTracks = [
   { id: "midnight-echo", title: "Midnight Echo", genre: "Marathi", duration: "3:42", cover: "assets/cover-1.jpg", bpm: 142, tone: 110, wave: "triangle" },
   { id: "neon-pulse", title: "Neon Pulse", genre: "Soundcheck", duration: "2:55", cover: "assets/cover-2.jpg", bpm: 128, tone: 146.83, wave: "sine" },
   { id: "dark-frequency", title: "Dark Frequency", genre: "Hindi", duration: "4:10", cover: "assets/cover-3.jpg", bpm: 92, tone: 82.41, wave: "sawtooth" },
@@ -78,6 +78,20 @@ const artistProfileName = document.querySelector("#artistProfileName");
 const artistTrackList = document.querySelector("#artistTrackList");
 const relatedArtistGrid = document.querySelector("#relatedArtistGrid");
 
+let artists = [...defaultArtists];
+let tracks = [...defaultTracks];
+let siteSettings = {
+  site: {
+    title: "SG Production",
+    contactEmail: "bookings@sgproduction.example"
+  },
+  links: {
+    instagram: "https://www.instagram.com/sgproduction.music",
+    spotify: "https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true",
+    appleMusic: "https://music.apple.com/in/artist/sg-production/1580814477",
+    youtube: "https://www.youtube.com/@sgproductionindia"
+  }
+};
 let activeTrackId = "";
 let activeTrackDuration = 0;
 let activeStartedAt = 0;
@@ -100,6 +114,126 @@ function escapeHTML(value) {
 
 function slugClass(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function isLocalAudioPath(url) {
+  return /^uploads\/audio\//.test(url);
+}
+
+function normalizeTrack(track) {
+  if (!track || !track.title) {
+    return null;
+  }
+
+  const rawDownloadUrl = track.downloadUrl || "";
+  const previewUrl = track.previewUrl || track.audioUrl || (isLocalAudioPath(rawDownloadUrl) ? rawDownloadUrl : "");
+
+  return {
+    id: track.id || slugClass(track.title),
+    title: track.title,
+    artist: track.artist || "SG Production",
+    artistId: track.artistId || "sg-production",
+    genre: track.genre || "Soundcheck",
+    duration: track.duration || "0:0",
+    cover: track.cover || "assets/cover-1.jpg",
+    previewUrl,
+    downloadUrl: rawDownloadUrl,
+    bpm: Number(track.bpm) || 124,
+    tone: Number(track.tone) || 146.83,
+    wave: track.wave || "sine"
+  };
+}
+
+function normalizeArtist(artist) {
+  if (!artist || !artist.name) {
+    return null;
+  }
+
+  return {
+    id: artist.id || slugClass(artist.name),
+    name: artist.name,
+    style: artist.style || "Original Mix",
+    image: artist.image || "assets/artist-photo-1.svg",
+    year: artist.year || "2026",
+    order: Number(artist.order) || 99,
+    trackGenres: Array.isArray(artist.trackGenres) && artist.trackGenres.length > 0 ? artist.trackGenres : [artist.style || "Original Mix"]
+  };
+}
+
+async function fetchJson(path, fallback) {
+  try {
+    const response = await fetch(path, { cache: "no-store" });
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    return await response.json();
+  } catch {
+    return fallback;
+  }
+}
+
+function mergeById(primary, fallback) {
+  const seen = new Set();
+  return [...primary, ...fallback].filter((item) => {
+    if (!item || seen.has(item.id)) {
+      return false;
+    }
+
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function setLink(selector, href) {
+  document.querySelectorAll(selector).forEach((element) => {
+    if (!href) {
+      element.hidden = true;
+      return;
+    }
+
+    element.hidden = false;
+    element.href = href;
+  });
+}
+
+function applySiteSettings() {
+  const { site, links } = siteSettings;
+
+  document.title = `Artists | ${site.title}`;
+  setLink('a[aria-label="Instagram"]', links.instagram);
+  setLink('a[aria-label="Spotify"]', links.spotify);
+  setLink('a[aria-label="Apple Music"]', links.appleMusic);
+  setLink('a[aria-label="YouTube"]', links.youtube);
+  setLink('a[aria-label="Contact SG Production"]', site.contactEmail ? `mailto:${site.contactEmail}` : "");
+}
+
+async function loadCatalogData() {
+  const [uploadedTracks, uploadedArtists, loadedSettings] = await Promise.all([
+    fetchJson("data/tracks.json", []),
+    fetchJson("data/artists.json", []),
+    fetchJson("data/settings.json", siteSettings)
+  ]);
+
+  const normalizedTracks = Array.isArray(uploadedTracks) ? uploadedTracks.map(normalizeTrack).filter(Boolean) : [];
+  const normalizedArtists = Array.isArray(uploadedArtists) ? uploadedArtists.map(normalizeArtist).filter(Boolean) : [];
+
+  tracks = mergeById(normalizedTracks, defaultTracks.map(normalizeTrack).filter(Boolean));
+  artists = mergeById(normalizedArtists, defaultArtists.map(normalizeArtist).filter(Boolean));
+  siteSettings = {
+    ...siteSettings,
+    ...loadedSettings,
+    site: {
+      ...siteSettings.site,
+      ...(loadedSettings.site || {})
+    },
+    links: {
+      ...siteSettings.links,
+      ...(loadedSettings.links || {})
+    }
+  };
+  applySiteSettings();
 }
 
 function trackUrl(track) {
@@ -125,7 +259,7 @@ function getFilteredArtists() {
   const query = artistSearchInput.value.trim().toLowerCase();
 
   return artists.filter((artist) => {
-    return `${artist.name} ${artist.style}`.toLowerCase().includes(query);
+    return `${artist.name} ${artist.style} ${artist.trackGenres.join(" ")}`.toLowerCase().includes(query);
   });
 }
 
@@ -159,7 +293,10 @@ function icon(name) {
 }
 
 function getArtistTracks(artist) {
-  const matches = tracks.filter((track) => artist.trackGenres.includes(track.genre));
+  const matches = tracks.filter((track) => {
+    return track.artistId === artist.id || artist.trackGenres.includes(track.genre);
+  });
+
   return artist.id === "sg-production" ? matches.slice(0, 7) : matches.slice(0, 5);
 }
 
@@ -202,14 +339,14 @@ function renderArtistProfile(artist) {
   artistProfileBg.style.backgroundImage = `url("${artist.image}")`;
   artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
   renderRelatedArtists(artist);
-  document.title = `${artist.name} | SG Production`;
+  document.title = `${artist.name} | ${siteSettings.site.title}`;
 }
 
 function showDirectory() {
   stopProfilePlayback();
   artistDirectory.hidden = false;
   artistProfilePage.hidden = true;
-  document.title = "Artists | SG Production";
+  document.title = `Artists | ${siteSettings.site.title}`;
 }
 
 function showProfile(artist) {
@@ -550,5 +687,7 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
-renderArtists();
-routeArtistPage();
+loadCatalogData().then(() => {
+  renderArtists();
+  routeArtistPage();
+});

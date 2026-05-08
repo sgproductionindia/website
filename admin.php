@@ -6,9 +6,11 @@ session_start();
 const ADMIN_PASSWORD = 'hyqhyp-viKfa3-timfaw';
 const TRACKS_FILE = __DIR__ . '/data/tracks.json';
 const SETTINGS_FILE = __DIR__ . '/data/settings.json';
+const ARTISTS_FILE = __DIR__ . '/data/artists.json';
 const COVER_DIR = __DIR__ . '/uploads/covers';
 const AUDIO_DIR = __DIR__ . '/uploads/audio';
 const AD_DIR = __DIR__ . '/uploads/ads';
+const ARTIST_DIR = __DIR__ . '/uploads/artists';
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 120 * 1024 * 1024;
 const MAX_AD_BYTES = 60 * 1024 * 1024;
@@ -23,7 +25,7 @@ function e(string $value): string
 
 function ensureStorage(): void
 {
-    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR] as $directory) {
+    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR, ARTIST_DIR] as $directory) {
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
@@ -39,6 +41,10 @@ function ensureStorage(): void
 
     if (!file_exists(SETTINGS_FILE)) {
         file_put_contents(SETTINGS_FILE, json_encode(defaultSettings(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
+    }
+
+    if (!file_exists(ARTISTS_FILE)) {
+        file_put_contents(ARTISTS_FILE, json_encode(defaultArtists(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
 }
 
@@ -105,10 +111,75 @@ function readTracks(): array
 function defaultSettings(): array
 {
     return [
+        'site' => [
+            'title' => 'SG Production',
+            'tagline' => 'Original music • direct download • no barriers',
+            'youtubeHeading' => 'Subscribe on YouTube',
+            'youtubeText' => 'Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.',
+            'contactEmail' => 'bookings@sgproduction.example',
+        ],
+        'links' => [
+            'instagram' => 'https://www.instagram.com/sgproduction.music',
+            'spotify' => 'https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true',
+            'appleMusic' => 'https://music.apple.com/in/artist/sg-production/1580814477',
+            'youtube' => 'https://www.youtube.com/@sgproductionindia',
+        ],
+        'catalog' => [
+            'latestCount' => 5,
+            'tracksPerPage' => 15,
+            'paginationDemoPages' => 12,
+        ],
         'advertising' => [
             'enabled' => false,
             'mediaUrl' => '',
             'mediaType' => '',
+            'linkUrl' => '',
+        ],
+    ];
+}
+
+function defaultArtists(): array
+{
+    return [
+        [
+            'id' => 'sg-production',
+            'name' => 'SG Production',
+            'style' => 'Original Mix',
+            'image' => 'assets/artist-photo-1.svg',
+            'year' => '2026',
+            'trackGenres' => ['Original Mix', 'Marathi', 'Soundcheck', 'Hindi'],
+        ],
+        [
+            'id' => 'sg-soundcheck',
+            'name' => 'SG Soundcheck',
+            'style' => 'Soundcheck',
+            'image' => 'assets/artist-photo-2.svg',
+            'year' => '2026',
+            'trackGenres' => ['Soundcheck'],
+        ],
+        [
+            'id' => 'marathi-pulse',
+            'name' => 'Marathi Pulse',
+            'style' => 'Marathi',
+            'image' => 'assets/artist-photo-3.svg',
+            'year' => '2025',
+            'trackGenres' => ['Marathi'],
+        ],
+        [
+            'id' => 'hindi-wave',
+            'name' => 'Hindi Wave',
+            'style' => 'Hindi',
+            'image' => 'assets/artist-photo-4.svg',
+            'year' => '2025',
+            'trackGenres' => ['Hindi'],
+        ],
+        [
+            'id' => 'night-circuit',
+            'name' => 'Night Circuit',
+            'style' => 'Original Mix',
+            'image' => 'assets/artist-photo-5.svg',
+            'year' => '2024',
+            'trackGenres' => ['Original Mix'],
         ],
     ];
 }
@@ -124,6 +195,15 @@ function readSettings(): array
     }
 
     return array_replace_recursive(defaultSettings(), $settings);
+}
+
+function readArtists(): array
+{
+    ensureStorage();
+    $json = file_get_contents(ARTISTS_FILE);
+    $artists = json_decode($json ?: '[]', true);
+
+    return is_array($artists) ? $artists : defaultArtists();
 }
 
 function writeSettings(array $settings): void
@@ -142,6 +222,78 @@ function writeTracks(array $tracks): void
     if ($json === false || file_put_contents(TRACKS_FILE, $json . "\n", LOCK_EX) === false) {
         throw new RuntimeException('Could not save the track list.');
     }
+}
+
+function writeArtists(array $artists): void
+{
+    $json = json_encode(array_values($artists), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    if ($json === false || file_put_contents(ARTISTS_FILE, $json . "\n", LOCK_EX) === false) {
+        throw new RuntimeException('Could not save artist profiles.');
+    }
+}
+
+function findIndexById(array $items, string $id): ?int
+{
+    foreach ($items as $index => $item) {
+        if (is_array($item) && (string) ($item['id'] ?? '') === $id) {
+            return (int) $index;
+        }
+    }
+
+    return null;
+}
+
+function parseList(string $value): array
+{
+    return array_values(array_filter(array_map('trim', explode(',', $value)), static fn (string $item): bool => $item !== ''));
+}
+
+function safeDeleteUpload(?string $path): void
+{
+    $path = (string) $path;
+
+    if ($path === '' || str_starts_with($path, 'assets/')) {
+        return;
+    }
+
+    $fullPath = realpath(__DIR__ . '/' . $path);
+    $root = realpath(__DIR__ . '/uploads');
+
+    if ($fullPath !== false && $root !== false && str_starts_with($fullPath, $root) && is_file($fullPath)) {
+        @unlink($fullPath);
+    }
+}
+
+function folderSize(string $directory): int
+{
+    if (!is_dir($directory)) {
+        return 0;
+    }
+
+    $size = 0;
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS));
+
+    foreach ($files as $file) {
+        if ($file->isFile()) {
+            $size += $file->getSize();
+        }
+    }
+
+    return $size;
+}
+
+function formatBytes(int $bytes): string
+{
+    if ($bytes >= 1024 * 1024) {
+        return round($bytes / 1024 / 1024, 1) . ' MB';
+    }
+
+    if ($bytes >= 1024) {
+        return round($bytes / 1024, 1) . ' KB';
+    }
+
+    return $bytes . ' B';
 }
 
 function uniqueTargetPath(string $directory, string $baseName, string $extension): string
@@ -386,6 +538,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
     try {
         $title = trim((string) ($_POST['title'] ?? ''));
         $artist = trim((string) ($_POST['artist'] ?? 'SG Production'));
+        $artistId = trim((string) ($_POST['artistId'] ?? 'sg-production'));
         $genre = trim((string) ($_POST['genre'] ?? 'Soundcheck'));
         $duration = trim((string) ($_POST['duration'] ?? ''));
         $downloadUrl = trim((string) ($_POST['downloadUrl'] ?? ''));
@@ -436,12 +589,14 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             'id' => $trackId,
             'title' => $title,
             'artist' => $artist !== '' ? $artist : 'SG Production',
+            'artistId' => $artistId !== '' ? $artistId : 'sg-production',
             'genre' => $genre !== '' ? $genre : 'Soundcheck',
             'duration' => $duration,
             'cover' => $cover,
             'previewUrl' => $previewAudio,
             'downloadUrl' => $downloadUrl,
             'isNew' => isset($_POST['isNew']),
+            'isFeatured' => isset($_POST['isFeatured']) || isset($_POST['isNew']),
             'bpm' => $bpm,
             'tone' => 146.83,
             'wave' => in_array($wave, ['sine', 'triangle', 'sawtooth', 'square'], true) ? $wave : 'sine',
@@ -477,6 +632,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         }
 
         $advertising['enabled'] = isset($_POST['adEnabled']);
+        $advertising['linkUrl'] = trim((string) ($_POST['adLinkUrl'] ?? ($advertising['linkUrl'] ?? '')));
 
         if ($advertising['enabled'] && trim((string) ($advertising['mediaUrl'] ?? '')) === '') {
             throw new RuntimeException('Upload an advertising image or video before turning advertising on.');
@@ -492,8 +648,234 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
     }
 }
 
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_site') {
+    try {
+        $settings = readSettings();
+        $latestCount = max(1, min(12, (int) ($_POST['latestCount'] ?? 5)));
+        $tracksPerPage = max(5, min(50, (int) ($_POST['tracksPerPage'] ?? 15)));
+        $paginationDemoPages = max(1, min(40, (int) ($_POST['paginationDemoPages'] ?? 12)));
+
+        $settings['site'] = [
+            'title' => trim((string) ($_POST['siteTitle'] ?? 'SG Production')) ?: 'SG Production',
+            'tagline' => trim((string) ($_POST['tagline'] ?? 'Original music • direct download • no barriers')) ?: 'Original music • direct download • no barriers',
+            'youtubeHeading' => trim((string) ($_POST['youtubeHeading'] ?? 'Subscribe on YouTube')) ?: 'Subscribe on YouTube',
+            'youtubeText' => trim((string) ($_POST['youtubeText'] ?? '')) ?: defaultSettings()['site']['youtubeText'],
+            'contactEmail' => trim((string) ($_POST['contactEmail'] ?? 'bookings@sgproduction.example')) ?: 'bookings@sgproduction.example',
+        ];
+        $settings['links'] = [
+            'instagram' => trim((string) ($_POST['instagram'] ?? '')),
+            'spotify' => trim((string) ($_POST['spotify'] ?? '')),
+            'appleMusic' => trim((string) ($_POST['appleMusic'] ?? '')),
+            'youtube' => trim((string) ($_POST['youtube'] ?? '')),
+        ];
+        $settings['catalog'] = [
+            'latestCount' => $latestCount,
+            'tracksPerPage' => $tracksPerPage,
+            'paginationDemoPages' => $paginationDemoPages,
+        ];
+
+        writeSettings($settings);
+        $_SESSION['flash_success'] = 'Website settings saved.';
+        header('Location: admin.php#website-settings');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_track') {
+    try {
+        $trackId = (string) ($_POST['trackId'] ?? '');
+        $tracks = readTracks();
+        $index = findIndexById($tracks, $trackId);
+
+        if ($index === null) {
+            throw new RuntimeException('Song not found.');
+        }
+
+        $track = is_array($tracks[$index]) ? $tracks[$index] : [];
+        $title = trim((string) ($_POST['title'] ?? ''));
+        $downloadUrl = trim((string) ($_POST['downloadUrl'] ?? ''));
+
+        if ($title === '') {
+            throw new RuntimeException('Track title is required.');
+        }
+
+        if ($downloadUrl === '' || !isHttpUrl($downloadUrl)) {
+            throw new RuntimeException('Add a valid WAV download URL that starts with http:// or https://.');
+        }
+
+        $bpm = max(40, min(240, (int) ($_POST['bpm'] ?? 124)));
+        $cover = uploadOptionalFile('cover', ['jpg', 'jpeg', 'png', 'webp'], ['image/jpeg', 'image/png', 'image/webp'], MAX_COVER_BYTES, COVER_DIR, $trackId);
+        $previewAudio = uploadOptionalFile('audio', ['wav', 'mp3'], ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/x-pn-wav', 'audio/mpeg', 'audio/mp3', 'audio/x-mpeg'], MAX_AUDIO_BYTES, AUDIO_DIR, $trackId);
+        $duration = trim((string) ($_POST['duration'] ?? ($track['duration'] ?? '0:0')));
+
+        if ($previewAudio !== null) {
+            $detectedDuration = detectAudioDuration(__DIR__ . '/' . $previewAudio);
+
+            if ($detectedDuration !== null) {
+                $duration = formatDurationSeconds($detectedDuration);
+            }
+        }
+
+        if (!preg_match('/^\d+:\d{1,2}$/', $duration)) {
+            throw new RuntimeException('Duration must use M:S format.');
+        }
+
+        if ($cover !== null) {
+            safeDeleteUpload((string) ($track['cover'] ?? ''));
+            $track['cover'] = $cover;
+        }
+
+        if ($previewAudio !== null) {
+            safeDeleteUpload((string) ($track['previewUrl'] ?? ''));
+            $track['previewUrl'] = $previewAudio;
+        }
+
+        $wave = trim((string) ($_POST['wave'] ?? 'sine'));
+        $track['title'] = $title;
+        $track['artist'] = trim((string) ($_POST['artist'] ?? 'SG Production')) ?: 'SG Production';
+        $track['artistId'] = trim((string) ($_POST['artistId'] ?? 'sg-production')) ?: 'sg-production';
+        $track['genre'] = trim((string) ($_POST['genre'] ?? 'Soundcheck')) ?: 'Soundcheck';
+        $track['duration'] = $duration;
+        $track['downloadUrl'] = $downloadUrl;
+        $track['isNew'] = isset($_POST['isNew']);
+        $track['isFeatured'] = isset($_POST['isFeatured']);
+        $track['bpm'] = $bpm;
+        $track['wave'] = in_array($wave, ['sine', 'triangle', 'sawtooth', 'square'], true) ? $wave : 'sine';
+
+        $tracks[$index] = $track;
+        writeTracks($tracks);
+        $_SESSION['flash_success'] = 'Song updated.';
+        header('Location: admin.php#track-' . rawurlencode($trackId));
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_track') {
+    try {
+        $trackId = (string) ($_POST['trackId'] ?? '');
+        $tracks = readTracks();
+        $index = findIndexById($tracks, $trackId);
+
+        if ($index === null) {
+            throw new RuntimeException('Song not found.');
+        }
+
+        $track = is_array($tracks[$index]) ? $tracks[$index] : [];
+
+        if (isset($_POST['deleteFiles'])) {
+            safeDeleteUpload((string) ($track['cover'] ?? ''));
+            safeDeleteUpload((string) ($track['previewUrl'] ?? ''));
+        }
+
+        array_splice($tracks, $index, 1);
+        writeTracks($tracks);
+        $_SESSION['flash_success'] = 'Song deleted.';
+        header('Location: admin.php#uploaded-songs');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'move_track') {
+    try {
+        $trackId = (string) ($_POST['trackId'] ?? '');
+        $direction = (string) ($_POST['direction'] ?? '');
+        $tracks = readTracks();
+        $index = findIndexById($tracks, $trackId);
+
+        if ($index === null) {
+            throw new RuntimeException('Song not found.');
+        }
+
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if (isset($tracks[$target])) {
+            [$tracks[$index], $tracks[$target]] = [$tracks[$target], $tracks[$index]];
+            writeTracks($tracks);
+        }
+
+        $_SESSION['flash_success'] = 'Song order updated.';
+        header('Location: admin.php#track-' . rawurlencode($trackId));
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_artist') {
+    try {
+        $artists = readArtists();
+        $artistId = trim((string) ($_POST['artistId'] ?? ''));
+        $name = trim((string) ($_POST['artistName'] ?? ''));
+
+        if ($name === '') {
+            throw new RuntimeException('Artist name is required.');
+        }
+
+        $isNewArtist = $artistId === '';
+        $artistId = $isNewArtist ? uniqueTrackId($name, $artists) : $artistId;
+        $index = findIndexById($artists, $artistId);
+        $artist = $index === null ? ['id' => $artistId] : (is_array($artists[$index]) ? $artists[$index] : ['id' => $artistId]);
+        $artistImage = uploadOptionalFile('artistImage', ['jpg', 'jpeg', 'png', 'webp', 'svg'], ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'text/plain'], MAX_COVER_BYTES, ARTIST_DIR, $artistId);
+
+        if ($artistImage !== null) {
+            safeDeleteUpload((string) ($artist['image'] ?? ''));
+            $artist['image'] = $artistImage;
+        }
+
+        $artist['name'] = $name;
+        $artist['style'] = trim((string) ($_POST['artistStyle'] ?? 'Original Mix')) ?: 'Original Mix';
+        $artist['year'] = trim((string) ($_POST['artistYear'] ?? date('Y'))) ?: date('Y');
+        $artist['trackGenres'] = parseList((string) ($_POST['artistGenres'] ?? 'Original Mix'));
+
+        if (empty($artist['image'])) {
+            $artist['image'] = 'assets/artist-photo-1.svg';
+        }
+
+        if ($index === null) {
+            array_unshift($artists, $artist);
+        } else {
+            $artists[$index] = $artist;
+        }
+
+        writeArtists($artists);
+        $_SESSION['flash_success'] = 'Artist profile saved.';
+        header('Location: admin.php#artists');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_artist') {
+    try {
+        $artistId = (string) ($_POST['artistId'] ?? '');
+        $artists = readArtists();
+        $index = findIndexById($artists, $artistId);
+
+        if ($index === null) {
+            throw new RuntimeException('Artist not found.');
+        }
+
+        safeDeleteUpload((string) ($artists[$index]['image'] ?? ''));
+        array_splice($artists, $index, 1);
+        writeArtists($artists);
+        $_SESSION['flash_success'] = 'Artist deleted.';
+        header('Location: admin.php#artists');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
 $settings = readSettings();
 $tracks = readTracks();
+$artists = readArtists();
 ?>
 <!doctype html>
 <html lang="en">
@@ -700,6 +1082,34 @@ $tracks = readTracks();
         background: rgba(255, 69, 69, 0.16);
       }
 
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .metric-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: #0b0f14;
+      }
+
+      .metric-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.35rem;
+      }
+
+      .split-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
       .track-list {
         display: grid;
         gap: 10px;
@@ -741,6 +1151,59 @@ $tracks = readTracks();
         justify-content: flex-end;
         gap: 10px;
         flex-wrap: wrap;
+      }
+
+      .mini-form {
+        display: inline-flex;
+        margin: 0;
+      }
+
+      details.editor {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+
+      details.editor summary {
+        color: var(--cyan);
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .danger {
+        color: #ffb8b8;
+        border-color: rgba(255, 69, 69, 0.38);
+        background: rgba(255, 69, 69, 0.12);
+      }
+
+      .artist-admin-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .artist-admin-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: #0b0f14;
+      }
+
+      .artist-admin-head {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .artist-admin-head img {
+        width: 58px;
+        height: 58px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #020305;
       }
 
       .ad-preview {
@@ -798,6 +1261,11 @@ $tracks = readTracks();
         .ad-preview {
           grid-template-columns: 1fr;
         }
+
+        .dashboard-grid,
+        .artist-admin-list {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -850,6 +1318,102 @@ $tracks = readTracks();
           </form>
         </section>
       <?php else: ?>
+        <?php
+          $site = is_array($settings['site'] ?? null) ? $settings['site'] : [];
+          $links = is_array($settings['links'] ?? null) ? $settings['links'] : [];
+          $catalog = is_array($settings['catalog'] ?? null) ? $settings['catalog'] : [];
+          $featuredCount = count(array_filter($tracks, static fn ($track): bool => is_array($track) && !empty($track['isFeatured'] ?? $track['isNew'] ?? false)));
+          $storageUsed = folderSize(__DIR__ . '/uploads');
+          $lastTrack = is_array($tracks[0] ?? null) ? $tracks[0] : null;
+        ?>
+        <section class="panel" id="dashboard">
+          <div class="split-heading">
+            <div>
+              <h1>Dashboard</h1>
+              <p class="muted">Quick status for the live catalog.</p>
+            </div>
+            <a class="button" href="admin-preview.html">Open Local Preview</a>
+          </div>
+          <div class="dashboard-grid">
+            <div class="metric-card">
+              <span class="muted">Total Songs</span>
+              <strong><?= count($tracks) ?></strong>
+            </div>
+            <div class="metric-card">
+              <span class="muted">Featured Songs</span>
+              <strong><?= $featuredCount ?></strong>
+            </div>
+            <div class="metric-card">
+              <span class="muted">Artists</span>
+              <strong><?= count($artists) ?></strong>
+            </div>
+            <div class="metric-card">
+              <span class="muted">Storage Used</span>
+              <strong><?= e(formatBytes($storageUsed)) ?></strong>
+            </div>
+          </div>
+          <p class="muted">Last uploaded: <?= e((string) ($lastTrack['title'] ?? 'No songs uploaded yet')) ?></p>
+        </section>
+
+        <section class="panel" id="website-settings">
+          <h1>Website Settings</h1>
+          <p class="muted">Control homepage text, social links, and catalog layout.</p>
+          <form class="grid" method="post">
+            <input type="hidden" name="action" value="save_site">
+            <label>
+              Site Title
+              <input type="text" name="siteTitle" value="<?= e((string) ($site['title'] ?? 'SG Production')) ?>">
+            </label>
+            <label>
+              Tagline
+              <input type="text" name="tagline" value="<?= e((string) ($site['tagline'] ?? 'Original music • direct download • no barriers')) ?>">
+            </label>
+            <label>
+              YouTube Heading
+              <input type="text" name="youtubeHeading" value="<?= e((string) ($site['youtubeHeading'] ?? 'Subscribe on YouTube')) ?>">
+            </label>
+            <label>
+              Contact Email
+              <input type="email" name="contactEmail" value="<?= e((string) ($site['contactEmail'] ?? 'bookings@sgproduction.example')) ?>">
+            </label>
+            <label class="full">
+              YouTube Text
+              <input type="text" name="youtubeText" value="<?= e((string) ($site['youtubeText'] ?? defaultSettings()['site']['youtubeText'])) ?>">
+            </label>
+            <label>
+              Instagram URL
+              <input type="url" name="instagram" value="<?= e((string) ($links['instagram'] ?? '')) ?>">
+            </label>
+            <label>
+              Spotify URL
+              <input type="url" name="spotify" value="<?= e((string) ($links['spotify'] ?? '')) ?>">
+            </label>
+            <label>
+              Apple Music URL
+              <input type="url" name="appleMusic" value="<?= e((string) ($links['appleMusic'] ?? '')) ?>">
+            </label>
+            <label>
+              YouTube URL
+              <input type="url" name="youtube" value="<?= e((string) ($links['youtube'] ?? '')) ?>">
+            </label>
+            <label>
+              Latest Count
+              <input type="number" name="latestCount" value="<?= e((string) ($catalog['latestCount'] ?? 5)) ?>" min="1" max="12">
+            </label>
+            <label>
+              Songs Per Page
+              <input type="number" name="tracksPerPage" value="<?= e((string) ($catalog['tracksPerPage'] ?? 15)) ?>" min="5" max="50">
+            </label>
+            <label>
+              Demo Page Count
+              <input type="number" name="paginationDemoPages" value="<?= e((string) ($catalog['paginationDemoPages'] ?? 12)) ?>" min="1" max="40">
+            </label>
+            <div class="full">
+              <button class="button primary" type="submit">Save Website Settings</button>
+            </div>
+          </form>
+        </section>
+
         <section class="panel">
           <h1>Upload New Song</h1>
           <p class="muted">Add a cover, an MP3/WAV preview for playback, and a separate WAV download URL.</p>
@@ -862,6 +1426,16 @@ $tracks = readTracks();
             <label>
               Artist
               <input type="text" name="artist" value="SG Production" required>
+            </label>
+            <label>
+              Artist Profile
+              <select name="artistId">
+                <?php foreach ($artists as $artistOption): ?>
+                  <?php if (is_array($artistOption)): ?>
+                    <option value="<?= e((string) ($artistOption['id'] ?? '')) ?>"><?= e((string) ($artistOption['name'] ?? 'Artist')) ?></option>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </select>
             </label>
             <label>
               Genre
@@ -906,6 +1480,10 @@ $tracks = readTracks();
               <input type="checkbox" name="isNew" checked>
               Mark as new release
             </label>
+            <label class="check-row full">
+              <input type="checkbox" name="isFeatured" checked>
+              Show in Latest Releases
+            </label>
             <div class="full">
               <button class="button primary" type="submit">Upload Song</button>
             </div>
@@ -944,6 +1522,10 @@ $tracks = readTracks();
               Advertising Media
               <input type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime">
             </label>
+            <label class="full">
+              Advertisement Click URL
+              <input type="url" name="adLinkUrl" value="<?= e((string) ($advertising['linkUrl'] ?? '')) ?>" placeholder="https://example.com">
+            </label>
             <label class="check-row full">
               <input type="checkbox" name="adEnabled" <?= $adEnabled ? 'checked' : '' ?>>
               Show advertisement on single song pages
@@ -954,20 +1536,122 @@ $tracks = readTracks();
           </form>
         </section>
 
+        <section class="panel" id="artists">
+          <h1>Artist Management</h1>
+          <p class="muted">Add or edit artist pages and assign genres to each profile.</p>
+          <form class="grid" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="save_artist">
+            <label>
+              Artist Name
+              <input type="text" name="artistName" placeholder="SG Production" required>
+            </label>
+            <label>
+              Artist Style
+              <input type="text" name="artistStyle" placeholder="Original Mix">
+            </label>
+            <label>
+              Release Year
+              <input type="text" name="artistYear" value="<?= e(date('Y')) ?>">
+            </label>
+            <label>
+              Artist Image
+              <input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+            </label>
+            <label class="full">
+              Genres Assigned
+              <input type="text" name="artistGenres" value="Original Mix, Marathi, Soundcheck, Hindi">
+            </label>
+            <div class="full">
+              <button class="button primary" type="submit">Add Artist</button>
+            </div>
+          </form>
+
+          <div class="artist-admin-list">
+            <?php foreach ($artists as $artist): ?>
+              <?php if (!is_array($artist)) { continue; } ?>
+              <?php
+                $artistId = (string) ($artist['id'] ?? '');
+                $artistGenres = implode(', ', array_map('strval', is_array($artist['trackGenres'] ?? null) ? $artist['trackGenres'] : []));
+              ?>
+              <article class="artist-admin-card" id="artist-<?= e($artistId) ?>">
+                <div class="artist-admin-head">
+                  <img src="<?= e((string) ($artist['image'] ?? 'assets/artist-photo-1.svg')) ?>" alt="">
+                  <div>
+                    <strong><?= e((string) ($artist['name'] ?? 'Artist')) ?></strong>
+                    <span class="muted"><?= e((string) ($artist['style'] ?? 'Original Mix')) ?></span>
+                  </div>
+                </div>
+                <details class="editor">
+                  <summary>Edit artist</summary>
+                  <form class="grid" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="save_artist">
+                    <input type="hidden" name="artistId" value="<?= e($artistId) ?>">
+                    <label>
+                      Artist Name
+                      <input type="text" name="artistName" value="<?= e((string) ($artist['name'] ?? '')) ?>" required>
+                    </label>
+                    <label>
+                      Artist Style
+                      <input type="text" name="artistStyle" value="<?= e((string) ($artist['style'] ?? '')) ?>">
+                    </label>
+                    <label>
+                      Release Year
+                      <input type="text" name="artistYear" value="<?= e((string) ($artist['year'] ?? date('Y'))) ?>">
+                    </label>
+                    <label>
+                      Replace Image
+                      <input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+                    </label>
+                    <label class="full">
+                      Genres Assigned
+                      <input type="text" name="artistGenres" value="<?= e($artistGenres) ?>">
+                    </label>
+                    <div class="full">
+                      <button class="button primary" type="submit">Save Artist</button>
+                    </div>
+                  </form>
+                  <form class="mini-form" method="post" onsubmit="return confirm('Delete this artist?');">
+                    <input type="hidden" name="action" value="delete_artist">
+                    <input type="hidden" name="artistId" value="<?= e($artistId) ?>">
+                    <button class="button danger" type="submit">Delete Artist</button>
+                  </form>
+                </details>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        </section>
+
         <section class="panel" id="uploaded-songs">
           <h2>Uploaded Songs</h2>
           <?php if ($tracks === []): ?>
             <p class="muted">No uploaded songs yet.</p>
           <?php else: ?>
             <div class="track-list">
-              <?php foreach ($tracks as $track): ?>
-                <div class="track-row">
+              <?php foreach ($tracks as $trackIndex => $track): ?>
+                <?php if (!is_array($track)) { continue; } ?>
+                <?php
+                  $trackId = (string) ($track['id'] ?? '');
+                  $trackArtistId = (string) ($track['artistId'] ?? 'sg-production');
+                ?>
+                <div class="track-row" id="track-<?= e($trackId) ?>">
                   <img src="<?= e((string) ($track['cover'] ?? 'assets/cover-1.jpg')) ?>" alt="">
                   <div>
                     <strong><?= e((string) ($track['title'] ?? 'Untitled Track')) ?></strong>
-                    <span><?= e((string) ($track['artist'] ?? 'SG Production')) ?> · <?= e((string) ($track['genre'] ?? 'Soundcheck')) ?> · <?= e((string) ($track['duration'] ?? '0:0')) ?></span>
+                    <span><?= e((string) ($track['artist'] ?? 'SG Production')) ?> · <?= e((string) ($track['genre'] ?? 'Soundcheck')) ?> · <?= e((string) ($track['duration'] ?? '0:0')) ?><?= !empty($track['isFeatured'] ?? $track['isNew'] ?? false) ? ' · Featured' : '' ?></span>
                   </div>
                   <div class="track-actions">
+                    <form class="mini-form" method="post">
+                      <input type="hidden" name="action" value="move_track">
+                      <input type="hidden" name="trackId" value="<?= e($trackId) ?>">
+                      <input type="hidden" name="direction" value="up">
+                      <button class="button" type="submit" <?= $trackIndex === 0 ? 'disabled' : '' ?>>Up</button>
+                    </form>
+                    <form class="mini-form" method="post">
+                      <input type="hidden" name="action" value="move_track">
+                      <input type="hidden" name="trackId" value="<?= e($trackId) ?>">
+                      <input type="hidden" name="direction" value="down">
+                      <button class="button" type="submit" <?= $trackIndex === count($tracks) - 1 ? 'disabled' : '' ?>>Down</button>
+                    </form>
                     <?php if (!empty($track['previewUrl'])): ?>
                       <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Preview</a>
                     <?php elseif (!empty($track['downloadUrl']) && !isHttpUrl((string) $track['downloadUrl'])): ?>
@@ -977,6 +1661,88 @@ $tracks = readTracks();
                       <a class="button" href="<?= e((string) $track['downloadUrl']) ?>" target="_blank" rel="noreferrer">Download</a>
                     <?php endif; ?>
                   </div>
+                  <details class="editor">
+                    <summary>Edit song</summary>
+                    <form class="grid" method="post" enctype="multipart/form-data">
+                      <input type="hidden" name="action" value="update_track">
+                      <input type="hidden" name="trackId" value="<?= e($trackId) ?>">
+                      <label>
+                        Song Title
+                        <input type="text" name="title" value="<?= e((string) ($track['title'] ?? '')) ?>" required>
+                      </label>
+                      <label>
+                        Artist
+                        <input type="text" name="artist" value="<?= e((string) ($track['artist'] ?? 'SG Production')) ?>" required>
+                      </label>
+                      <label>
+                        Artist Profile
+                        <select name="artistId">
+                          <?php foreach ($artists as $artistOption): ?>
+                            <?php if (is_array($artistOption)): ?>
+                              <?php $optionId = (string) ($artistOption['id'] ?? ''); ?>
+                              <option value="<?= e($optionId) ?>" <?= $optionId === $trackArtistId ? 'selected' : '' ?>><?= e((string) ($artistOption['name'] ?? 'Artist')) ?></option>
+                            <?php endif; ?>
+                          <?php endforeach; ?>
+                        </select>
+                      </label>
+                      <label>
+                        Genre
+                        <select name="genre">
+                          <?php foreach (['Soundcheck', 'Marathi', 'Hindi', 'Original Mix'] as $genreOption): ?>
+                            <option <?= ((string) ($track['genre'] ?? '')) === $genreOption ? 'selected' : '' ?>><?= e($genreOption) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                      </label>
+                      <label>
+                        Duration
+                        <input type="text" name="duration" value="<?= e((string) ($track['duration'] ?? '0:0')) ?>">
+                      </label>
+                      <label>
+                        BPM
+                        <input type="number" name="bpm" value="<?= e((string) ($track['bpm'] ?? 124)) ?>" min="40" max="240">
+                      </label>
+                      <label>
+                        Wave Style
+                        <select name="wave">
+                          <?php foreach (['sine' => 'Sine', 'triangle' => 'Triangle', 'sawtooth' => 'Sawtooth', 'square' => 'Square'] as $waveValue => $waveLabel): ?>
+                            <option value="<?= e($waveValue) ?>" <?= ((string) ($track['wave'] ?? 'sine')) === $waveValue ? 'selected' : '' ?>><?= e($waveLabel) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                      </label>
+                      <label>
+                        Replace Cover
+                        <input type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                      </label>
+                      <label>
+                        Replace Preview File
+                        <input type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg">
+                      </label>
+                      <label class="full">
+                        WAV Download URL
+                        <input type="url" name="downloadUrl" value="<?= e((string) ($track['downloadUrl'] ?? '')) ?>" required>
+                      </label>
+                      <label class="check-row full">
+                        <input type="checkbox" name="isNew" <?= !empty($track['isNew']) ? 'checked' : '' ?>>
+                        Mark as new release
+                      </label>
+                      <label class="check-row full">
+                        <input type="checkbox" name="isFeatured" <?= !empty($track['isFeatured'] ?? $track['isNew'] ?? false) ? 'checked' : '' ?>>
+                        Show in Latest Releases
+                      </label>
+                      <div class="full">
+                        <button class="button primary" type="submit">Save Song</button>
+                      </div>
+                    </form>
+                    <form class="mini-form" method="post" onsubmit="return confirm('Delete this song?');">
+                      <input type="hidden" name="action" value="delete_track">
+                      <input type="hidden" name="trackId" value="<?= e($trackId) ?>">
+                      <label class="check-row">
+                        <input type="checkbox" name="deleteFiles" checked>
+                        Delete files
+                      </label>
+                      <button class="button danger" type="submit">Delete Song</button>
+                    </form>
+                  </details>
                 </div>
               <?php endforeach; ?>
             </div>

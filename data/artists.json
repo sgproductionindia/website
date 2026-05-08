@@ -1,0 +1,55 @@
+[
+  {
+    "id": "sg-production",
+    "name": "SG Production",
+    "style": "Original Mix",
+    "image": "assets/artist-photo-1.svg",
+    "year": "2026",
+    "trackGenres": [
+      "Original Mix",
+      "Marathi",
+      "Soundcheck",
+      "Hindi"
+    ]
+  },
+  {
+    "id": "sg-soundcheck",
+    "name": "SG Soundcheck",
+    "style": "Soundcheck",
+    "image": "assets/artist-photo-2.svg",
+    "year": "2026",
+    "trackGenres": [
+      "Soundcheck"
+    ]
+  },
+  {
+    "id": "marathi-pulse",
+    "name": "Marathi Pulse",
+    "style": "Marathi",
+    "image": "assets/artist-photo-3.svg",
+    "year": "2025",
+    "trackGenres": [
+      "Marathi"
+    ]
+  },
+  {
+    "id": "hindi-wave",
+    "name": "Hindi Wave",
+    "style": "Hindi",
+    "image": "assets/artist-photo-4.svg",
+    "year": "2025",
+    "trackGenres": [
+      "Hindi"
+    ]
+  },
+  {
+    "id": "night-circuit",
+    "name": "Night Circuit",
+    "style": "Original Mix",
+    "image": "assets/artist-photo-5.svg",
+    "year": "2024",
+    "trackGenres": [
+      "Original Mix"
+    ]
+  }
+]

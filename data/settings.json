@@ -1,7 +1,26 @@
 {
+  "site": {
+    "title": "SG Production",
+    "tagline": "Original music • direct download • no barriers",
+    "youtubeHeading": "Subscribe on YouTube",
+    "youtubeText": "Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.",
+    "contactEmail": "bookings@sgproduction.example"
+  },
+  "links": {
+    "instagram": "https://www.instagram.com/sgproduction.music",
+    "spotify": "https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true",
+    "appleMusic": "https://music.apple.com/in/artist/sg-production/1580814477",
+    "youtube": "https://www.youtube.com/@sgproductionindia"
+  },
+  "catalog": {
+    "latestCount": 5,
+    "tracksPerPage": 15,
+    "paginationDemoPages": 12
+  },
   "advertising": {
     "enabled": true,
     "mediaUrl": "assets/ad-sample.jpg",
-    "mediaType": "image"
+    "mediaType": "image",
+    "linkUrl": ""
   }
 }

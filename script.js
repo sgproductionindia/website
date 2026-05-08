@@ -226,16 +226,36 @@ let waveformResizeFrame = 0;
 let allTracks = [];
 let allTracksPage = 1;
 let siteSettings = {
+  site: {
+    title: "SG Production",
+    tagline: "Original music • direct download • no barriers",
+    youtubeHeading: "Subscribe on YouTube",
+    youtubeText: "Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.",
+    contactEmail: "bookings@sgproduction.example"
+  },
+  links: {
+    instagram: "https://www.instagram.com/sgproduction.music",
+    spotify: "https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true",
+    appleMusic: "https://music.apple.com/in/artist/sg-production/1580814477",
+    youtube: "https://www.youtube.com/@sgproductionindia"
+  },
+  catalog: {
+    latestCount: 5,
+    tracksPerPage: 15,
+    paginationDemoPages: 12
+  },
   advertising: {
     enabled: false,
     mediaUrl: "",
-    mediaType: ""
+    mediaType: "",
+    linkUrl: ""
   }
 };
 
 const PREVIEW_SECONDS = 12;
-const ALL_TRACKS_PER_PAGE = 15;
-const DEMO_TRACK_PAGE_COUNT = 12;
+let allTracksPerPage = 15;
+let demoTrackPageCount = 12;
+let latestTrackCount = 5;
 
 function setMobileMenu(open) {
   document.body.classList.toggle("menu-open", open);
@@ -292,6 +312,8 @@ function normalizeUploadedTrack(track) {
     previewUrl,
     downloadUrl: rawDownloadUrl,
     isNew: Boolean(track.isNew),
+    isFeatured: Boolean(track.isFeatured || track.isNew),
+    artistId: track.artistId || "sg-production",
     bpm: Number(track.bpm) || 124,
     tone: Number(track.tone) || 146.83,
     wave: track.wave || "sine"
@@ -331,6 +353,18 @@ async function loadSiteSettings() {
     return {
       ...siteSettings,
       ...settings,
+      site: {
+        ...siteSettings.site,
+        ...(settings.site || {})
+      },
+      links: {
+        ...siteSettings.links,
+        ...(settings.links || {})
+      },
+      catalog: {
+        ...siteSettings.catalog,
+        ...(settings.catalog || {})
+      },
       advertising: {
         ...siteSettings.advertising,
         ...(settings.advertising || {})
@@ -339,6 +373,63 @@ async function loadSiteSettings() {
   } catch (error) {
     return siteSettings;
   }
+}
+
+function setLink(selector, href) {
+  const elements = document.querySelectorAll(selector);
+
+  elements.forEach((element) => {
+    if (!href) {
+      element.hidden = true;
+      return;
+    }
+
+    element.hidden = false;
+    element.href = href;
+  });
+}
+
+function applySiteSettings() {
+  const { site, links, catalog } = siteSettings;
+
+  latestTrackCount = Math.max(1, Math.min(12, Number(catalog.latestCount) || 5));
+  allTracksPerPage = Math.max(5, Math.min(50, Number(catalog.tracksPerPage) || 15));
+  demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
+
+  document.title = `${site.title} | Direct Music Downloads`;
+
+  const siteTitle = document.querySelector("#site-title");
+  const siteTagline = document.querySelector("#siteTagline");
+  const licenseTitle = document.querySelector("#license-title");
+  const youtubeText = document.querySelector("#youtubeText");
+  const youtubeSubscribe = document.querySelector("#youtubeSubscribe");
+  const contactHref = site.contactEmail ? `mailto:${site.contactEmail}` : "";
+
+  if (siteTitle) {
+    siteTitle.textContent = site.title;
+  }
+
+  if (siteTagline) {
+    siteTagline.textContent = site.tagline;
+  }
+
+  if (licenseTitle) {
+    licenseTitle.textContent = site.youtubeHeading;
+  }
+
+  if (youtubeText) {
+    youtubeText.textContent = site.youtubeText;
+  }
+
+  if (youtubeSubscribe && links.youtube) {
+    youtubeSubscribe.href = links.youtube;
+  }
+
+  setLink('a[aria-label="Instagram"]', links.instagram);
+  setLink('a[aria-label="Spotify"]', links.spotify);
+  setLink('a[aria-label="Apple Music"]', links.appleMusic);
+  setLink('a[aria-label="YouTube"]', links.youtube);
+  setLink('a[aria-label="Contact SG Production"]', contactHref);
 }
 
 function preloadAdMedia(advertising) {
@@ -499,7 +590,7 @@ function renderTracks(list, target) {
 }
 
 function buildDemoTrackPages(sourceTracks) {
-  const targetCount = ALL_TRACKS_PER_PAGE * DEMO_TRACK_PAGE_COUNT;
+  const targetCount = allTracksPerPage * demoTrackPageCount;
 
   return Array.from({ length: targetCount }, (_, index) => {
     const track = sourceTracks[index % sourceTracks.length];
@@ -547,11 +638,11 @@ function renderPagination(totalPages) {
 }
 
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
-  const totalPages = Math.max(1, Math.ceil(allTracks.length / ALL_TRACKS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(allTracks.length / allTracksPerPage));
   allTracksPage = Math.min(Math.max(1, page), totalPages);
-  const start = (allTracksPage - 1) * ALL_TRACKS_PER_PAGE;
+  const start = (allTracksPage - 1) * allTracksPerPage;
 
-  renderTracks(allTracks.slice(start, start + ALL_TRACKS_PER_PAGE), trackGrid);
+  renderTracks(allTracks.slice(start, start + allTracksPerPage), trackGrid);
   renderPagination(totalPages);
 
   if (shouldScroll) {
@@ -976,6 +1067,18 @@ function renderSongAd() {
     media.addEventListener("error", markFailed, { once: true });
   }
 
+  if (advertising.linkUrl) {
+    const link = document.createElement("a");
+    link.className = "song-ad-link";
+    link.href = advertising.linkUrl;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.setAttribute("aria-label", "Open advertisement");
+    link.append(media);
+    songAd.append(link);
+    return;
+  }
+
   songAd.append(media);
 }
 
@@ -1000,6 +1103,7 @@ function openSongPage(track, updateUrl = true) {
   songArtist.textContent = track.artist;
   songDuration.textContent = track.duration;
   creditText.textContent = buildCreditText(track);
+  document.title = `${track.title} | ${siteSettings.site.title}`;
   renderSongWaveform(track);
   renderSongAd();
   syncPlayer();
@@ -1014,6 +1118,7 @@ function openSongPage(track, updateUrl = true) {
 function closeSongPage(updateUrl = true) {
   document.body.classList.remove("song-view");
   songPage.hidden = true;
+  document.title = `${siteSettings.site.title} | Direct Music Downloads`;
 
   if (updateUrl) {
     history.pushState(null, "", canUseCleanUrls() ? "/#all-tracks" : "#all-tracks");
@@ -1071,6 +1176,7 @@ async function initializeCatalog() {
   ]);
 
   siteSettings = loadedSettings;
+  applySiteSettings();
   preloadAdMedia(siteSettings.advertising);
 
   if (uploadedTracks.length > 0) {
@@ -1080,7 +1186,8 @@ async function initializeCatalog() {
   selectedTrack = tracks[0];
   allTracks = buildDemoTrackPages(tracks);
   normalizeInitialUrl();
-  renderTracks(tracks.slice(0, 5), latestGrid);
+  const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
+  renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
   renderAllTracksPage(1);
   syncPlayer();
   openSongFromLocation();
@@ -1211,6 +1318,7 @@ document.querySelectorAll('.side-nav a[href^="#"], .mobile-brand[href^="#"]').fo
     if (document.body.classList.contains("song-view")) {
       document.body.classList.remove("song-view");
       songPage.hidden = true;
+      document.title = `${siteSettings.site.title} | Direct Music Downloads`;
     }
 
     if (canUseCleanUrls()) {

@@ -1506,6 +1506,12 @@ body.search-open {
   transition: opacity 220ms ease;
 }
 
+.song-ad-link {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .song-ad.is-loaded .song-ad-media {
   opacity: 1;
 }
