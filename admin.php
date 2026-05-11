@@ -7,13 +7,16 @@ const ADMIN_PASSWORD = 'hyqhyp-viKfa3-timfaw';
 const TRACKS_FILE = __DIR__ . '/data/tracks.json';
 const SETTINGS_FILE = __DIR__ . '/data/settings.json';
 const ARTISTS_FILE = __DIR__ . '/data/artists.json';
+const AD_STATS_FILE = __DIR__ . '/data/ad-stats.json';
 const COVER_DIR = __DIR__ . '/uploads/covers';
 const AUDIO_DIR = __DIR__ . '/uploads/audio';
 const AD_DIR = __DIR__ . '/uploads/ads';
 const ARTIST_DIR = __DIR__ . '/uploads/artists';
+const SITE_MEDIA_DIR = __DIR__ . '/uploads/site';
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 120 * 1024 * 1024;
 const MAX_AD_BYTES = 60 * 1024 * 1024;
+const MAX_SITE_MEDIA_BYTES = 8 * 1024 * 1024;
 
 $errors = [];
 $success = '';
@@ -25,7 +28,7 @@ function e(string $value): string
 
 function ensureStorage(): void
 {
-    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR, ARTIST_DIR] as $directory) {
+    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR, ARTIST_DIR, SITE_MEDIA_DIR] as $directory) {
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
@@ -45,6 +48,10 @@ function ensureStorage(): void
 
     if (!file_exists(ARTISTS_FILE)) {
         file_put_contents(ARTISTS_FILE, json_encode(defaultArtists(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
+    }
+
+    if (!file_exists(AD_STATS_FILE)) {
+        file_put_contents(AD_STATS_FILE, json_encode(defaultAdStats(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
 }
 
@@ -124,6 +131,11 @@ function defaultSettings(): array
             'appleMusic' => 'https://music.apple.com/in/artist/sg-production/1580814477',
             'youtube' => 'https://www.youtube.com/@sgproductionindia',
         ],
+        'seo' => [
+            'metaDescription' => 'SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.',
+            'ogImage' => 'assets/cover-1.jpg',
+            'favicon' => 'assets/sg-logo.svg',
+        ],
         'catalog' => [
             'latestCount' => 5,
             'tracksPerPage' => 15,
@@ -135,6 +147,18 @@ function defaultSettings(): array
             'mediaType' => '',
             'linkUrl' => '',
         ],
+    ];
+}
+
+function defaultAdStats(): array
+{
+    return [
+        'totals' => [
+            'impressions' => 0,
+            'clicks' => 0,
+        ],
+        'songs' => [],
+        'events' => [],
     ];
 }
 
@@ -204,6 +228,15 @@ function readArtists(): array
     $artists = json_decode($json ?: '[]', true);
 
     return is_array($artists) ? $artists : defaultArtists();
+}
+
+function readAdStats(): array
+{
+    ensureStorage();
+    $json = file_get_contents(AD_STATS_FILE);
+    $stats = json_decode($json ?: '{}', true);
+
+    return is_array($stats) ? array_replace_recursive(defaultAdStats(), $stats) : defaultAdStats();
 }
 
 function writeSettings(array $settings): void
@@ -544,6 +577,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         $downloadUrl = trim((string) ($_POST['downloadUrl'] ?? ''));
         $bpm = (int) ($_POST['bpm'] ?? 124);
         $wave = trim((string) ($_POST['wave'] ?? 'sine'));
+        $creditText = trim((string) ($_POST['creditText'] ?? ''));
 
         if ($title === '') {
             throw new RuntimeException('Track title is required.');
@@ -595,6 +629,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             'cover' => $cover,
             'previewUrl' => $previewAudio,
             'downloadUrl' => $downloadUrl,
+            'creditText' => $creditText,
             'isNew' => isset($_POST['isNew']),
             'isFeatured' => isset($_POST['isFeatured']) || isset($_POST['isNew']),
             'bpm' => $bpm,
@@ -651,9 +686,26 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_site') {
     try {
         $settings = readSettings();
-        $latestCount = max(1, min(12, (int) ($_POST['latestCount'] ?? 5)));
+        $latestCount = max(0, min(12, (int) ($_POST['latestCount'] ?? 5)));
         $tracksPerPage = max(5, min(50, (int) ($_POST['tracksPerPage'] ?? 15)));
         $paginationDemoPages = max(1, min(40, (int) ($_POST['paginationDemoPages'] ?? 12)));
+        $seo = is_array($settings['seo'] ?? null) ? $settings['seo'] : defaultSettings()['seo'];
+        $uploadedOgImage = uploadOptionalFile(
+            'ogImage',
+            ['jpg', 'jpeg', 'png', 'webp'],
+            ['image/jpeg', 'image/png', 'image/webp'],
+            MAX_SITE_MEDIA_BYTES,
+            SITE_MEDIA_DIR,
+            'og-image-' . date('YmdHis')
+        );
+        $uploadedFavicon = uploadOptionalFile(
+            'favicon',
+            ['ico', 'png', 'jpg', 'jpeg', 'webp', 'svg'],
+            ['image/vnd.microsoft.icon', 'image/x-icon', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'text/plain'],
+            MAX_SITE_MEDIA_BYTES,
+            SITE_MEDIA_DIR,
+            'favicon-' . date('YmdHis')
+        );
 
         $settings['site'] = [
             'title' => trim((string) ($_POST['siteTitle'] ?? 'SG Production')) ?: 'SG Production',
@@ -667,6 +719,11 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
             'spotify' => trim((string) ($_POST['spotify'] ?? '')),
             'appleMusic' => trim((string) ($_POST['appleMusic'] ?? '')),
             'youtube' => trim((string) ($_POST['youtube'] ?? '')),
+        ];
+        $settings['seo'] = [
+            'metaDescription' => substr(trim((string) ($_POST['metaDescription'] ?? ($seo['metaDescription'] ?? defaultSettings()['seo']['metaDescription']))), 0, 160),
+            'ogImage' => $uploadedOgImage ?? (string) ($seo['ogImage'] ?? defaultSettings()['seo']['ogImage']),
+            'favicon' => $uploadedFavicon ?? (string) ($seo['favicon'] ?? defaultSettings()['seo']['favicon']),
         ];
         $settings['catalog'] = [
             'latestCount' => $latestCount,
@@ -739,6 +796,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         $track['genre'] = trim((string) ($_POST['genre'] ?? 'Soundcheck')) ?: 'Soundcheck';
         $track['duration'] = $duration;
         $track['downloadUrl'] = $downloadUrl;
+        $track['creditText'] = trim((string) ($_POST['creditText'] ?? ($track['creditText'] ?? '')));
         $track['isNew'] = isset($_POST['isNew']);
         $track['isFeatured'] = isset($_POST['isFeatured']);
         $track['bpm'] = $bpm;
@@ -876,6 +934,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 $settings = readSettings();
 $tracks = readTracks();
 $artists = readArtists();
+$adStats = readAdStats();
 ?>
 <!doctype html>
 <html lang="en">
@@ -914,6 +973,25 @@ $artists = readArtists();
       a {
         color: inherit;
         text-decoration: none;
+      }
+
+      .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .alert-error {
+        background: rgba(255, 69, 96, 0.12);
+        color: #ff4560;
+        border: 1px solid rgba(255, 69, 96, 0.25);
+      }
+
+      .alert-success {
+        background: rgba(0, 255, 136, 0.1);
+        color: #00ff88;
+        border: 1px solid rgba(0, 255, 136, 0.25);
       }
 
       .admin-shell {
@@ -1025,7 +1103,8 @@ $artists = readArtists();
       }
 
       input,
-      select {
+      select,
+      textarea {
         width: 100%;
         min-height: 44px;
         border: 1px solid var(--line);
@@ -1034,6 +1113,12 @@ $artists = readArtists();
         color: var(--text);
         background: #0b0f14;
         font: inherit;
+      }
+
+      textarea {
+        min-height: 96px;
+        padding: 12px;
+        resize: vertical;
       }
 
       input[type="file"] {
@@ -1267,11 +1352,254 @@ $artists = readArtists();
           grid-template-columns: 1fr;
         }
       }
+
+      body.admin-ready {
+        height: 100vh;
+        overflow: hidden;
+        background: #080c10;
+      }
+
+      .admin-shell.with-sidebar {
+        width: 100%;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr);
+        margin: 0;
+        padding: 0;
+      }
+
+      .admin-sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #1f2d3d;
+        background: rgba(15, 20, 25, 0.96);
+        overflow-y: auto;
+      }
+
+      .sidebar-brand {
+        min-height: 76px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px;
+        border-bottom: 1px solid #1f2d3d;
+      }
+
+      .sidebar-brand strong,
+      .sidebar-brand span:not(.logo) {
+        display: block;
+      }
+
+      .sidebar-brand span:not(.logo) {
+        margin-top: 2px;
+        color: #7a8fa6;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .sidebar-section {
+        display: grid;
+        gap: 4px;
+        padding: 14px 10px 4px;
+      }
+
+      .sidebar-label {
+        padding: 0 10px 6px;
+        color: #3d5168;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .sidebar-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        border-radius: 9px;
+        padding: 0 12px;
+        color: #8ca0b6;
+        font-size: 0.91rem;
+        font-weight: 600;
+      }
+
+      .sidebar-link:hover,
+      .sidebar-link.active {
+        color: #10d9ff;
+        background: rgba(16, 217, 255, 0.1);
+      }
+
+      .sidebar-link.active::before {
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 50%;
+        width: 3px;
+        height: 20px;
+        border-radius: 0 999px 999px 0;
+        background: #10d9ff;
+      }
+
+      .admin-content {
+        min-width: 0;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 20px 24px 42px;
+      }
+
+      .with-sidebar .admin-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        margin: -20px -24px 24px;
+        border-width: 0 0 1px;
+        border-radius: 0;
+        background: rgba(15, 20, 25, 0.94);
+        backdrop-filter: blur(18px);
+      }
+
+      .admin-section {
+        display: none;
+      }
+
+      .admin-section.active-section {
+        display: block;
+      }
+
+      .menu-toggle {
+        width: 42px;
+        height: 42px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+      }
+
+      .menu-toggle span {
+        width: 17px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .admin-scrim {
+        display: none;
+      }
+
+      @media (max-width: 860px) {
+        body.admin-ready {
+          overflow: hidden;
+        }
+
+        .admin-shell.with-sidebar {
+          display: block;
+        }
+
+        .admin-sidebar {
+          position: fixed;
+          inset: 0 auto 0 0;
+          z-index: 100;
+          width: min(86vw, 320px);
+          transform: translateX(-100%);
+          transition: transform 0.2s ease;
+        }
+
+        body.admin-menu-open .admin-sidebar {
+          transform: translateX(0);
+        }
+
+        .admin-scrim {
+          position: fixed;
+          inset: 0;
+          z-index: 90;
+          display: block;
+          pointer-events: none;
+          opacity: 0;
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(8px);
+          transition: opacity 0.18s ease;
+        }
+
+        body.admin-menu-open .admin-scrim {
+          pointer-events: auto;
+          opacity: 1;
+        }
+
+        .admin-content {
+          height: 100vh;
+          padding: 16px;
+        }
+
+        .with-sidebar .admin-header {
+          margin: -16px -16px 18px;
+          flex-direction: row;
+          align-items: center;
+        }
+
+        .menu-toggle {
+          display: inline-flex;
+        }
+      }
     </style>
   </head>
-  <body>
-    <main class="admin-shell">
+  <body class="<?= $isAuthed ? 'admin-ready' : '' ?>">
+    <main class="admin-shell <?= $isAuthed ? 'with-sidebar' : '' ?>">
+      <?php if ($isAuthed): ?>
+        <aside class="admin-sidebar" id="adminSidebar" aria-label="Admin navigation">
+          <a class="sidebar-brand" href="#dashboard" data-admin-nav="dashboard">
+            <span class="logo" aria-hidden="true">
+              <svg viewBox="0 0 924.99 924.99">
+                <path d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"></path>
+              </svg>
+            </span>
+            <span>
+              <strong>SG Production</strong>
+              <span>Admin Studio</span>
+            </span>
+          </a>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Overview</span>
+            <a class="sidebar-link active" href="#dashboard" data-admin-nav="dashboard">Dashboard</a>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Music</span>
+            <a class="sidebar-link" href="#upload-song" data-admin-nav="upload-song">Upload New Song</a>
+            <a class="sidebar-link" href="#uploaded-songs" data-admin-nav="uploaded-songs">Uploaded Songs</a>
+            <a class="sidebar-link" href="#artists" data-admin-nav="artists">Artist Management</a>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Monetization</span>
+            <a class="sidebar-link" href="#global-settings" data-admin-nav="global-settings">Advertising</a>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Site</span>
+            <a class="sidebar-link" href="#website-settings" data-admin-nav="website-settings">Website Settings</a>
+          </div>
+        </aside>
+        <div class="admin-scrim" id="adminScrim" aria-hidden="true"></div>
+        <div class="admin-content">
+      <?php endif; ?>
       <header class="admin-header">
+        <?php if ($isAuthed): ?>
+          <button class="menu-toggle" id="adminMenuToggle" type="button" aria-label="Open admin menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        <?php endif; ?>
         <a class="brand" href="/">
           <span class="logo" aria-hidden="true">
             <svg viewBox="0 0 924.99 924.99">
@@ -1321,18 +1649,20 @@ $artists = readArtists();
         <?php
           $site = is_array($settings['site'] ?? null) ? $settings['site'] : [];
           $links = is_array($settings['links'] ?? null) ? $settings['links'] : [];
+          $seo = is_array($settings['seo'] ?? null) ? $settings['seo'] : defaultSettings()['seo'];
           $catalog = is_array($settings['catalog'] ?? null) ? $settings['catalog'] : [];
+          $adStats = readAdStats();
           $featuredCount = count(array_filter($tracks, static fn ($track): bool => is_array($track) && !empty($track['isFeatured'] ?? $track['isNew'] ?? false)));
           $storageUsed = folderSize(__DIR__ . '/uploads');
           $lastTrack = is_array($tracks[0] ?? null) ? $tracks[0] : null;
         ?>
-        <section class="panel" id="dashboard">
+        <section class="panel admin-section active-section" id="dashboard">
           <div class="split-heading">
             <div>
               <h1>Dashboard</h1>
               <p class="muted">Quick status for the live catalog.</p>
             </div>
-            <a class="button" href="admin-preview.html">Open Local Preview</a>
+            <a class="button primary" href="#upload-song" data-admin-nav="upload-song">Upload Song</a>
           </div>
           <div class="dashboard-grid">
             <div class="metric-card">
@@ -1355,10 +1685,10 @@ $artists = readArtists();
           <p class="muted">Last uploaded: <?= e((string) ($lastTrack['title'] ?? 'No songs uploaded yet')) ?></p>
         </section>
 
-        <section class="panel" id="website-settings">
+        <section class="panel admin-section" id="website-settings">
           <h1>Website Settings</h1>
           <p class="muted">Control homepage text, social links, and catalog layout.</p>
-          <form class="grid" method="post">
+          <form class="grid" method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="save_site">
             <label>
               Site Title
@@ -1380,6 +1710,21 @@ $artists = readArtists();
               YouTube Text
               <input type="text" name="youtubeText" value="<?= e((string) ($site['youtubeText'] ?? defaultSettings()['site']['youtubeText'])) ?>">
             </label>
+            <label class="full">
+              Meta Description
+              <textarea name="metaDescription" maxlength="160" rows="3"><?= e((string) ($seo['metaDescription'] ?? defaultSettings()['seo']['metaDescription'])) ?></textarea>
+              <span class="muted">Used for Google, WhatsApp, Open Graph, and Twitter previews. Keep it under 160 characters.</span>
+            </label>
+            <label>
+              OG Share Image
+              <input type="file" name="ogImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+              <span class="muted">Current: <?= e((string) ($seo['ogImage'] ?? defaultSettings()['seo']['ogImage'])) ?></span>
+            </label>
+            <label>
+              Favicon
+              <input type="file" name="favicon" accept=".ico,.png,.jpg,.jpeg,.webp,.svg,image/x-icon,image/png,image/jpeg,image/webp,image/svg+xml">
+              <span class="muted">Current: <?= e((string) ($seo['favicon'] ?? defaultSettings()['seo']['favicon'])) ?></span>
+            </label>
             <label>
               Instagram URL
               <input type="url" name="instagram" value="<?= e((string) ($links['instagram'] ?? '')) ?>">
@@ -1398,7 +1743,7 @@ $artists = readArtists();
             </label>
             <label>
               Latest Count
-              <input type="number" name="latestCount" value="<?= e((string) ($catalog['latestCount'] ?? 5)) ?>" min="1" max="12">
+              <input type="number" name="latestCount" value="<?= e((string) ($catalog['latestCount'] ?? 5)) ?>" min="0" max="12">
             </label>
             <label>
               Songs Per Page
@@ -1414,7 +1759,7 @@ $artists = readArtists();
           </form>
         </section>
 
-        <section class="panel">
+        <section class="panel admin-section" id="upload-song">
           <h1>Upload New Song</h1>
           <p class="muted">Add a cover, an MP3/WAV preview for playback, and a separate WAV download URL.</p>
           <form class="grid" method="post" enctype="multipart/form-data">
@@ -1476,6 +1821,10 @@ $artists = readArtists();
               WAV Download URL
               <input type="url" name="downloadUrl" placeholder="https://example.com/downloads/nagin-theme.wav" required>
             </label>
+            <label class="full">
+              Credit Text
+              <textarea name="creditText" rows="3" placeholder="Music provided by SG Production"></textarea>
+            </label>
             <label class="check-row full">
               <input type="checkbox" name="isNew" checked>
               Mark as new release
@@ -1490,7 +1839,7 @@ $artists = readArtists();
           </form>
         </section>
 
-        <section class="panel" id="global-settings">
+        <section class="panel admin-section" id="global-settings">
           <h1>Global Settings</h1>
           <p class="muted">Advertisement controls for the single song page.</p>
           <h2 style="margin-top: 20px;">Advertisement</h2>
@@ -1500,6 +1849,9 @@ $artists = readArtists();
             $adMediaUrl = (string) ($advertising['mediaUrl'] ?? '');
             $adMediaType = (string) ($advertising['mediaType'] ?? '');
             $adEnabled = !empty($advertising['enabled']);
+            $totalAdImpressions = (int) ($adStats['totals']['impressions'] ?? 0);
+            $totalAdClicks = (int) ($adStats['totals']['clicks'] ?? 0);
+            $adCtr = $totalAdImpressions > 0 ? round(($totalAdClicks / $totalAdImpressions) * 100, 2) : 0;
           ?>
           <?php if ($adMediaUrl !== ''): ?>
             <div class="ad-preview">
@@ -1516,6 +1868,20 @@ $artists = readArtists();
               </div>
             </div>
           <?php endif; ?>
+          <div class="dashboard-grid" style="margin-top: 18px;">
+            <div class="metric-card">
+              <span class="muted">Total Ad Impressions</span>
+              <strong><?= e(number_format($totalAdImpressions)) ?></strong>
+            </div>
+            <div class="metric-card">
+              <span class="muted">Total Ad Clicks</span>
+              <strong><?= e(number_format($totalAdClicks)) ?></strong>
+            </div>
+            <div class="metric-card">
+              <span class="muted">CTR</span>
+              <strong><?= e((string) $adCtr) ?>%</strong>
+            </div>
+          </div>
           <form class="grid" method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="save_ad">
             <label class="full">
@@ -1536,7 +1902,7 @@ $artists = readArtists();
           </form>
         </section>
 
-        <section class="panel" id="artists">
+        <section class="panel admin-section" id="artists">
           <h1>Artist Management</h1>
           <p class="muted">Add or edit artist pages and assign genres to each profile.</p>
           <form class="grid" method="post" enctype="multipart/form-data">
@@ -1621,7 +1987,7 @@ $artists = readArtists();
           </div>
         </section>
 
-        <section class="panel" id="uploaded-songs">
+        <section class="panel admin-section" id="uploaded-songs">
           <h2>Uploaded Songs</h2>
           <?php if ($tracks === []): ?>
             <p class="muted">No uploaded songs yet.</p>
@@ -1721,6 +2087,10 @@ $artists = readArtists();
                         WAV Download URL
                         <input type="url" name="downloadUrl" value="<?= e((string) ($track['downloadUrl'] ?? '')) ?>" required>
                       </label>
+                      <label class="full">
+                        Credit Text
+                        <textarea name="creditText" rows="3"><?= e((string) ($track['creditText'] ?? '')) ?></textarea>
+                      </label>
                       <label class="check-row full">
                         <input type="checkbox" name="isNew" <?= !empty($track['isNew']) ? 'checked' : '' ?>>
                         Mark as new release
@@ -1749,8 +2119,58 @@ $artists = readArtists();
           <?php endif; ?>
         </section>
       <?php endif; ?>
+      <?php if ($isAuthed): ?>
+        </div>
+      <?php endif; ?>
     </main>
     <script>
+      const adminSections = Array.from(document.querySelectorAll(".admin-section"));
+      const adminNavLinks = Array.from(document.querySelectorAll("[data-admin-nav]"));
+      const adminMenuToggle = document.querySelector("#adminMenuToggle");
+      const adminScrim = document.querySelector("#adminScrim");
+
+      function setAdminMenu(open) {
+        document.body.classList.toggle("admin-menu-open", open);
+        adminMenuToggle?.setAttribute("aria-expanded", String(open));
+        adminMenuToggle?.setAttribute("aria-label", open ? "Close admin menu" : "Open admin menu");
+      }
+
+      function showAdminSection(sectionId, updateUrl = true) {
+        const safeId = adminSections.some((section) => section.id === sectionId) ? sectionId : "dashboard";
+
+        adminSections.forEach((section) => {
+          section.classList.toggle("active-section", section.id === safeId);
+        });
+        adminNavLinks.forEach((link) => {
+          const active = link.dataset.adminNav === safeId;
+          link.classList.toggle("active", active);
+          link.setAttribute("aria-current", active ? "page" : "false");
+        });
+
+        if (updateUrl) {
+          history.replaceState(null, "", `#${safeId}`);
+        }
+
+        setAdminMenu(false);
+        document.querySelector(".admin-content")?.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      adminNavLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          showAdminSection(link.dataset.adminNav || "dashboard");
+        });
+      });
+
+      adminMenuToggle?.addEventListener("click", () => {
+        setAdminMenu(!document.body.classList.contains("admin-menu-open"));
+      });
+      adminScrim?.addEventListener("click", () => setAdminMenu(false));
+
+      if (adminSections.length > 0) {
+        showAdminSection(window.location.hash.replace("#", "") || "dashboard", false);
+      }
+
       const audioInput = document.querySelector("#audioInput");
       const durationInput = document.querySelector("#durationInput");
       const durationStatus = document.querySelector("#durationStatus");

@@ -72,16 +72,23 @@
     width:3px; height:18px; background:var(--cyan); border-radius:0 3px 3px 0;
   }
   .nav-item svg { width:15px; height:15px; flex-shrink:0; }
-  .badge {
-    margin-left:auto; background:var(--red); color:#fff;
-    font-size:9px; font-weight:700; padding:2px 6px; border-radius:10px;
-    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-  .badge.new { background:var(--green); color:#000; }
-
   .sidebar-footer {
     margin-top:auto; padding:12px 10px 0;
     border-top:1px solid var(--border);
+  }
+  .sidebar-scrim {
+    position:fixed;
+    inset:0;
+    z-index:90;
+    background:rgba(0,0,0,.55);
+    backdrop-filter:blur(8px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .sidebar-scrim.open {
+    opacity:1;
+    pointer-events:auto;
   }
 
   /* MAIN */
@@ -93,6 +100,27 @@
     background:var(--surface); padding:0 24px;
     display:flex; align-items:center; gap:16px;
     flex-shrink:0;
+  }
+  .mobile-menu-toggle {
+    width:42px;
+    height:42px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface2);
+    color:var(--text);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:5px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .mobile-menu-toggle span {
+    width:17px;
+    height:2px;
+    border-radius:999px;
+    background:currentColor;
   }
   .topbar-title { font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:22px; letter-spacing:0; color:var(--text); }
   .topbar-sub { font-size:12px; color:var(--text-dim); margin-left:4px; }
@@ -115,6 +143,1122 @@
   .view-section.active { display:flex; }
   .section-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
   .section-note { color:var(--text-dim); line-height:1.6; max-width:720px; }
+  .upload-panel { max-width:1040px; }
+  .admin-form { display:flex; flex-direction:column; gap:18px; }
+  .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .form-field { display:flex; flex-direction:column; gap:8px; color:var(--text); font-size:13px; font-weight:700; }
+  .form-field.full { grid-column:1 / -1; }
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    width:100%;
+    min-height:44px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    color:var(--text);
+    padding:11px 13px;
+    font:inherit;
+    font-weight:500;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s, background .15s;
+  }
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus {
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px var(--cyan-dim);
+  }
+  .form-field input[type="file"] {
+    padding:9px 12px;
+    color:var(--text-dim);
+  }
+  .form-help { color:var(--text-dim); font-size:12px; font-weight:500; line-height:1.5; }
+  .duration-pill {
+    display:inline-flex;
+    align-items:center;
+    min-height:44px;
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    color:var(--text-dim);
+    padding:11px 13px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .check-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .check-card {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    color:var(--text);
+    padding:13px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .check-card input { width:18px; height:18px; accent-color:var(--cyan); }
+  .form-actions { display:flex; justify-content:flex-end; gap:10px; padding-top:2px; }
+  .artist-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+  .artist-toolbar h2 { font-size:20px; line-height:1.2; margin-bottom:6px; }
+  .artist-toolbar p { color:var(--text-dim); font-size:14px; }
+  .artist-form-layout { display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:22px; align-items:start; }
+  .tag-input-shell {
+    min-height:44px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    padding:7px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:7px;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .tag-input-shell:focus-within {
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px var(--cyan-dim);
+  }
+  .tag-input-shell input {
+    min-width:150px;
+    flex:1;
+    border:0;
+    background:transparent;
+    color:var(--text);
+    padding:6px;
+    outline:0;
+    font:inherit;
+  }
+  .genre-tag,
+  .artist-genre-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    border:1px solid rgba(0,212,255,.35);
+    border-radius:999px;
+    background:var(--cyan-dim);
+    color:var(--cyan);
+    padding:4px 9px;
+    font-size:12px;
+    font-weight:700;
+  }
+  .genre-tag button {
+    width:16px;
+    height:16px;
+    border:0;
+    border-radius:50%;
+    background:rgba(255,255,255,.09);
+    color:inherit;
+    cursor:pointer;
+    line-height:1;
+  }
+  .image-preview-box {
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface2);
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .artist-preview {
+    width:112px;
+    height:112px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:linear-gradient(135deg,rgba(0,212,255,.22),rgba(168,85,247,.12));
+    overflow:hidden;
+  }
+  .artist-preview img,
+  .artist-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+  .file-trigger {
+    width:100%;
+    cursor:pointer;
+    color:var(--text-dim);
+    font-size:12px;
+    text-align:center;
+  }
+  .file-trigger input { display:none; }
+  .char-row { display:flex; justify-content:space-between; gap:12px; }
+  .char-count { color:var(--text-dim); font-size:12px; font-weight:600; }
+  .artist-grid {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+  }
+  .artist-card {
+    position:relative;
+    min-height:236px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface);
+    padding:22px 18px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .artist-card:hover {
+    border-color:rgba(0,212,255,.45);
+    background:var(--surface2);
+    transform:translateY(-2px);
+  }
+  .artist-avatar {
+    width:84px;
+    height:84px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    overflow:hidden;
+    margin-bottom:14px;
+    background:var(--surface3);
+  }
+  .artist-name { font-size:16px; font-weight:800; color:var(--text); }
+  .artist-style { margin-top:4px; font-size:13px; color:var(--text-dim); }
+  .artist-genres { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin-top:14px; }
+  .artist-card-actions {
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:rgba(8,12,16,.82);
+    backdrop-filter:blur(10px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s;
+  }
+  .artist-card:hover .artist-card-actions {
+    opacity:1;
+    pointer-events:auto;
+  }
+  .genre-grid {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+  }
+  .genre-card {
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface);
+    padding:18px;
+    overflow:hidden;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .genre-card:hover {
+    border-color:rgba(0,212,255,.35);
+    background:var(--surface2);
+    transform:translateY(-2px);
+  }
+  .genre-card::before {
+    content:'';
+    position:absolute;
+    inset:0 0 auto;
+    height:4px;
+    background:var(--genre-color, var(--cyan));
+  }
+  .genre-card-head {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .genre-card-title {
+    font-size:17px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .genre-slug {
+    color:var(--text-dim);
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size:12px;
+    font-weight:600;
+    margin-top:4px;
+  }
+  .genre-card-actions {
+    display:flex;
+    gap:7px;
+    flex-shrink:0;
+  }
+  .icon-btn {
+    width:34px;
+    height:34px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface2);
+    color:var(--text-dim);
+    display:grid;
+    place-items:center;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .icon-btn:hover {
+    border-color:var(--cyan);
+    color:var(--cyan);
+    background:var(--cyan-dim);
+  }
+  .icon-btn svg {
+    width:15px;
+    height:15px;
+  }
+  .genre-description {
+    min-height:40px;
+    color:var(--text-dim);
+    font-size:13px;
+    line-height:1.5;
+    margin:12px 0 14px;
+  }
+  .genre-counts {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .genre-card.confirming .genre-confirm {
+    display:flex;
+  }
+  .genre-confirm {
+    display:none;
+    flex-direction:column;
+    gap:12px;
+    margin-top:14px;
+    border:1px solid var(--orange);
+    border-radius:12px;
+    background:var(--orange-dim);
+    color:var(--text);
+    padding:12px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .genre-confirm.error {
+    display:flex;
+    border-color:var(--red);
+    background:var(--red-dim);
+    color:var(--red);
+  }
+  .genre-confirm-actions {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .color-swatch-grid {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .color-swatch-option {
+    width:34px;
+    height:34px;
+    border-radius:999px;
+    border:2px solid transparent;
+    padding:3px;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+  }
+  .color-swatch-option input {
+    display:none;
+  }
+  .color-swatch-option span {
+    width:100%;
+    height:100%;
+    border-radius:inherit;
+    background:var(--swatch);
+    box-shadow:0 0 18px color-mix(in srgb, var(--swatch) 42%, transparent);
+  }
+  .color-swatch-option:has(input:checked) {
+    border-color:var(--text);
+    background:rgba(255,255,255,.08);
+  }
+  .genre-form-actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  [data-cancel-genre-edit] {
+    display:none;
+  }
+  .is-editing-genre [data-cancel-genre-edit] {
+    display:inline-flex;
+  }
+  .empty-state {
+    display:none;
+    min-height:220px;
+    border:1px dashed var(--border);
+    border-radius:14px;
+    background:rgba(255,255,255,.025);
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:30px;
+  }
+  .empty-state.is-visible { display:flex; }
+  .empty-state h3 { font-size:18px; margin-bottom:8px; }
+  .empty-state p { color:var(--text-dim); margin-bottom:18px; }
+  .management-toolbar {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+  }
+  .management-toolbar h2 { font-size:20px; line-height:1.2; margin-bottom:6px; }
+  .management-toolbar p { color:var(--text-dim); font-size:14px; }
+  .song-controls {
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .admin-control {
+    min-height:40px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface2);
+    color:var(--text);
+    padding:9px 13px;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    outline:0;
+  }
+  .admin-control:focus {
+    border-color:var(--cyan);
+    box-shadow:0 0 0 3px var(--cyan-dim);
+  }
+  .song-search { width:240px; }
+  .songs-list { display:flex; flex-direction:column; gap:10px; }
+  .song-row {
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(280px,1.45fr) 120px 110px 110px 120px 260px;
+    gap:14px;
+    align-items:center;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface);
+    padding:14px;
+    transition:border-color .15s, background .15s;
+  }
+  .song-row:hover {
+    border-color:rgba(0,212,255,.35);
+    background:var(--surface2);
+  }
+  .song-main {
+    display:flex;
+    align-items:center;
+    gap:13px;
+    min-width:0;
+  }
+  .song-thumb {
+    width:58px;
+    height:58px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid var(--border);
+    background:var(--surface3);
+    flex-shrink:0;
+  }
+  .song-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .song-title { font-size:15px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .song-detail { color:var(--text-dim); font-size:12px; margin-top:4px; }
+  .metric-badge {
+    display:inline-flex;
+    justify-content:center;
+    min-width:82px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface2);
+    color:var(--text);
+    padding:7px 10px;
+    font-size:12px;
+    font-weight:800;
+  }
+  .metric-badge.cyan { color:var(--cyan); border-color:rgba(0,212,255,.25); }
+  .metric-badge.orange { color:var(--orange); border-color:rgba(255,159,67,.25); }
+  .status-pill {
+    display:inline-flex;
+    justify-content:center;
+    min-width:82px;
+    border-radius:999px;
+    padding:7px 10px;
+    font-size:12px;
+    font-weight:800;
+  }
+  .status-pill.published { background:var(--green-dim); color:var(--green); }
+  .status-pill.draft { background:var(--orange-dim); color:var(--orange); }
+  .status-pill.unlisted { background:var(--red-dim); color:var(--red); }
+  .song-flags { display:flex; flex-wrap:wrap; gap:6px; }
+  .song-actions { display:flex; justify-content:flex-end; gap:8px; }
+  .song-delete-warning {
+    grid-column:1 / -1;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    border:1px solid var(--red);
+    border-radius:12px;
+    background:var(--red-dim);
+    color:var(--text);
+    padding:12px;
+  }
+  .song-row.confirming .song-delete-warning { display:flex; }
+  .drawer-backdrop {
+    position:fixed;
+    inset:0;
+    z-index:70;
+    background:rgba(0,0,0,.45);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s;
+  }
+  .drawer-backdrop.open {
+    opacity:1;
+    pointer-events:auto;
+  }
+  .edit-drawer {
+    position:fixed;
+    inset:0 0 0 auto;
+    z-index:80;
+    width:min(520px, calc(100vw - 24px));
+    background:var(--surface);
+    border-left:1px solid var(--border);
+    box-shadow:-24px 0 60px rgba(0,0,0,.42);
+    transform:translateX(105%);
+    transition:transform .22s ease;
+    display:flex;
+    flex-direction:column;
+  }
+  .edit-drawer.open { transform:translateX(0); }
+  .drawer-head {
+    padding:22px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:18px;
+  }
+  .drawer-head h3 { font-size:20px; margin-bottom:4px; }
+  .drawer-head p { color:var(--text-dim); font-size:13px; }
+  .drawer-body { padding:22px; overflow-y:auto; }
+  .pagination {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding-top:6px;
+  }
+  .page-btn {
+    min-width:42px;
+    height:42px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface);
+    color:var(--text);
+    cursor:pointer;
+    font-weight:800;
+  }
+  .page-btn.active,
+  .page-btn:hover {
+    border-color:var(--cyan);
+    background:var(--cyan);
+    color:#000;
+  }
+  .upload-layout {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 320px;
+    gap:16px;
+    align-items:start;
+  }
+  .upload-main-card { min-width:0; }
+  .file-meta {
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:rgba(0,212,255,.055);
+    color:var(--text-dim);
+    padding:10px 12px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .file-meta.is-visible { display:flex; }
+  .cover-upload-row {
+    display:grid;
+    grid-template-columns:96px minmax(0,1fr);
+    gap:14px;
+    align-items:center;
+  }
+  .cover-preview-thumb {
+    width:96px;
+    aspect-ratio:1;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface2);
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:700;
+  }
+  .cover-preview-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .toggle-card {
+    cursor:pointer;
+    justify-content:space-between;
+  }
+  .toggle-card input {
+    appearance:none;
+    width:44px;
+    height:24px;
+    border-radius:999px;
+    background:var(--surface3);
+    position:relative;
+    transition:background .15s;
+  }
+  .toggle-card input::after {
+    content:'';
+    position:absolute;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--text-dim);
+    top:3px;
+    left:3px;
+    transition:transform .15s, background .15s;
+  }
+  .toggle-card input:checked {
+    background:var(--cyan-dim);
+  }
+  .toggle-card input:checked::after {
+    transform:translateX(20px);
+    background:var(--cyan);
+  }
+  .upload-progress {
+    display:none;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface2);
+    padding:14px;
+  }
+  .upload-progress.is-visible { display:block; }
+  .progress-head {
+    display:flex;
+    justify-content:space-between;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .progress-track {
+    height:8px;
+    border-radius:999px;
+    background:var(--surface3);
+    overflow:hidden;
+  }
+  .progress-fill {
+    width:0%;
+    height:100%;
+    border-radius:inherit;
+    background:linear-gradient(90deg,var(--cyan),var(--green));
+    transition:width .18s;
+  }
+  .tips-card ul {
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    color:var(--text-dim);
+    font-size:13px;
+    line-height:1.5;
+  }
+  .tips-card li {
+    border-bottom:1px solid var(--border);
+    padding-bottom:14px;
+  }
+  .tips-card li:last-child {
+    border-bottom:0;
+    padding-bottom:0;
+  }
+  .settings-stack {
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    padding-bottom:74px;
+  }
+  .settings-card-grid {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+  .settings-preview {
+    width:120px;
+    aspect-ratio:1.91 / 1;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:700;
+  }
+  .settings-preview.square {
+    width:64px;
+    aspect-ratio:1;
+    border-radius:14px;
+  }
+  .settings-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+  .settings-upload-row {
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .sticky-save-bar {
+    position:sticky;
+    bottom:0;
+    z-index:20;
+    margin-top:4px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:rgba(15,20,25,.9);
+    backdrop-filter:blur(16px);
+    padding:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    box-shadow:0 -14px 34px rgba(0,0,0,.24);
+  }
+  .save-copy { color:var(--text-dim); font-size:13px; }
+  .toast {
+    position:fixed;
+    right:24px;
+    bottom:24px;
+    z-index:120;
+    background:var(--surface);
+    border:1px solid var(--cyan);
+    color:var(--text);
+    border-radius:999px;
+    padding:12px 18px;
+    box-shadow:0 16px 44px rgba(0,0,0,.32);
+    opacity:0;
+    transform:translateY(12px);
+    pointer-events:none;
+    transition:opacity .18s, transform .18s;
+    font-weight:800;
+  }
+  .toast.show {
+    opacity:1;
+    transform:translateY(0);
+  }
+  .analytics-filter-bar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .date-chip-group {
+    display:flex;
+    gap:8px;
+    padding:4px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface);
+  }
+  .date-chip {
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:var(--text-dim);
+    padding:8px 14px;
+    font:inherit;
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .date-chip.active,
+  .date-chip:hover {
+    background:var(--cyan);
+    color:#000;
+  }
+  .analytics-kpis {
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:12px;
+  }
+  .line-chart-shell {
+    position:relative;
+    min-height:320px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));
+    padding:18px 18px 34px;
+    overflow:hidden;
+  }
+  .line-chart-shell svg {
+    width:100%;
+    height:260px;
+    display:block;
+  }
+  .chart-axis {
+    display:flex;
+    justify-content:space-between;
+    color:var(--text-faint);
+    font-size:11px;
+    font-weight:700;
+    padding:0 8px;
+  }
+  .chart-toggle {
+    display:flex;
+    gap:6px;
+    padding:3px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface2);
+  }
+  .chart-toggle button {
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:var(--text-dim);
+    padding:7px 12px;
+    font:inherit;
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .chart-toggle button.active,
+  .chart-toggle button:hover {
+    background:var(--cyan-dim);
+    color:var(--cyan);
+  }
+  .horizontal-bars {
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .hbar-row {
+    display:grid;
+    grid-template-columns:140px minmax(0,1fr) 54px;
+    gap:12px;
+    align-items:center;
+  }
+  .hbar-label {
+    color:var(--text);
+    font-size:13px;
+    font-weight:800;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .hbar-track {
+    height:10px;
+    border-radius:999px;
+    background:var(--surface3);
+    overflow:hidden;
+  }
+  .hbar-fill {
+    height:100%;
+    border-radius:inherit;
+    background:linear-gradient(90deg,var(--cyan),var(--green));
+  }
+  .hbar-value {
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:800;
+    text-align:right;
+  }
+  .donut-wrap {
+    display:grid;
+    grid-template-columns:180px minmax(0,1fr);
+    gap:22px;
+    align-items:center;
+  }
+  .donut-chart {
+    width:180px;
+    aspect-ratio:1;
+    border-radius:50%;
+    background:conic-gradient(var(--cyan) 0 38%, var(--green) 38% 64%, var(--orange) 64% 84%, var(--purple) 84% 100%);
+    position:relative;
+  }
+  .donut-chart::after {
+    content:'';
+    position:absolute;
+    inset:34px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border);
+  }
+  .donut-legend {
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+  }
+  .legend-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    color:var(--text-dim);
+    font-size:13px;
+    font-weight:700;
+  }
+  .legend-label {
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .legend-dot {
+    width:9px;
+    height:9px;
+    border-radius:50%;
+  }
+  .analytics-table-wrap {
+    overflow:auto;
+  }
+  .analytics-table {
+    width:100%;
+    min-width:1120px;
+    border-collapse:collapse;
+  }
+  .analytics-table th,
+  .analytics-table td {
+    padding:12px 10px;
+    border-bottom:1px solid var(--border);
+    text-align:left;
+    vertical-align:middle;
+  }
+  .analytics-table th {
+    color:var(--text-faint);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .analytics-table th[data-sort] {
+    cursor:pointer;
+  }
+  .analytics-table th[data-sort]::after {
+    content:' ↕';
+    color:var(--text-faint);
+  }
+  .analytics-table td {
+    color:var(--text-dim);
+    font-size:13px;
+    font-weight:600;
+  }
+  .analytics-table tr:hover td {
+    background:var(--surface2);
+  }
+  .table-cover {
+    width:42px;
+    height:42px;
+    border-radius:9px;
+    overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .table-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+  .notification-tabs {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .notification-feed {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .notification-item {
+    position:relative;
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) auto;
+    gap:14px;
+    align-items:center;
+    border:1px solid var(--border);
+    border-left-width:4px;
+    border-radius:14px;
+    background:var(--surface);
+    padding:14px;
+    transition:border-color .15s, background .15s;
+  }
+  .notification-item:hover {
+    background:var(--surface2);
+  }
+  .notification-item.download { border-left-color:var(--cyan); }
+  .notification-item.ad { border-left-color:var(--green); }
+  .notification-item.warning { border-left-color:var(--orange); }
+  .notification-item.error { border-left-color:var(--red); }
+  .notification-item.system { border-left-color:var(--purple); }
+  .notification-icon {
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:var(--surface2);
+    color:var(--cyan);
+    font-weight:900;
+    border:1px solid var(--border);
+  }
+  .notification-title-row {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:4px;
+  }
+  .notification-title {
+    font-size:15px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .unread-dot {
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 12px var(--cyan-glow);
+  }
+  .notification-description {
+    color:var(--text-dim);
+    font-size:13px;
+    line-height:1.45;
+  }
+  .notification-time {
+    color:var(--text-faint);
+    font-size:12px;
+    font-weight:700;
+    margin-top:6px;
+  }
+  .dismiss-notification {
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s;
+  }
+  .notification-item:hover .dismiss-notification {
+    opacity:1;
+    pointer-events:auto;
+  }
+  .notification-settings {
+    overflow:hidden;
+  }
+  .notification-settings-body {
+    display:none;
+    padding-top:16px;
+  }
+  .notification-settings.open .notification-settings-body {
+    display:block;
+  }
+  .ad-status-layout {
+    display:grid;
+    grid-template-columns:160px minmax(0,1fr) 250px;
+    gap:18px;
+    align-items:center;
+  }
+  .ad-preview-thumb {
+    width:150px;
+    aspect-ratio:9 / 16;
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    background:var(--surface2);
+    display:grid;
+    place-items:center;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:800;
+  }
+  .ad-preview-thumb img,
+  .ad-preview-thumb video {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .ad-detail-list {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    color:var(--text-dim);
+    font-size:13px;
+  }
+  .ad-detail-list strong {
+    color:var(--text);
+  }
+  .ad-upload-layout {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 190px;
+    gap:18px;
+    align-items:start;
+  }
+  .ad-media-meta {
+    display:none;
+    flex-direction:column;
+    gap:6px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface2);
+    padding:12px;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:700;
+  }
+  .ad-media-meta.is-visible {
+    display:flex;
+  }
+  .ratio-warning {
+    display:none;
+    border:1px solid var(--orange);
+    border-radius:12px;
+    background:var(--orange-dim);
+    color:var(--orange);
+    padding:10px 12px;
+    font-size:12px;
+    font-weight:800;
+  }
+  .ratio-warning.is-visible { display:block; }
+  .ad-summary-grid {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+  }
+  .history-table {
+    width:100%;
+    border-collapse:collapse;
+    min-width:980px;
+  }
+  .history-table th,
+  .history-table td {
+    padding:12px 10px;
+    border-bottom:1px solid var(--border);
+    text-align:left;
+    vertical-align:middle;
+  }
+  .history-table th {
+    color:var(--text-faint);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-weight:800;
+  }
+  .history-table td {
+    color:var(--text-dim);
+    font-size:13px;
+    font-weight:600;
+  }
 
   /* DATE RANGE */
   .filter-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -278,6 +1422,266 @@
     background:var(--red); border:1px solid var(--bg);
   }
 
+  @media (max-width: 1180px) {
+    .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .analytics-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .artist-grid,
+    .genre-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .song-row {
+      grid-template-columns:minmax(240px,1fr) 120px 110px 100px;
+    }
+    .song-row > div:nth-child(5),
+    .song-row > div:nth-child(6) {
+      grid-column:auto;
+    }
+    .song-actions {
+      grid-column:1 / -1;
+      justify-content:flex-start;
+    }
+  }
+
+  @media (max-width: 960px) {
+    body {
+      display:block;
+      height:100vh;
+      overflow:hidden;
+    }
+    .sidebar {
+      position:fixed;
+      inset:0 auto 0 0;
+      z-index:100;
+      width:min(82vw, 320px);
+      min-width:0;
+      max-width:320px;
+      background:rgba(15,20,25,.92);
+      border-right:1px solid rgba(255,255,255,.08);
+      box-shadow:28px 0 70px rgba(0,0,0,.42);
+      backdrop-filter:blur(22px);
+      transform:translateX(-105%);
+      transition:transform .22s ease;
+    }
+    .sidebar.open { transform:translateX(0); }
+    .main {
+      width:100%;
+      height:100vh;
+      min-width:0;
+    }
+    .topbar {
+      min-height:64px;
+      height:auto;
+      padding:10px 14px;
+      gap:10px;
+      background:rgba(15,20,25,.9);
+      backdrop-filter:blur(18px);
+    }
+    .topbar > div:not(.topbar-right) {
+      min-width:0;
+    }
+    .mobile-menu-toggle { display:flex; }
+    .topbar-title {
+      display:block;
+      font-size:20px;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .topbar-sub {
+      display:block;
+      margin:3px 0 0;
+      font-size:12px;
+    }
+    .topbar-right { gap:8px; }
+    .topbar-right .btn-ghost { display:none; }
+    #topPrimaryAction {
+      padding:9px 12px;
+      white-space:nowrap;
+    }
+    .content {
+      padding:16px;
+      gap:16px;
+    }
+    .view-section { gap:16px; }
+    .two-col,
+    .three-col,
+    .section-grid,
+    .upload-layout,
+    .artist-form-layout,
+    .settings-card-grid,
+    .ad-status-layout,
+    .ad-upload-layout {
+      grid-template-columns:1fr;
+    }
+    .artist-grid,
+    .genre-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .ad-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .ad-preview-thumb { width:min(180px, 100%); }
+    .management-toolbar,
+    .artist-toolbar,
+    .analytics-filter-bar,
+    .panel-header,
+    .export-box,
+    .sticky-save-bar {
+      align-items:stretch;
+      flex-direction:column;
+    }
+    .song-controls {
+      display:grid;
+      grid-template-columns:1fr;
+      width:100%;
+    }
+    .song-search,
+    .admin-control {
+      width:100%;
+    }
+    .panel,
+    .analytics-table-wrap {
+      overflow-x:auto;
+    }
+    .song-table {
+      min-width:520px;
+    }
+    .hbar-row {
+      grid-template-columns:110px minmax(0,1fr) 48px;
+    }
+    .donut-wrap {
+      grid-template-columns:1fr;
+      justify-items:center;
+    }
+    .donut-legend {
+      width:100%;
+    }
+    .line-chart-shell {
+      min-height:260px;
+      padding:14px 12px 30px;
+    }
+    .line-chart-shell svg { height:210px; }
+    .chart-axis {
+      overflow-x:auto;
+      gap:22px;
+    }
+    .chart-toggle,
+    .date-chip-group,
+    .notification-tabs,
+    .pagination {
+      overflow-x:auto;
+      justify-content:flex-start;
+      padding-bottom:3px;
+    }
+    .date-chip,
+    .page-btn,
+    .notification-tabs .btn {
+      flex:0 0 auto;
+    }
+    .notification-item {
+      grid-template-columns:40px minmax(0,1fr);
+      align-items:flex-start;
+    }
+    .dismiss-notification {
+      grid-column:2;
+      opacity:1;
+      pointer-events:auto;
+      justify-self:flex-start;
+    }
+  }
+
+  @media (max-width: 620px) {
+    body { font-size:14px; }
+    .brand { padding:18px 16px 14px; }
+    .nav-item {
+      min-height:44px;
+      border-radius:12px;
+      font-size:15px;
+    }
+    .content { padding:14px 12px 18px; }
+    .topbar { padding:9px 12px; }
+    .topbar-title { font-size:17px; }
+    .topbar-sub { display:none; }
+    #topPrimaryAction {
+      max-width:128px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .stats-grid,
+    .analytics-kpis,
+    .ad-summary-grid,
+    .form-grid,
+    .check-grid,
+    .artist-grid,
+    .genre-grid,
+    .quick-grid {
+      grid-template-columns:1fr;
+    }
+    .stat-card,
+    .panel {
+      border-radius:16px;
+      padding:16px;
+    }
+    .stat-value { font-size:30px; }
+    .song-row {
+      grid-template-columns:1fr;
+      gap:10px;
+      padding:14px;
+      border-radius:18px;
+    }
+    .song-main { align-items:flex-start; }
+    .song-thumb {
+      width:54px;
+      height:54px;
+      border-radius:12px;
+    }
+    .song-title { white-space:normal; }
+    .metric-badge,
+    .status-pill,
+    .artist-genre-pill {
+      width:fit-content;
+    }
+    .song-actions {
+      justify-content:stretch;
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+    }
+    .song-actions .btn {
+      width:100%;
+      padding-inline:8px;
+    }
+    .song-delete-warning {
+      flex-direction:column;
+      align-items:flex-start;
+    }
+    .song-delete-warning > div {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .cover-upload-row,
+    .settings-upload-row {
+      grid-template-columns:1fr;
+      display:grid;
+    }
+    .cover-preview-thumb { width:112px; }
+    .edit-drawer {
+      width:100vw;
+      border-left:0;
+    }
+    .drawer-head,
+    .drawer-body {
+      padding:18px 16px;
+    }
+    .ad-preview-thumb {
+      width:min(220px, 100%);
+      justify-self:start;
+    }
+    .toast {
+      right:12px;
+      left:12px;
+      bottom:14px;
+      text-align:center;
+      border-radius:16px;
+    }
+  }
+
   /* Typography tuned to match the main SG Production website. */
   body,
   button,
@@ -287,7 +1691,6 @@
   .topbar-title,
   .stat-value,
   .mono,
-  .badge,
   .ad-stat-val,
   .activity-time {
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -360,6 +1763,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Artist Management
       </a>
+      <a class="nav-item" href="#genres" data-section="genres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Genre Management
+      </a>
     </div>
 
     <div class="nav-section">
@@ -367,10 +1774,6 @@
       <a class="nav-item" href="#advertising" data-section="advertising">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
         Advertising
-      </a>
-      <a class="nav-item" href="#brand-deals" data-section="brand-deals">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        Brand Deals
       </a>
     </div>
 
@@ -394,28 +1797,26 @@
     </a>
   </div>
 </aside>
+<div class="sidebar-scrim" id="sidebarScrim"></div>
 
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Open admin menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
     <div>
       <span class="topbar-title">Dashboard</span>
       <span class="topbar-sub">— May 2026</span>
-    </div>
-    <div style="display:flex;gap:6px;margin-left:20px;">
-      <div class="tabs">
-        <button class="tab active">7 Days</button>
-        <button class="tab">30 Days</button>
-        <button class="tab">90 Days</button>
-        <button class="tab">All Time</button>
-      </div>
     </div>
     <div class="topbar-right">
       <button class="btn btn-ghost" onclick="exportReport()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export Report
       </button>
-      <button class="btn btn-primary" data-action-section="upload">+ Upload Song</button>
+      <button class="btn btn-primary" id="topPrimaryAction" data-action-section="upload">+ Upload Song</button>
     </div>
   </div>
 
@@ -724,147 +2125,970 @@
     </section>
 
     <section class="view-section" id="analytics-section" data-title="Analytics" data-subtitle="Performance overview">
-      <div class="stats-grid">
-        <div class="stat-card cyan">
-          <div class="stat-label">Downloads</div>
-          <div class="stat-value cyan">3,847</div>
-          <div class="stat-change up">18% vs last period</div>
+      <div class="management-toolbar">
+        <div>
+          <h2>Analytics</h2>
+          <p>Measure downloads, song views, ads, and engagement</p>
         </div>
-        <div class="stat-card green">
-          <div class="stat-label">Unique Visitors</div>
-          <div class="stat-value green">8,120</div>
-          <div class="stat-change up">12% vs last period</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-label">Ad Clicks</div>
-          <div class="stat-value orange">284</div>
-          <div class="stat-change up">7% vs last period</div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-label">CTR</div>
-          <div class="stat-value purple">2.28%</div>
-          <div class="stat-change down">4% vs last period</div>
-        </div>
+        <button class="btn btn-primary" type="button" id="analyticsExportCsv">Export CSV</button>
       </div>
+
+      <div class="analytics-filter-bar">
+        <div class="date-chip-group">
+          <button class="date-chip active" type="button">7D</button>
+          <button class="date-chip" type="button">30D</button>
+          <button class="date-chip" type="button">90D</button>
+          <button class="date-chip" type="button">All Time</button>
+        </div>
+        <input class="admin-control" type="date" value="2026-05-09">
+      </div>
+
+      <div class="analytics-kpis">
+        <div class="stat-card cyan"><div class="stat-label">Total Downloads</div><div class="stat-value cyan">3,847</div><div class="stat-change up">▲ 18% vs previous period</div></div>
+        <div class="stat-card green"><div class="stat-label">Total Song Page Views</div><div class="stat-value green">8,120</div><div class="stat-change up">▲ 12% vs previous period</div></div>
+        <div class="stat-card orange"><div class="stat-label">Ad Impressions</div><div class="stat-value orange">12,440</div><div class="stat-change up">▲ 32% vs previous period</div></div>
+        <div class="stat-card purple"><div class="stat-label">Ad Clicks</div><div class="stat-value purple">284</div><div class="stat-change up">▲ 7% vs previous period</div></div>
+        <div class="stat-card cyan"><div class="stat-label">CTR Percentage</div><div class="stat-value cyan">2.28%</div><div class="stat-change down">▼ 4% vs previous period</div></div>
+        <div class="stat-card green"><div class="stat-label">Avg Session Duration</div><div class="stat-value green">1m 42s</div><div class="stat-change up">▲ 9% vs previous period</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Traffic Snapshot</span>
+          <span class="panel-title">Downloads Over Time</span>
+          <div class="chart-toggle" id="analyticsChartToggle">
+            <button class="active" type="button" data-chart="Downloads">Downloads</button>
+            <button type="button" data-chart="Page Views">Page Views</button>
+            <button type="button" data-chart="Ad Clicks">Ad Clicks</button>
+          </div>
         </div>
-        <p class="section-note">This preview shows where the live admin can display song views, downloads, ad impressions, ad clicks, and date range reports after connecting the PHP tracking counters.</p>
+        <div class="line-chart-shell">
+          <svg viewBox="0 0 900 260" preserveAspectRatio="none" aria-label="Analytics line chart">
+            <g stroke="rgba(255,255,255,.08)" stroke-width="1">
+              <line x1="40" y1="30" x2="880" y2="30"></line>
+              <line x1="40" y1="85" x2="880" y2="85"></line>
+              <line x1="40" y1="140" x2="880" y2="140"></line>
+              <line x1="40" y1="195" x2="880" y2="195"></line>
+              <line x1="40" y1="238" x2="880" y2="238"></line>
+            </g>
+            <polyline id="analyticsLine" fill="none" stroke="#00d4ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="45,210 165,178 285,192 405,120 525,145 645,82 765,112 875,54"></polyline>
+            <g id="analyticsDots" fill="#00d4ff">
+              <circle cx="45" cy="210" r="5"></circle><circle cx="165" cy="178" r="5"></circle><circle cx="285" cy="192" r="5"></circle><circle cx="405" cy="120" r="5"></circle><circle cx="525" cy="145" r="5"></circle><circle cx="645" cy="82" r="5"></circle><circle cx="765" cy="112" r="5"></circle><circle cx="875" cy="54" r="5"></circle>
+            </g>
+          </svg>
+          <div class="chart-axis"><span>May 2</span><span>May 3</span><span>May 4</span><span>May 5</span><span>May 6</span><span>May 7</span><span>May 8</span><span>May 9</span></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Top 5 Songs by Downloads</span></div>
+          <div class="horizontal-bars">
+            <div class="hbar-row"><div class="hbar-label">Midnight Echo</div><div class="hbar-track"><div class="hbar-fill" style="width:100%"></div></div><div class="hbar-value">1,204</div></div>
+            <div class="hbar-row"><div class="hbar-label">Neon Pulse</div><div class="hbar-track"><div class="hbar-fill" style="width:82%"></div></div><div class="hbar-value">987</div></div>
+            <div class="hbar-row"><div class="hbar-label">Dark Frequency</div><div class="hbar-track"><div class="hbar-fill" style="width:63%"></div></div><div class="hbar-value">763</div></div>
+            <div class="hbar-row"><div class="hbar-label">Electric Dream</div><div class="hbar-track"><div class="hbar-fill" style="width:53%"></div></div><div class="hbar-value">642</div></div>
+            <div class="hbar-row"><div class="hbar-label">Shadow Wave</div><div class="hbar-track"><div class="hbar-fill" style="width:44%"></div></div><div class="hbar-value">531</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Traffic by Genre</span></div>
+          <div class="donut-wrap">
+            <div class="donut-chart" aria-label="Traffic by genre donut chart"></div>
+            <div class="donut-legend">
+              <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--cyan)"></span>Original Mix</span><strong>38%</strong></div>
+              <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--green)"></span>Soundcheck</span><strong>26%</strong></div>
+              <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--orange)"></span>Marathi</span><strong>20%</strong></div>
+              <div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--purple)"></span>Hindi</span><strong>16%</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Per-Song Analytics</span>
+        </div>
+        <div class="analytics-table-wrap">
+          <table class="analytics-table" id="analyticsTable">
+            <thead>
+              <tr>
+                <th data-sort="index">#</th>
+                <th>Cover</th>
+                <th data-sort="title">Song Title</th>
+                <th data-sort="artist">Artist</th>
+                <th data-sort="genre">Genre</th>
+                <th data-sort="views">Page Views</th>
+                <th data-sort="downloads">Downloads</th>
+                <th data-sort="impressions">Ad Impressions</th>
+                <th data-sort="clicks">Ad Clicks</th>
+                <th data-sort="ctr">CTR</th>
+                <th data-sort="time">Avg Time on Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-index="1" data-title="Midnight Echo" data-artist="SG Production" data-genre="Marathi" data-views="2200" data-downloads="1204" data-impressions="3100" data-clicks="92" data-ctr="2.97" data-time="118"><td>01</td><td><div class="table-cover"><img src="assets/cover-1.jpg" alt=""></div></td><td><strong>Midnight Echo</strong></td><td>SG Production</td><td>Marathi</td><td>2,200</td><td>1,204</td><td>3,100</td><td>92</td><td>2.97%</td><td>1m 58s</td></tr>
+              <tr data-index="2" data-title="Neon Pulse" data-artist="SG Production" data-genre="Soundcheck" data-views="1850" data-downloads="987" data-impressions="2700" data-clicks="71" data-ctr="2.63" data-time="104"><td>02</td><td><div class="table-cover"><img src="assets/cover-2.jpg" alt=""></div></td><td><strong>Neon Pulse</strong></td><td>SG Production</td><td>Soundcheck</td><td>1,850</td><td>987</td><td>2,700</td><td>71</td><td>2.63%</td><td>1m 44s</td></tr>
+              <tr data-index="3" data-title="Dark Frequency" data-artist="SG Production" data-genre="Hindi" data-views="1460" data-downloads="763" data-impressions="1880" data-clicks="48" data-ctr="2.55" data-time="96"><td>03</td><td><div class="table-cover"><img src="assets/cover-3.jpg" alt=""></div></td><td><strong>Dark Frequency</strong></td><td>SG Production</td><td>Hindi</td><td>1,460</td><td>763</td><td>1,880</td><td>48</td><td>2.55%</td><td>1m 36s</td></tr>
+              <tr data-index="4" data-title="Electric Dream" data-artist="SG Production" data-genre="Original Mix" data-views="1222" data-downloads="642" data-impressions="1630" data-clicks="43" data-ctr="2.64" data-time="91"><td>04</td><td><div class="table-cover"><img src="assets/cover-4.jpg" alt=""></div></td><td><strong>Electric Dream</strong></td><td>SG Production</td><td>Original Mix</td><td>1,222</td><td>642</td><td>1,630</td><td>43</td><td>2.64%</td><td>1m 31s</td></tr>
+              <tr data-index="5" data-title="Shadow Wave" data-artist="SG Production" data-genre="Marathi" data-views="1110" data-downloads="531" data-impressions="1488" data-clicks="38" data-ctr="2.55" data-time="88"><td>05</td><td><div class="table-cover"><img src="assets/cover-5.jpg" alt=""></div></td><td><strong>Shadow Wave</strong></td><td>SG Production</td><td>Marathi</td><td>1,110</td><td>531</td><td>1,488</td><td>38</td><td>2.55%</td><td>1m 28s</td></tr>
+              <tr data-index="6" data-title="Lost Signal" data-artist="SG Production" data-genre="Soundcheck" data-views="980" data-downloads="498" data-impressions="1302" data-clicks="35" data-ctr="2.69" data-time="84"><td>06</td><td><div class="table-cover"><img src="assets/cover-6.jpg" alt=""></div></td><td><strong>Lost Signal</strong></td><td>SG Production</td><td>Soundcheck</td><td>980</td><td>498</td><td>1,302</td><td>35</td><td>2.69%</td><td>1m 24s</td></tr>
+              <tr data-index="7" data-title="Void Rhythm" data-artist="SG Production" data-genre="Hindi" data-views="910" data-downloads="452" data-impressions="1190" data-clicks="31" data-ctr="2.61" data-time="79"><td>07</td><td><div class="table-cover"><img src="assets/cover-7.jpg" alt=""></div></td><td><strong>Void Rhythm</strong></td><td>SG Production</td><td>Hindi</td><td>910</td><td>452</td><td>1,190</td><td>31</td><td>2.61%</td><td>1m 19s</td></tr>
+              <tr data-index="8" data-title="Raw Energy" data-artist="SG Production" data-genre="Marathi" data-views="846" data-downloads="419" data-impressions="1044" data-clicks="28" data-ctr="2.68" data-time="76"><td>08</td><td><div class="table-cover"><img src="assets/cover-1.jpg" alt=""></div></td><td><strong>Raw Energy</strong></td><td>SG Production</td><td>Marathi</td><td>846</td><td>419</td><td>1,044</td><td>28</td><td>2.68%</td><td>1m 16s</td></tr>
+              <tr data-index="9" data-title="Night Circuit" data-artist="SG Production" data-genre="Original Mix" data-views="790" data-downloads="388" data-impressions="988" data-clicks="24" data-ctr="2.43" data-time="72"><td>09</td><td><div class="table-cover"><img src="assets/cover-2.jpg" alt=""></div></td><td><strong>Night Circuit</strong></td><td>SG Production</td><td>Original Mix</td><td>790</td><td>388</td><td>988</td><td>24</td><td>2.43%</td><td>1m 12s</td></tr>
+              <tr data-index="10" data-title="Stellar Drift" data-artist="SG Production" data-genre="Soundcheck" data-views="742" data-downloads="351" data-impressions="912" data-clicks="22" data-ctr="2.41" data-time="70"><td>10</td><td><div class="table-cover"><img src="assets/cover-3.jpg" alt=""></div></td><td><strong>Stellar Drift</strong></td><td>SG Production</td><td>Soundcheck</td><td>742</td><td>351</td><td>912</td><td>22</td><td>2.41%</td><td>1m 10s</td></tr>
+              <tr data-index="11" data-title="Hyper Drive" data-artist="SG Production" data-genre="Hindi" data-views="690" data-downloads="322" data-impressions="840" data-clicks="19" data-ctr="2.26" data-time="67"><td>11</td><td><div class="table-cover"><img src="assets/cover-4.jpg" alt=""></div></td><td><strong>Hyper Drive</strong></td><td>SG Production</td><td>Hindi</td><td>690</td><td>322</td><td>840</td><td>19</td><td>2.26%</td><td>1m 07s</td></tr>
+              <tr data-index="12" data-title="Phantom Bass" data-artist="SG Production" data-genre="Original Mix" data-views="655" data-downloads="304" data-impressions="804" data-clicks="16" data-ctr="1.99" data-time="64"><td>12</td><td><div class="table-cover"><img src="assets/cover-5.jpg" alt=""></div></td><td><strong>Phantom Bass</strong></td><td>SG Production</td><td>Original Mix</td><td>655</td><td>304</td><td>804</td><td>16</td><td>1.99%</td><td>1m 04s</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="analyticsPagination"></div>
       </div>
     </section>
 
-    <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add a release">
-      <div class="section-grid">
-        <div class="panel">
+    <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add the public preview file and the WAV download link separately">
+      <div class="management-toolbar">
+        <div>
+          <h2>Upload New Song</h2>
+          <p>Add the public preview file and the WAV download link separately</p>
+        </div>
+      </div>
+
+      <div class="upload-layout">
+        <div class="panel upload-main-card">
           <div class="panel-header">
             <span class="panel-title">Song Details</span>
           </div>
-          <p class="section-note">Upload preview MP3, cover artwork, title, artist, genre, duration, and WAV download URL from this section in the live PHP admin.</p>
+          <form class="admin-form" id="uploadSongForm" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="upload">
+            <div class="form-grid">
+              <label class="form-field">
+                Song Title
+                <input type="text" name="title" placeholder="Nagin Theme" value="Nagin Theme" required>
+              </label>
+              <label class="form-field">
+                Artist
+                <select name="artist">
+                  <option>SG Production</option>
+                  <option>SG Soundcheck</option>
+                  <option>Marathi Pulse</option>
+                  <option>Hindi Wave</option>
+                </select>
+              </label>
+              <label class="form-field">
+                Artist Profile
+                <select name="artistId">
+                  <option value="sg-production">SG Production</option>
+                  <option value="sg-soundcheck">SG Soundcheck</option>
+                  <option value="marathi-pulse">Marathi Pulse</option>
+                  <option value="hindi-wave">Hindi Wave</option>
+                </select>
+              </label>
+              <label class="form-field">
+                Genre
+                <select name="genre">
+                  <option>Original Mix</option>
+                  <option>Hindi</option>
+                  <option>Marathi</option>
+                  <option>Soundcheck</option>
+                </select>
+              </label>
+              <label class="form-field full">
+                Preview Song File
+                <input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" required>
+                <span class="form-help">Accepts MP3/WAV. Duration will be detected from this file.</span>
+                <div class="file-meta" id="previewFileMeta">
+                  <span id="previewFileName">No file selected</span>
+                  <span id="previewFileSize">0 MB</span>
+                </div>
+              </label>
+              <label class="form-field">
+                Duration
+                <input id="uploadDurationInput" type="text" name="duration" placeholder="0:0">
+              </label>
+              <label class="form-field">
+                Wave Style
+                <select name="wave">
+                  <option value="sine">Sine</option>
+                  <option value="square">Square</option>
+                  <option value="sawtooth">Sawtooth</option>
+                  <option value="triangle">Triangle</option>
+                </select>
+              </label>
+              <label class="form-field full">
+                WAV Download URL
+                <input type="url" name="downloadUrl" placeholder="https://example.com/downloads/nagin-theme.wav" required>
+                <span class="form-help">Direct URL for the full-quality WAV download.</span>
+              </label>
+              <label class="form-field">
+                Credit Text
+                <input type="text" name="creditText" placeholder="Optional artist credit">
+              </label>
+              <label class="form-field full">
+                Cover Image
+                <div class="cover-upload-row">
+                  <div class="cover-preview-thumb" id="uploadCoverPreview">Cover</div>
+                  <div>
+                    <input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required>
+                    <span class="form-help">Image preview appears after selection.</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div class="check-grid">
+              <label class="check-card toggle-card">
+                <span>Show in Latest Releases</span>
+                <input type="checkbox" name="isNew" checked>
+              </label>
+              <label class="check-card toggle-card">
+                <span>Mark as Featured</span>
+                <input type="checkbox" name="isFeatured">
+              </label>
+            </div>
+
+            <div class="upload-progress" id="uploadProgress">
+              <div class="progress-head">
+                <span>Uploading song</span>
+                <span id="uploadProgressValue">0%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="uploadProgressFill"></div></div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-outline" type="button" id="saveDraftButton">Save as Draft</button>
+              <button class="btn btn-primary" type="submit">Upload Song</button>
+            </div>
+          </form>
         </div>
-        <div class="panel">
+
+        <aside class="panel tips-card">
           <div class="panel-header">
-            <span class="panel-title">Publishing</span>
+            <span class="panel-title">Upload Tips</span>
           </div>
-          <p class="section-note">Control homepage visibility, featured placement, artist assignment, and SEO song URL before publishing.</p>
-        </div>
+          <ul>
+            <li><strong>Cover image:</strong> recommended 1:1 ratio, minimum 500x500px.</li>
+            <li><strong>Preview file:</strong> MP3, maximum 10MB for fast public playback.</li>
+            <li><strong>WAV link:</strong> should be a direct downloadable URL.</li>
+            <li><strong>Wave style:</strong> affects how the waveform looks on the public song page.</li>
+          </ul>
+        </aside>
       </div>
     </section>
 
-    <section class="view-section" id="songs-section" data-title="Uploaded Songs" data-subtitle="Manage releases">
+    <section class="view-section" id="songs-section" data-title="Uploaded Songs" data-subtitle="Manage and monitor all your tracks">
+      <div class="management-toolbar">
+        <div>
+          <h2>Uploaded Songs</h2>
+          <p>Manage and monitor all your tracks</p>
+        </div>
+        <div class="song-controls">
+          <input class="admin-control song-search" id="songSearchInput" type="search" placeholder="Search songs">
+          <select class="admin-control" id="songGenreFilter">
+            <option value="all">All Genres</option>
+            <option>Soundcheck</option>
+            <option>Marathi</option>
+            <option>Hindi</option>
+            <option>Original Mix</option>
+          </select>
+          <select class="admin-control" id="songSortSelect">
+            <option value="newest">Newest</option>
+            <option value="downloads">Most Downloaded</option>
+            <option value="az">A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="empty-state" id="songsEmptyState">
+        <div>
+          <h3>No songs uploaded yet</h3>
+          <p>Upload your first song to start building the catalog.</p>
+          <button class="btn btn-primary" type="button" data-action-section="upload">Upload Your First Song</button>
+        </div>
+      </div>
+
+      <div class="songs-list" id="songsList">
+        <article class="song-row" data-title="Midnight Echo" data-artist="SG Production" data-genre="Marathi" data-duration="3:42" data-downloads="1204" data-clicks="92" data-featured="true" data-status="Published" data-cover="assets/cover-1.jpg" data-date="2026-05-08">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-1.jpg" alt="Midnight Echo cover"></div><div><div class="song-title">Midnight Echo</div><div class="song-detail">SG Production · Marathi · 3:42</div></div></div>
+          <div><span class="metric-badge cyan">1,204 downloads</span></div>
+          <div><span class="metric-badge orange">92 ad clicks</span></div>
+          <div class="song-flags"><span class="artist-genre-pill">Featured</span></div>
+          <div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Midnight Echo? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Neon Pulse" data-artist="SG Production" data-genre="Soundcheck" data-duration="2:55" data-downloads="987" data-clicks="71" data-featured="true" data-status="Published" data-cover="assets/cover-2.jpg" data-date="2026-05-07">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-2.jpg" alt="Neon Pulse cover"></div><div><div class="song-title">Neon Pulse</div><div class="song-detail">SG Production · Soundcheck · 2:55</div></div></div>
+          <div><span class="metric-badge cyan">987 downloads</span></div><div><span class="metric-badge orange">71 ad clicks</span></div><div class="song-flags"><span class="artist-genre-pill">Featured</span></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Neon Pulse? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Dark Frequency" data-artist="SG Production" data-genre="Hindi" data-duration="4:10" data-downloads="763" data-clicks="48" data-featured="false" data-status="Published" data-cover="assets/cover-3.jpg" data-date="2026-05-06">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-3.jpg" alt="Dark Frequency cover"></div><div><div class="song-title">Dark Frequency</div><div class="song-detail">SG Production · Hindi · 4:10</div></div></div>
+          <div><span class="metric-badge cyan">763 downloads</span></div><div><span class="metric-badge orange">48 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Dark Frequency? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Electric Dream" data-artist="SG Production" data-genre="Original Mix" data-duration="5:20" data-downloads="642" data-clicks="43" data-featured="false" data-status="Draft" data-cover="assets/cover-4.jpg" data-date="2026-05-05">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-4.jpg" alt="Electric Dream cover"></div><div><div class="song-title">Electric Dream</div><div class="song-detail">SG Production · Original Mix · 5:20</div></div></div>
+          <div><span class="metric-badge cyan">642 downloads</span></div><div><span class="metric-badge orange">43 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill draft">Draft</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Electric Dream? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Shadow Wave" data-artist="SG Production" data-genre="Marathi" data-duration="3:15" data-downloads="531" data-clicks="38" data-featured="true" data-status="Unlisted" data-cover="assets/cover-5.jpg" data-date="2026-05-04">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-5.jpg" alt="Shadow Wave cover"></div><div><div class="song-title">Shadow Wave</div><div class="song-detail">SG Production · Marathi · 3:15</div></div></div>
+          <div><span class="metric-badge cyan">531 downloads</span></div><div><span class="metric-badge orange">38 ad clicks</span></div><div class="song-flags"><span class="artist-genre-pill">Featured</span></div><div><span class="status-pill unlisted">Unlisted</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Shadow Wave? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Lost Signal" data-artist="SG Production" data-genre="Soundcheck" data-duration="4:05" data-downloads="498" data-clicks="35" data-featured="false" data-status="Published" data-cover="assets/cover-6.jpg" data-date="2026-05-03">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-6.jpg" alt="Lost Signal cover"></div><div><div class="song-title">Lost Signal</div><div class="song-detail">SG Production · Soundcheck · 4:05</div></div></div>
+          <div><span class="metric-badge cyan">498 downloads</span></div><div><span class="metric-badge orange">35 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Lost Signal? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Void Rhythm" data-artist="SG Production" data-genre="Hindi" data-duration="2:48" data-downloads="452" data-clicks="31" data-featured="false" data-status="Published" data-cover="assets/cover-7.jpg" data-date="2026-05-02">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-7.jpg" alt="Void Rhythm cover"></div><div><div class="song-title">Void Rhythm</div><div class="song-detail">SG Production · Hindi · 2:48</div></div></div>
+          <div><span class="metric-badge cyan">452 downloads</span></div><div><span class="metric-badge orange">31 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Void Rhythm? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Raw Energy" data-artist="SG Production" data-genre="Marathi" data-duration="3:30" data-downloads="419" data-clicks="28" data-featured="false" data-status="Published" data-cover="assets/cover-1.jpg" data-date="2026-05-01">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-1.jpg" alt="Raw Energy cover"></div><div><div class="song-title">Raw Energy</div><div class="song-detail">SG Production · Marathi · 3:30</div></div></div>
+          <div><span class="metric-badge cyan">419 downloads</span></div><div><span class="metric-badge orange">28 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Raw Energy? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Night Circuit" data-artist="SG Production" data-genre="Original Mix" data-duration="3:47" data-downloads="388" data-clicks="24" data-featured="false" data-status="Draft" data-cover="assets/cover-2.jpg" data-date="2026-04-30">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-2.jpg" alt="Night Circuit cover"></div><div><div class="song-title">Night Circuit</div><div class="song-detail">SG Production · Original Mix · 3:47</div></div></div>
+          <div><span class="metric-badge cyan">388 downloads</span></div><div><span class="metric-badge orange">24 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill draft">Draft</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Night Circuit? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Stellar Drift" data-artist="SG Production" data-genre="Soundcheck" data-duration="5:10" data-downloads="351" data-clicks="22" data-featured="false" data-status="Published" data-cover="assets/cover-3.jpg" data-date="2026-04-29">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-3.jpg" alt="Stellar Drift cover"></div><div><div class="song-title">Stellar Drift</div><div class="song-detail">SG Production · Soundcheck · 5:10</div></div></div>
+          <div><span class="metric-badge cyan">351 downloads</span></div><div><span class="metric-badge orange">22 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Stellar Drift? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Hyper Drive" data-artist="SG Production" data-genre="Hindi" data-duration="3:01" data-downloads="322" data-clicks="19" data-featured="false" data-status="Unlisted" data-cover="assets/cover-4.jpg" data-date="2026-04-28">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-4.jpg" alt="Hyper Drive cover"></div><div><div class="song-title">Hyper Drive</div><div class="song-detail">SG Production · Hindi · 3:01</div></div></div>
+          <div><span class="metric-badge cyan">322 downloads</span></div><div><span class="metric-badge orange">19 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill unlisted">Unlisted</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Hyper Drive? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+        <article class="song-row" data-title="Phantom Bass" data-artist="SG Production" data-genre="Original Mix" data-duration="3:38" data-downloads="304" data-clicks="16" data-featured="false" data-status="Published" data-cover="assets/cover-5.jpg" data-date="2026-04-27">
+          <div class="song-main"><div class="song-thumb"><img src="assets/cover-5.jpg" alt="Phantom Bass cover"></div><div><div class="song-title">Phantom Bass</div><div class="song-detail">SG Production · Original Mix · 3:38</div></div></div>
+          <div><span class="metric-badge cyan">304 downloads</span></div><div><span class="metric-badge orange">16 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
+          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-delete-warning"><span>Are you sure you want to delete Phantom Bass? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
+        </article>
+      </div>
+      <div class="pagination" id="songsPagination"></div>
+
+      <div class="drawer-backdrop" id="songDrawerBackdrop"></div>
+      <aside class="edit-drawer" id="songEditDrawer" aria-hidden="true">
+        <div class="drawer-head">
+          <div>
+            <h3>Edit Song</h3>
+            <p>Update metadata, files, visibility, and download URL.</p>
+          </div>
+          <button class="btn btn-outline" type="button" data-close-song-drawer>Cancel</button>
+        </div>
+        <div class="drawer-body">
+          <form class="admin-form" id="songEditForm">
+            <div class="form-grid">
+              <label class="form-field"><span>Song Title</span><input id="editSongTitle" type="text"></label>
+              <label class="form-field"><span>Artist</span><input id="editSongArtist" type="text"></label>
+              <label class="form-field"><span>Artist Profile</span><select><option>SG Production</option><option>SG Soundcheck</option><option>Marathi Pulse</option><option>Hindi Wave</option></select></label>
+              <label class="form-field"><span>Genre</span><select id="editSongGenre"><option>Soundcheck</option><option>Marathi</option><option>Hindi</option><option>Original Mix</option></select></label>
+              <label class="form-field"><span>Duration</span><input id="editSongDuration" type="text"></label>
+              <label class="form-field"><span>Status</span><select id="editSongStatus"><option>Published</option><option>Draft</option><option>Unlisted</option></select></label>
+              <label class="form-field"><span>BPM</span><input type="number" value="124"></label>
+              <label class="form-field"><span>Wave Style</span><select><option>Sine</option><option>Triangle</option><option>Sawtooth</option><option>Square</option></select></label>
+              <label class="form-field"><span>Cover Image</span><input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label>
+              <label class="form-field"><span>Preview MP3/WAV</span><input type="file" accept=".wav,.mp3,audio/wav,audio/mpeg"></label>
+              <label class="form-field full"><span>WAV Download URL</span><input type="url" placeholder="https://example.com/downloads/song.wav"></label>
+              <label class="form-field full"><span>SEO Song URL</span><input id="editSongSlug" type="text"></label>
+            </div>
+            <div class="check-grid">
+              <label class="check-card"><input type="checkbox" checked> Mark as new release</label>
+              <label class="check-card"><input id="editSongFeatured" type="checkbox"> Featured</label>
+              <label class="check-card"><input type="checkbox" checked> Publish changes immediately</label>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-outline" type="button" data-close-song-drawer>Cancel</button>
+              <button class="btn btn-primary" type="submit">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </aside>
+    </section>
+
+    <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Add artists and connect them to genres">
+      <div class="artist-toolbar">
+        <div>
+          <h2>Artist Management</h2>
+          <p>Add artists and connect them to genres</p>
+        </div>
+        <button class="btn btn-primary" type="button" data-artist-focus>+ Add New Artist</button>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Uploaded Songs</span>
-          <button class="panel-action" data-action-section="upload">Upload New</button>
+          <span class="panel-title">Add / Edit Artist</span>
+          <button class="panel-action" type="button" data-clear-artist>Clear Form</button>
         </div>
-        <table class="song-table">
-          <tbody>
-            <tr>
-              <td><div class="song-info"><div class="song-cover"><img src="assets/cover-1.jpg" alt="Midnight Echo cover"></div><div><div class="song-name">Midnight Echo</div><div class="song-meta">SG Production · Marathi</div></div></div></td>
-              <td><button class="btn btn-outline">Edit</button></td>
-              <td><button class="btn btn-primary">Preview</button></td>
-            </tr>
-            <tr>
-              <td><div class="song-info"><div class="song-cover"><img src="assets/cover-2.jpg" alt="Neon Pulse cover"></div><div><div class="song-name">Neon Pulse</div><div class="song-meta">SG Production · Soundcheck</div></div></div></td>
-              <td><button class="btn btn-outline">Edit</button></td>
-              <td><button class="btn btn-primary">Preview</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <form class="admin-form" id="artistForm" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="save_artist">
+          <input type="hidden" name="artistId" id="artistIdInput" value="">
+          <div class="artist-form-layout">
+            <div class="form-grid">
+              <label class="form-field">
+                Artist Name
+                <input id="artistNameInput" type="text" name="artistName" placeholder="SG Production" required>
+              </label>
+              <label class="form-field">
+                Artist Style
+                <input id="artistStyleInput" type="text" name="artistStyle" placeholder="Original Mix, Soundcheck" required>
+              </label>
+              <label class="form-field">
+                Year Active
+                <input id="artistYearInput" type="text" name="artistYear" placeholder="2026">
+              </label>
+              <label class="form-field">
+                Assigned Genres
+                <input id="genreTagInput" type="hidden" name="artistGenres" value="">
+                <div class="tag-input-shell" id="genreTagShell">
+                  <input id="genreTagInput" type="text" placeholder="Type genre and press Enter">
+                </div>
+                <span class="form-help">Examples: Marathi, Hindi, Original Mix, Soundcheck.</span>
+              </label>
+            </div>
 
-    <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Profiles and pages">
-      <div class="section-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Artist Profiles</span>
+            <div class="image-preview-box">
+              <div class="artist-preview">
+                <img id="artistPreviewImage" src="assets/artist-photo-1.svg" alt="Artist profile preview">
+              </div>
+              <label class="file-trigger">
+                Artist Profile Image
+                <input id="artistImageInput" name="artistImage" type="file" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+              </label>
+              <span class="form-help">Circular preview. Square image recommended.</span>
+            </div>
           </div>
-          <p class="section-note">Add artist name, profile image, and assign songs to each artist page.</p>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Artist Page Preview</span>
-          </div>
-          <p class="section-note">Use this area to preview artist pages before pushing the same structure into the live admin panel.</p>
-        </div>
-      </div>
-    </section>
 
-    <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Global ad controls">
-      <div class="section-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Advertisement Media</span>
+          <div class="form-actions">
+            <button class="btn btn-outline" type="button" data-clear-artist>Clear Form</button>
+            <button class="btn btn-primary" type="submit">Save Artist</button>
           </div>
-          <p class="section-note">Upload or select ad image/video, set the destination link, and turn advertising on or off globally.</p>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Ad Tracking</span>
-          </div>
-          <p class="section-note">Track impressions, clicks, CTR, and generate advertiser reports from the live website.</p>
-        </div>
+        </form>
       </div>
-    </section>
 
-    <section class="view-section" id="brand-deals-section" data-title="Brand Deals" data-subtitle="Coming soon">
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Brand Deals</span>
+          <span class="panel-title">Existing Artists</span>
         </div>
-        <p class="section-note">A future area for advertiser details, campaign pricing, and report links.</p>
+        <div class="empty-state" id="artistEmptyState">
+          <div>
+            <h3>No artists added yet</h3>
+            <p>Create your first artist profile and connect it to genres.</p>
+            <button class="btn btn-primary" type="button" data-artist-focus>Add Your First Artist</button>
+          </div>
+        </div>
+        <div class="artist-grid" id="artistGrid">
+          <article class="artist-card" data-name="SG Production" data-style="Original Mix" data-genres="Original Mix,Marathi" data-image="assets/artist-photo-1.svg" data-bio="Original releases and direct artist downloads." data-social="https://youtube.com/@sgproductionindia">
+            <div class="artist-avatar"><img src="assets/artist-photo-1.svg" alt="SG Production"></div>
+            <div class="artist-name">SG Production</div>
+            <div class="artist-style">Original Mix</div>
+            <div class="artist-genres">
+              <span class="artist-genre-pill">Original Mix</span>
+              <span class="artist-genre-pill">Marathi</span>
+            </div>
+            <div class="artist-card-actions">
+              <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
+              <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
+            </div>
+          </article>
+          <article class="artist-card" data-name="SG Soundcheck" data-style="Soundcheck" data-genres="Soundcheck,Hindi" data-image="assets/artist-photo-2.svg" data-bio="Soundcheck focused drops and testing mixes." data-social="">
+            <div class="artist-avatar"><img src="assets/artist-photo-2.svg" alt="SG Soundcheck"></div>
+            <div class="artist-name">SG Soundcheck</div>
+            <div class="artist-style">Soundcheck</div>
+            <div class="artist-genres">
+              <span class="artist-genre-pill">Soundcheck</span>
+              <span class="artist-genre-pill">Hindi</span>
+            </div>
+            <div class="artist-card-actions">
+              <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
+              <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
+            </div>
+          </article>
+          <article class="artist-card" data-name="Marathi Pulse" data-style="Marathi" data-genres="Marathi,Original Mix" data-image="assets/artist-photo-3.svg" data-bio="Marathi inspired rhythms for fresh releases." data-social="">
+            <div class="artist-avatar"><img src="assets/artist-photo-3.svg" alt="Marathi Pulse"></div>
+            <div class="artist-name">Marathi Pulse</div>
+            <div class="artist-style">Marathi</div>
+            <div class="artist-genres">
+              <span class="artist-genre-pill">Marathi</span>
+              <span class="artist-genre-pill">Original Mix</span>
+            </div>
+            <div class="artist-card-actions">
+              <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
+              <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
+            </div>
+          </article>
+          <article class="artist-card" data-name="Hindi Wave" data-style="Hindi" data-genres="Hindi,Soundcheck" data-image="assets/artist-photo-4.svg" data-bio="Hindi wave catalog profile." data-social="">
+            <div class="artist-avatar"><img src="assets/artist-photo-4.svg" alt="Hindi Wave"></div>
+            <div class="artist-name">Hindi Wave</div>
+            <div class="artist-style">Hindi</div>
+            <div class="artist-genres">
+              <span class="artist-genre-pill">Hindi</span>
+              <span class="artist-genre-pill">Soundcheck</span>
+            </div>
+            <div class="artist-card-actions">
+              <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
+              <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="genres-section" data-title="Genre Management" data-subtitle="Add and manage genres for your songs and artists">
+      <div class="management-toolbar">
+        <div>
+          <h2>Genre Management</h2>
+          <p>Add and manage genres for your songs and artists</p>
+        </div>
+      </div>
+
+      <div class="panel" id="genreFormPanel">
+        <div class="panel-header">
+          <span class="panel-title">Add New Genre</span>
+          <button class="panel-action" type="button" data-clear-genre>Clear Form</button>
+        </div>
+        <form class="admin-form" id="genreForm">
+          <div class="form-grid">
+            <label class="form-field">
+              Genre Name
+              <input id="genreNameInput" type="text" placeholder="Original Mix" required>
+            </label>
+            <label class="form-field">
+              Genre Slug
+              <input id="genreSlugInput" type="text" placeholder="original-mix" required>
+            </label>
+            <label class="form-field full">
+              <span class="char-row">
+                <span>Genre Description</span>
+                <span class="char-count"><span id="genreDescriptionCount">0</span>/150</span>
+              </span>
+              <textarea id="genreDescriptionInput" rows="3" maxlength="150" placeholder="Optional short description for this genre."></textarea>
+            </label>
+            <div class="form-field full">
+              Genre Color
+              <div class="color-swatch-grid" id="genreColorGrid">
+                <label class="color-swatch-option" style="--swatch:#00d4ff"><input type="radio" name="genreColor" value="#00d4ff" checked><span></span></label>
+                <label class="color-swatch-option" style="--swatch:#00ff88"><input type="radio" name="genreColor" value="#00ff88"><span></span></label>
+                <label class="color-swatch-option" style="--swatch:#ff9f43"><input type="radio" name="genreColor" value="#ff9f43"><span></span></label>
+                <label class="color-swatch-option" style="--swatch:#a855f7"><input type="radio" name="genreColor" value="#a855f7"><span></span></label>
+                <label class="color-swatch-option" style="--swatch:#ff4560"><input type="radio" name="genreColor" value="#ff4560"><span></span></label>
+                <label class="color-swatch-option" style="--swatch:#5cc8ff"><input type="radio" name="genreColor" value="#5cc8ff"><span></span></label>
+              </div>
+              <span class="form-help">This accent color can be used later on public song cards and genre pills.</span>
+            </div>
+          </div>
+          <div class="genre-form-actions">
+            <button class="btn btn-outline" type="button" data-clear-genre>Clear</button>
+            <button class="btn btn-outline" type="button" data-cancel-genre-edit>Cancel</button>
+            <button class="btn btn-primary" type="submit" id="genreSubmitButton">Save Genre</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Existing Genres</span>
+          <input class="admin-control song-search" id="genreSearchInput" type="search" placeholder="Search genres">
+        </div>
+        <div class="empty-state" id="genreEmptyState">
+          <div>
+            <h3>No genres added yet</h3>
+            <p>Add your first genre to organize songs and artists.</p>
+            <button class="btn btn-primary" type="button" data-genre-focus>Add Your First Genre</button>
+          </div>
+        </div>
+        <div class="genre-grid" id="genreGrid">
+          <article class="genre-card" style="--genre-color:#00d4ff" data-name="Original Mix" data-slug="original-mix" data-description="Original SG Production mixes and main catalog releases." data-color="#00d4ff" data-songs="12" data-artists="3">
+            <div class="genre-card-head">
+              <div>
+                <div class="genre-card-title">Original Mix</div>
+                <div class="genre-slug">original-mix</div>
+              </div>
+              <div class="genre-card-actions">
+                <button class="icon-btn" type="button" data-edit-genre aria-label="Edit Original Mix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="icon-btn" type="button" data-delete-genre aria-label="Delete Original Mix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
+            </div>
+            <div class="genre-description">Original SG Production mixes and main catalog releases.</div>
+            <div class="genre-counts"><span class="metric-badge cyan">12 songs</span><span class="metric-badge orange">3 artists</span></div>
+            <div class="genre-confirm"><span>Deleting this genre will unassign it from all songs and artists. Continue?</span><div class="genre-confirm-actions"><button class="btn btn-outline" type="button" data-cancel-genre-delete>Cancel</button><button class="btn btn-primary" type="button" data-confirm-genre-delete>Confirm Delete</button></div></div>
+          </article>
+          <article class="genre-card" style="--genre-color:#00ff88" data-name="Soundcheck" data-slug="soundcheck" data-description="Soundcheck drops, tests, and high-energy release ideas." data-color="#00ff88" data-songs="8" data-artists="2">
+            <div class="genre-card-head">
+              <div><div class="genre-card-title">Soundcheck</div><div class="genre-slug">soundcheck</div></div>
+              <div class="genre-card-actions">
+                <button class="icon-btn" type="button" data-edit-genre aria-label="Edit Soundcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="icon-btn" type="button" data-delete-genre aria-label="Delete Soundcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
+            </div>
+            <div class="genre-description">Soundcheck drops, tests, and high-energy release ideas.</div>
+            <div class="genre-counts"><span class="metric-badge cyan">8 songs</span><span class="metric-badge orange">2 artists</span></div>
+            <div class="genre-confirm"><span>Deleting this genre will unassign it from all songs and artists. Continue?</span><div class="genre-confirm-actions"><button class="btn btn-outline" type="button" data-cancel-genre-delete>Cancel</button><button class="btn btn-primary" type="button" data-confirm-genre-delete>Confirm Delete</button></div></div>
+          </article>
+          <article class="genre-card" style="--genre-color:#ff9f43" data-name="Marathi" data-slug="marathi" data-description="Marathi inspired melodies, rhythms, and original releases." data-color="#ff9f43" data-songs="5" data-artists="2">
+            <div class="genre-card-head">
+              <div><div class="genre-card-title">Marathi</div><div class="genre-slug">marathi</div></div>
+              <div class="genre-card-actions">
+                <button class="icon-btn" type="button" data-edit-genre aria-label="Edit Marathi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="icon-btn" type="button" data-delete-genre aria-label="Delete Marathi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
+            </div>
+            <div class="genre-description">Marathi inspired melodies, rhythms, and original releases.</div>
+            <div class="genre-counts"><span class="metric-badge cyan">5 songs</span><span class="metric-badge orange">2 artists</span></div>
+            <div class="genre-confirm"><span>Deleting this genre will unassign it from all songs and artists. Continue?</span><div class="genre-confirm-actions"><button class="btn btn-outline" type="button" data-cancel-genre-delete>Cancel</button><button class="btn btn-primary" type="button" data-confirm-genre-delete>Confirm Delete</button></div></div>
+          </article>
+          <article class="genre-card" style="--genre-color:#a855f7" data-name="Hindi" data-slug="hindi" data-description="Hindi wave tracks and melodic public releases." data-color="#a855f7" data-songs="6" data-artists="1">
+            <div class="genre-card-head">
+              <div><div class="genre-card-title">Hindi</div><div class="genre-slug">hindi</div></div>
+              <div class="genre-card-actions">
+                <button class="icon-btn" type="button" data-edit-genre aria-label="Edit Hindi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="icon-btn" type="button" data-delete-genre aria-label="Delete Hindi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
+            </div>
+            <div class="genre-description">Hindi wave tracks and melodic public releases.</div>
+            <div class="genre-counts"><span class="metric-badge cyan">6 songs</span><span class="metric-badge orange">1 artist</span></div>
+            <div class="genre-confirm"><span>Deleting this genre will unassign it from all songs and artists. Continue?</span><div class="genre-confirm-actions"><button class="btn btn-outline" type="button" data-cancel-genre-delete>Cancel</button><button class="btn btn-primary" type="button" data-confirm-genre-delete>Confirm Delete</button></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Manage ads shown on song pages">
+      <div class="management-toolbar">
+        <div>
+          <h2>Advertising</h2>
+          <p>Manage ads shown on song pages</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Current Ad Status</span>
+          <span class="status-pill published" id="adStatusPill">Active</span>
+        </div>
+        <div class="ad-status-layout">
+          <div class="ad-preview-thumb" id="currentAdPreview">
+            <img src="assets/ad-sample.jpg" alt="Current advertisement preview">
+          </div>
+          <div class="ad-detail-list">
+            <div><strong>File:</strong> ad-sample.jpg</div>
+            <div><strong>Type:</strong> image/jpeg</div>
+            <div><strong>Click URL:</strong> https://example.com/campaign</div>
+            <div><strong>Last updated:</strong> May 9, 2026 · 10:42 PM</div>
+          </div>
+          <label class="check-card toggle-card">
+            <span>Showing on song pages</span>
+            <input id="sitewideAdToggle" type="checkbox" checked>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Update Ad</span>
+        </div>
+        <form class="admin-form" id="adUpdateForm" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="save_ad">
+          <div class="ad-upload-layout">
+            <div class="form-grid">
+              <label class="form-field full">
+                Advertising Media
+                <input id="adMediaInput" type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime">
+                <span class="form-help">Accepts JPG, PNG, WEBP, or video. 9:16 ratio recommended.</span>
+              </label>
+              <div class="ad-media-meta full" id="adMediaMeta">
+                <span id="adFileName">No file selected</span>
+                <span id="adFileSize">0 MB</span>
+                <span id="adDimensions">Dimensions pending</span>
+              </div>
+              <div class="ratio-warning full" id="adRatioWarning">For best results use 9:16 aspect ratio</div>
+              <label class="form-field full">
+                Advertisement Click URL
+                <input id="adClickUrlInput" type="url" name="adLinkUrl" value="https://example.com/campaign">
+                <span class="form-help">User will be redirected here when they click the ad</span>
+              </label>
+              <label class="check-card toggle-card">
+                <span>Show advertisement on single song pages</span>
+                <input type="checkbox" name="adEnabled" checked>
+              </label>
+              <label class="check-card toggle-card">
+                <span>Show advertisement on homepage</span>
+                <input type="checkbox">
+              </label>
+            </div>
+            <div class="ad-preview-thumb" id="adSelectedPreview">Preview</div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Save Advertising</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Ad Performance Summary</span>
+          <button class="panel-action" type="button" data-action-section="analytics">View Full Ad Report →</button>
+        </div>
+        <div class="ad-summary-grid">
+          <div class="stat-card cyan"><div class="stat-label">Total Impressions</div><div class="stat-value cyan">12,440</div><div class="stat-change up">This month</div></div>
+          <div class="stat-card orange"><div class="stat-label">Total Clicks</div><div class="stat-value orange">284</div><div class="stat-change up">This month</div></div>
+          <div class="stat-card purple"><div class="stat-label">CTR</div><div class="stat-value purple">2.28%</div><div class="stat-change up">Campaign average</div></div>
+          <div class="stat-card green"><div class="stat-label">Top Song</div><div class="stat-value green" style="font-size:24px;">Neon Pulse</div><div class="stat-change up">71 ad clicks</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Ad History</span>
+        </div>
+        <div class="analytics-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Thumbnail</th>
+                <th>File Name</th>
+                <th>Period Active</th>
+                <th>Total Impressions</th>
+                <th>Total Clicks</th>
+                <th>CTR</th>
+                <th>Click URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><div class="table-cover"><img src="assets/ad-sample.jpg" alt=""></div></td><td>ad-sample.jpg</td><td>May 1 - May 9, 2026</td><td>12,440</td><td>284</td><td>2.28%</td><td>https://example.com/campaign</td></tr>
+              <tr><td><div class="table-cover"><img src="assets/cover-4.jpg" alt=""></div></td><td>brand-drop.png</td><td>Apr 12 - Apr 30, 2026</td><td>9,820</td><td>201</td><td>2.04%</td><td>https://brand.example/drop</td></tr>
+              <tr><td><div class="table-cover"><img src="assets/cover-7.jpg" alt=""></div></td><td>festival-ad.mp4</td><td>Mar 18 - Apr 10, 2026</td><td>14,006</td><td>376</td><td>2.68%</td><td>https://festival.example/tickets</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <section class="view-section" id="settings-section" data-title="Website Settings" data-subtitle="Site controls">
-      <div class="section-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Website Content</span>
-          </div>
-          <p class="section-note">Edit website title, YouTube subscribe link, social links, and global homepage text.</p>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">SEO</span>
-          </div>
-          <p class="section-note">Manage clean URLs, page titles, meta descriptions, and sharing images.</p>
+      <div class="management-toolbar">
+        <div>
+          <h2>Website Settings</h2>
+          <p>Control public content, SEO, downloads, layout, and social links</p>
         </div>
       </div>
+
+      <form class="settings-stack" id="websiteSettingsForm" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="save_site">
+        <div class="settings-card-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Website Content</span>
+            </div>
+            <div class="admin-form">
+              <label class="form-field">
+                Website Title
+                <input type="text" name="siteTitle" value="SG Production">
+              </label>
+              <label class="form-field">
+                Tagline
+                <input type="text" name="tagline" value="Original music • direct download • no barriers">
+              </label>
+              <label class="form-field">
+                Contact Email
+                <input type="email" name="contactEmail" value="bookings@sgproduction.example">
+              </label>
+              <label class="form-field">
+                YouTube Section Heading
+                <input type="text" name="youtubeHeading" value="Subscribe on YouTube">
+              </label>
+              <label class="form-field">
+                YouTube Section Text
+                <textarea name="youtubeText" rows="2" placeholder="Describe your YouTube channel..."></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Catalog Settings</span>
+            </div>
+            <div class="admin-form">
+              <label class="form-field">
+                Latest Releases Count
+                <input type="number" name="latestCount" value="5" min="1" max="12">
+              </label>
+              <label class="form-field">
+                Tracks Per Page
+                <input type="number" name="tracksPerPage" value="15" min="5" max="50">
+              </label>
+              <label class="form-field">
+                Pagination Demo Pages
+                <input type="number" name="paginationDemoPages" value="12" min="1" max="40">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">SEO & META</span>
+          </div>
+          <div class="form-grid">
+            <label class="form-field full">
+              <span class="char-row">
+                <span>Meta Description</span>
+                <span class="char-count"><span id="metaDescriptionCount">0</span>/160</span>
+              </span>
+              <textarea id="metaDescriptionInput" name="metaDescription" rows="3" maxlength="160" placeholder="Short description shown in search results."></textarea>
+            </label>
+            <label class="form-field">
+              OG Image
+              <div class="settings-upload-row">
+                <div class="settings-preview" id="ogImagePreview">OG</div>
+                <input id="ogImageInput" name="ogImage" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+              </div>
+            </label>
+            <label class="form-field">
+              Favicon
+              <div class="settings-upload-row">
+                <div class="settings-preview square" id="faviconPreview">Icon</div>
+                <input id="faviconInput" name="favicon" type="file" accept=".ico,.png,.jpg,.jpeg,.webp,.svg,image/vnd.microsoft.icon,image/x-icon,image/jpeg,image/png,image/webp,image/svg+xml">
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">SOCIAL LINKS</span>
+          </div>
+          <div class="form-grid">
+            <label class="form-field">
+              Instagram
+              <input type="url" name="instagram" value="https://www.instagram.com/sgproduction.music">
+            </label>
+            <label class="form-field">
+              Spotify
+              <input type="url" name="spotify" placeholder="https://open.spotify.com/artist/...">
+            </label>
+            <label class="form-field">
+              Apple Music
+              <input type="url" name="appleMusic" placeholder="https://music.apple.com/...">
+            </label>
+            <label class="form-field">
+              YouTube
+              <input type="url" name="youtube" value="https://www.youtube.com/@sgproductionindia">
+            </label>
+          </div>
+        </div>
+
+        <div class="sticky-save-bar">
+          <div>
+            <strong>Website Settings</strong>
+            <div class="save-copy">Save layout, SEO, download, and social changes together.</div>
+          </div>
+          <button class="btn btn-primary" type="submit">Save All Settings</button>
+        </div>
+      </form>
     </section>
 
     <section class="view-section" id="notifications-section" data-title="Notifications" data-subtitle="Recent alerts">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Notifications</span>
+      <div class="management-toolbar">
+        <div>
+          <h2>Notifications</h2>
+          <p>Track downloads, ad activity, system alerts, and errors</p>
         </div>
-        <p class="section-note">Song uploads, ad clicks, failed media loads, and report exports can appear here after live backend wiring.</p>
+        <button class="btn btn-primary" type="button" id="markAllReadButton">Mark All as Read</button>
+      </div>
+
+      <div class="notification-tabs">
+        <button class="date-chip active" type="button" data-notification-filter="all">All</button>
+        <button class="date-chip" type="button" data-notification-filter="download">Downloads</button>
+        <button class="date-chip" type="button" data-notification-filter="ad">Ad Activity</button>
+        <button class="date-chip" type="button" data-notification-filter="system">System</button>
+        <button class="date-chip" type="button" data-notification-filter="error">Errors</button>
+      </div>
+
+      <div class="notification-feed" id="notificationFeed">
+        <article class="notification-item download" data-type="download" data-unread="true">
+          <div class="notification-icon">D</div>
+          <div>
+            <div class="notification-title-row"><span class="notification-title">Hype downloaded 23 times in the last hour</span><span class="unread-dot"></span></div>
+            <div class="notification-description">Download activity is higher than usual for this track.</div>
+            <div class="notification-time">8 mins ago</div>
+          </div>
+          <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
+        </article>
+        <article class="notification-item ad" data-type="ad" data-unread="true">
+          <div class="notification-icon">A</div>
+          <div>
+            <div class="notification-title-row"><span class="notification-title">Ad clicked from Neon Pulse page — brand link visited</span><span class="unread-dot"></span></div>
+            <div class="notification-description">A visitor opened the advertiser destination from the song page.</div>
+            <div class="notification-time">21 mins ago</div>
+          </div>
+          <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
+        </article>
+        <article class="notification-item warning" data-type="system" data-unread="true">
+          <div class="notification-icon">W</div>
+          <div>
+            <div class="notification-title-row"><span class="notification-title">Storage at 80% capacity</span><span class="unread-dot"></span></div>
+            <div class="notification-description">Uploaded covers, preview files, and ads are using most of the available storage.</div>
+            <div class="notification-time">1 hour ago</div>
+          </div>
+          <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
+        </article>
+        <article class="notification-item error" data-type="error" data-unread="true">
+          <div class="notification-icon">E</div>
+          <div>
+            <div class="notification-title-row"><span class="notification-title">WAV download link broken for Night Drive — 404 error</span><span class="unread-dot"></span></div>
+            <div class="notification-description">The direct WAV URL returned a not found response during the latest check.</div>
+            <div class="notification-time">2 hours ago</div>
+          </div>
+          <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
+        </article>
+        <article class="notification-item system" data-type="system" data-unread="false">
+          <div class="notification-icon">S</div>
+          <div>
+            <div class="notification-title-row"><span class="notification-title">Purple Rain uploaded successfully</span></div>
+            <div class="notification-description">The song is now available in Uploaded Songs and can be published or edited.</div>
+            <div class="notification-time">Yesterday</div>
+          </div>
+          <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
+        </article>
+      </div>
+
+      <div class="panel notification-settings" id="notificationSettingsPanel">
+        <div class="panel-header">
+          <span class="panel-title">Notification Settings</span>
+          <button class="panel-action" type="button" id="toggleNotificationSettings">Show Settings</button>
+        </div>
+        <div class="notification-settings-body">
+          <div class="check-grid">
+            <label class="check-card toggle-card"><span>Email on every download</span><input type="checkbox"></label>
+            <label class="check-card toggle-card"><span>Email on ad clicks</span><input type="checkbox" checked></label>
+            <label class="check-card toggle-card"><span>Storage warnings</span><input type="checkbox" checked></label>
+            <label class="check-card toggle-card"><span>Broken link detection</span><input type="checkbox" checked></label>
+          </div>
+        </div>
       </div>
     </section>
 
   </div>
 </div>
+<div class="toast" id="settingsToast">Settings saved ✓</div>
 
 <script>
   // Tab switching
@@ -879,6 +3103,16 @@
   const navItems = document.querySelectorAll('.nav-item[data-section]');
   const titleEl = document.querySelector('.topbar-title');
   const subEl = document.querySelector('.topbar-sub');
+  const topPrimaryAction = document.querySelector('#topPrimaryAction');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarScrim = document.querySelector('#sidebarScrim');
+  const mobileMenuToggle = document.querySelector('#mobileMenuToggle');
+
+  function setMobileMenu(open) {
+    sidebar?.classList.toggle('open', open);
+    sidebarScrim?.classList.toggle('open', open);
+    mobileMenuToggle?.setAttribute('aria-expanded', String(open));
+  }
 
   function openSection(sectionName) {
     const target = document.querySelector(`#${sectionName}-section`);
@@ -893,7 +3127,14 @@
 
     titleEl.textContent = target.dataset.title || 'Dashboard';
     subEl.textContent = `— ${target.dataset.subtitle || 'Admin Studio'}`;
+    if (topPrimaryAction) {
+      const artistMode = sectionName === 'artists';
+      const genreMode = sectionName === 'genres';
+      topPrimaryAction.textContent = artistMode ? '+ Add New Artist' : genreMode ? '+ Add Genre' : '+ Upload Song';
+      topPrimaryAction.dataset.actionSection = artistMode ? 'artists' : genreMode ? 'genres' : 'upload';
+    }
     history.replaceState(null, '', `#${sectionName}`);
+    setMobileMenu(false);
   }
 
   navItems.forEach(item => {
@@ -903,8 +3144,914 @@
     });
   });
 
+  mobileMenuToggle?.addEventListener('click', () => {
+    setMobileMenu(!sidebar?.classList.contains('open'));
+  });
+
+  sidebarScrim?.addEventListener('click', () => setMobileMenu(false));
+
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setMobileMenu(false);
+  });
+
   document.querySelectorAll('[data-action-section]').forEach(button => {
-    button.addEventListener('click', () => openSection(button.dataset.actionSection));
+    button.addEventListener('click', () => {
+      openSection(button.dataset.actionSection);
+      if (button.dataset.actionSection === 'artists') focusArtistForm();
+      if (button.dataset.actionSection === 'genres') focusGenreForm();
+    });
+  });
+
+  window.addEventListener('hashchange', () => {
+    const nextSection = location.hash.replace('#', '') || 'dashboard';
+    if (document.querySelector(`#${nextSection}-section`)) openSection(nextSection);
+  });
+
+  const uploadSongForm = document.querySelector('#uploadSongForm');
+  const uploadPreviewFile = document.querySelector('#uploadPreviewFile');
+  const previewFileMeta = document.querySelector('#previewFileMeta');
+  const previewFileName = document.querySelector('#previewFileName');
+  const previewFileSize = document.querySelector('#previewFileSize');
+  const uploadDurationInput = document.querySelector('#uploadDurationInput');
+  const uploadCoverInput = document.querySelector('#uploadCoverInput');
+  const uploadCoverPreview = document.querySelector('#uploadCoverPreview');
+  const uploadProgress = document.querySelector('#uploadProgress');
+  const uploadProgressFill = document.querySelector('#uploadProgressFill');
+  const uploadProgressValue = document.querySelector('#uploadProgressValue');
+  const saveDraftButton = document.querySelector('#saveDraftButton');
+  const websiteSettingsForm = document.querySelector('#websiteSettingsForm');
+  const metaDescriptionInput = document.querySelector('#metaDescriptionInput');
+  const metaDescriptionCount = document.querySelector('#metaDescriptionCount');
+  const ogImageInput = document.querySelector('#ogImageInput');
+  const ogImagePreview = document.querySelector('#ogImagePreview');
+  const faviconInput = document.querySelector('#faviconInput');
+  const faviconPreview = document.querySelector('#faviconPreview');
+  const settingsToast = document.querySelector('#settingsToast');
+  const adMediaInput = document.querySelector('#adMediaInput');
+  const adSelectedPreview = document.querySelector('#adSelectedPreview');
+  const adMediaMeta = document.querySelector('#adMediaMeta');
+  const adFileName = document.querySelector('#adFileName');
+  const adFileSize = document.querySelector('#adFileSize');
+  const adDimensions = document.querySelector('#adDimensions');
+  const adRatioWarning = document.querySelector('#adRatioWarning');
+  const sitewideAdToggle = document.querySelector('#sitewideAdToggle');
+  const adStatusPill = document.querySelector('#adStatusPill');
+  const adUpdateForm = document.querySelector('#adUpdateForm');
+
+  function formatFileSize(bytes) {
+    if (!bytes) return '0 MB';
+    const mb = bytes / 1024 / 1024;
+    return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+  }
+
+  function formatDurationFromSeconds(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '0:0';
+    const minutes = Math.floor(seconds / 60);
+    const remaining = Math.floor(seconds % 60);
+    return `${minutes}:${remaining}`;
+  }
+
+  uploadPreviewFile?.addEventListener('change', () => {
+    const file = uploadPreviewFile.files && uploadPreviewFile.files[0];
+    if (!file) return;
+    previewFileMeta?.classList.add('is-visible');
+    if (previewFileName) previewFileName.textContent = file.name;
+    if (previewFileSize) previewFileSize.textContent = formatFileSize(file.size);
+
+    const audio = document.createElement('audio');
+    const objectUrl = URL.createObjectURL(file);
+    audio.preload = 'metadata';
+    audio.src = objectUrl;
+    audio.addEventListener('loadedmetadata', () => {
+      if (uploadDurationInput) uploadDurationInput.value = formatDurationFromSeconds(audio.duration);
+      URL.revokeObjectURL(objectUrl);
+    });
+    audio.addEventListener('error', () => {
+      if (uploadDurationInput && !uploadDurationInput.value) uploadDurationInput.value = '0:0';
+      URL.revokeObjectURL(objectUrl);
+    });
+  });
+
+  uploadCoverInput?.addEventListener('change', () => {
+    const file = uploadCoverInput.files && uploadCoverInput.files[0];
+    if (!file || !uploadCoverPreview) return;
+    const image = document.createElement('img');
+    image.src = URL.createObjectURL(file);
+    image.alt = 'Selected cover preview';
+    uploadCoverPreview.replaceChildren(image);
+  });
+
+  function runUploadProgress(message) {
+    let progress = 0;
+    uploadProgress?.classList.add('is-visible');
+    if (uploadProgressFill) uploadProgressFill.style.width = '0%';
+    if (uploadProgressValue) uploadProgressValue.textContent = '0%';
+    const timer = setInterval(() => {
+      progress = Math.min(100, progress + 12);
+      if (uploadProgressFill) uploadProgressFill.style.width = `${progress}%`;
+      if (uploadProgressValue) uploadProgressValue.textContent = `${progress}%`;
+      if (progress >= 100) {
+        clearInterval(timer);
+        setTimeout(() => alert(message), 180);
+      }
+    }, 140);
+  }
+
+  uploadSongForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    runUploadProgress('Upload preview complete. This UI will connect to admin.php for the live website.');
+  });
+
+  saveDraftButton?.addEventListener('click', () => {
+    runUploadProgress('Draft saved in preview.');
+  });
+
+  function updateMetaCounter() {
+    if (metaDescriptionCount && metaDescriptionInput) {
+      metaDescriptionCount.textContent = String(metaDescriptionInput.value.length);
+    }
+  }
+
+  function previewImageUpload(input, preview, label) {
+    const file = input.files && input.files[0];
+    if (!file || !preview) return;
+    const image = document.createElement('img');
+    image.src = URL.createObjectURL(file);
+    image.alt = label;
+    preview.replaceChildren(image);
+  }
+
+  metaDescriptionInput?.addEventListener('input', updateMetaCounter);
+  updateMetaCounter();
+
+  ogImageInput?.addEventListener('change', () => previewImageUpload(ogImageInput, ogImagePreview, 'OG image preview'));
+  faviconInput?.addEventListener('change', () => previewImageUpload(faviconInput, faviconPreview, 'Favicon preview'));
+
+  websiteSettingsForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    settingsToast?.classList.add('show');
+    setTimeout(() => settingsToast?.classList.remove('show'), 2200);
+  });
+
+  function checkAdRatio(width, height) {
+    if (!width || !height || !adDimensions || !adRatioWarning) return;
+    adDimensions.textContent = `${width} x ${height}`;
+    const ratio = width / height;
+    const target = 9 / 16;
+    const isClose = Math.abs(ratio - target) < 0.04;
+    adRatioWarning.classList.toggle('is-visible', !isClose);
+  }
+
+  adMediaInput?.addEventListener('change', () => {
+    const file = adMediaInput.files && adMediaInput.files[0];
+    if (!file || !adSelectedPreview) return;
+    const objectUrl = URL.createObjectURL(file);
+    adMediaMeta?.classList.add('is-visible');
+    if (adFileName) adFileName.textContent = file.name;
+    if (adFileSize) adFileSize.textContent = formatFileSize(file.size);
+    if (adDimensions) adDimensions.textContent = 'Detecting dimensions...';
+
+    if (file.type.startsWith('video/')) {
+      const video = document.createElement('video');
+      video.src = objectUrl;
+      video.muted = true;
+      video.loop = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.addEventListener('loadedmetadata', () => checkAdRatio(video.videoWidth, video.videoHeight));
+      adSelectedPreview.replaceChildren(video);
+      return;
+    }
+
+    const image = document.createElement('img');
+    image.src = objectUrl;
+    image.alt = 'Selected advertisement preview';
+    image.addEventListener('load', () => checkAdRatio(image.naturalWidth, image.naturalHeight));
+    adSelectedPreview.replaceChildren(image);
+  });
+
+  sitewideAdToggle?.addEventListener('change', () => {
+    if (!adStatusPill) return;
+    adStatusPill.textContent = sitewideAdToggle.checked ? 'Active' : 'Inactive';
+    adStatusPill.className = `status-pill ${sitewideAdToggle.checked ? 'published' : 'draft'}`;
+  });
+
+  adUpdateForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    if (settingsToast) settingsToast.textContent = 'Advertising saved ✓';
+    settingsToast?.classList.add('show');
+    setTimeout(() => {
+      settingsToast?.classList.remove('show');
+      if (settingsToast) settingsToast.textContent = 'Settings saved ✓';
+    }, 2200);
+  });
+
+  const artistForm = document.querySelector('#artistForm');
+  const artistNameInput = document.querySelector('#artistNameInput');
+  const artistStyleInput = document.querySelector('#artistStyleInput');
+  const artistBioInput = document.querySelector('#artistBioInput');
+  const artistSocialInput = document.querySelector('#artistSocialInput');
+  const artistImageInput = document.querySelector('#artistImageInput');
+  const artistPreviewImage = document.querySelector('#artistPreviewImage');
+  const genreTagShell = document.querySelector('#genreTagShell');
+  const genreTagInput = document.querySelector('#genreTagInput');
+  const bioCount = document.querySelector('#bioCount');
+  const artistGrid = document.querySelector('#artistGrid');
+  const artistEmptyState = document.querySelector('#artistEmptyState');
+  let editingArtistCard = null;
+  let selectedGenres = Array.from(document.querySelectorAll('.genre-tag')).map(tag => tag.dataset.genre);
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    }[char]));
+  }
+
+  function renderGenreTags() {
+    if (!genreTagShell || !genreTagInput) return;
+    genreTagShell.querySelectorAll('.genre-tag').forEach(tag => tag.remove());
+    selectedGenres.forEach(genre => {
+      const tag = document.createElement('span');
+      tag.className = 'genre-tag';
+      tag.dataset.genre = genre;
+      tag.innerHTML = `${escapeHtml(genre)} <button type="button" aria-label="Remove ${escapeHtml(genre)}">x</button>`;
+      genreTagShell.insertBefore(tag, genreTagInput);
+    });
+  }
+
+  function addGenreTag(value) {
+    const genre = value.trim().replace(/,$/, '');
+    if (!genre || selectedGenres.includes(genre)) return;
+    selectedGenres.push(genre);
+    renderGenreTags();
+  }
+
+  function resetArtistForm() {
+    editingArtistCard = null;
+    artistForm?.reset();
+    selectedGenres = ['Original Mix', 'Soundcheck'];
+    renderGenreTags();
+    if (artistPreviewImage) artistPreviewImage.src = 'assets/artist-photo-1.svg';
+    if (bioCount) bioCount.textContent = '0';
+    artistNameInput?.focus();
+  }
+
+  function focusArtistForm() {
+    artistForm?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => artistNameInput?.focus(), 180);
+  }
+
+  function updateArtistEmptyState() {
+    if (!artistGrid || !artistEmptyState) return;
+    const hasArtists = artistGrid.querySelectorAll('.artist-card').length > 0;
+    artistEmptyState.classList.toggle('is-visible', !hasArtists);
+    artistGrid.style.display = hasArtists ? 'grid' : 'none';
+  }
+
+  function artistCardTemplate({ name, style, genres, image, bio, social }) {
+    const genrePills = genres.map(genre => `<span class="artist-genre-pill">${escapeHtml(genre)}</span>`).join('');
+    return `
+      <div class="artist-avatar"><img src="${escapeHtml(image)}" alt="${escapeHtml(name)}"></div>
+      <div class="artist-name">${escapeHtml(name)}</div>
+      <div class="artist-style">${escapeHtml(style)}</div>
+      <div class="artist-genres">${genrePills}</div>
+      <div class="artist-card-actions">
+        <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
+        <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
+      </div>
+    `;
+  }
+
+  function saveArtistCard(event) {
+    event.preventDefault();
+    const name = artistNameInput.value.trim();
+    const style = artistStyleInput.value.trim();
+    if (!name || !style) return;
+
+    const artist = {
+      name,
+      style,
+      genres: selectedGenres.length ? selectedGenres : ['Original Mix'],
+      image: artistPreviewImage?.getAttribute('src') || 'assets/artist-photo-1.svg',
+      bio: artistBioInput.value.trim(),
+      social: artistSocialInput.value.trim()
+    };
+
+    const card = editingArtistCard || document.createElement('article');
+    card.className = 'artist-card';
+    card.dataset.name = artist.name;
+    card.dataset.style = artist.style;
+    card.dataset.genres = artist.genres.join(',');
+    card.dataset.image = artist.image;
+    card.dataset.bio = artist.bio;
+    card.dataset.social = artist.social;
+    card.innerHTML = artistCardTemplate(artist);
+
+    if (!editingArtistCard) artistGrid.appendChild(card);
+    updateArtistEmptyState();
+    resetArtistForm();
+  }
+
+  genreTagInput?.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addGenreTag(genreTagInput.value);
+      genreTagInput.value = '';
+    }
+  });
+
+  genreTagShell?.addEventListener('click', event => {
+    const button = event.target.closest('.genre-tag button');
+    if (!button) return;
+    const genre = button.closest('.genre-tag').dataset.genre;
+    selectedGenres = selectedGenres.filter(item => item !== genre);
+    renderGenreTags();
+  });
+
+  artistImageInput?.addEventListener('change', () => {
+    const file = artistImageInput.files && artistImageInput.files[0];
+    if (!file || !artistPreviewImage) return;
+    artistPreviewImage.src = URL.createObjectURL(file);
+  });
+
+  artistBioInput?.addEventListener('input', () => {
+    if (bioCount) bioCount.textContent = String(artistBioInput.value.length);
+  });
+
+  artistForm?.addEventListener('submit', saveArtistCard);
+
+  document.querySelectorAll('[data-clear-artist]').forEach(button => {
+    button.addEventListener('click', resetArtistForm);
+  });
+
+  document.querySelectorAll('[data-artist-focus]').forEach(button => {
+    button.addEventListener('click', focusArtistForm);
+  });
+
+  artistGrid?.addEventListener('click', event => {
+    const card = event.target.closest('.artist-card');
+    if (!card) return;
+
+    if (event.target.closest('[data-delete-artist]')) {
+      const artistName = card.dataset.name || 'Artist';
+      if (confirm(`Delete ${artistName}? All songs linked to this artist will be unlinked.`)) {
+        card.remove();
+        updateArtistEmptyState();
+      }
+      return;
+    }
+
+    if (event.target.closest('[data-edit-artist]')) {
+      editingArtistCard = card;
+      artistNameInput.value = card.dataset.name || '';
+      artistStyleInput.value = card.dataset.style || '';
+      artistBioInput.value = card.dataset.bio || '';
+      artistSocialInput.value = card.dataset.social || '';
+      selectedGenres = (card.dataset.genres || '').split(',').map(item => item.trim()).filter(Boolean);
+      renderGenreTags();
+      if (artistPreviewImage) artistPreviewImage.src = card.dataset.image || 'assets/artist-photo-1.svg';
+      if (bioCount) bioCount.textContent = String(artistBioInput.value.length);
+      focusArtistForm();
+    }
+  });
+
+  renderGenreTags();
+  updateArtistEmptyState();
+
+  const genreFormPanel = document.querySelector('#genreFormPanel');
+  const genreForm = document.querySelector('#genreForm');
+  const genreNameInput = document.querySelector('#genreNameInput');
+  const genreSlugInput = document.querySelector('#genreSlugInput');
+  const genreDescriptionInput = document.querySelector('#genreDescriptionInput');
+  const genreDescriptionCount = document.querySelector('#genreDescriptionCount');
+  const genreSubmitButton = document.querySelector('#genreSubmitButton');
+  const genreGrid = document.querySelector('#genreGrid');
+  const genreEmptyState = document.querySelector('#genreEmptyState');
+  const genreSearchInput = document.querySelector('#genreSearchInput');
+  let editingGenreCard = null;
+  let genreSlugEdited = false;
+
+  function genreSlugify(value) {
+    return String(value).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function getSelectedGenreColor() {
+    return document.querySelector('input[name="genreColor"]:checked')?.value || '#00d4ff';
+  }
+
+  function setSelectedGenreColor(color) {
+    const input = document.querySelector(`input[name="genreColor"][value="${color}"]`) || document.querySelector('input[name="genreColor"]');
+    if (input) input.checked = true;
+  }
+
+  function updateGenreDescriptionCount() {
+    if (genreDescriptionCount && genreDescriptionInput) {
+      genreDescriptionCount.textContent = String(genreDescriptionInput.value.length);
+    }
+  }
+
+  function focusGenreForm() {
+    genreFormPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => genreNameInput?.focus(), 180);
+  }
+
+  function resetGenreForm() {
+    editingGenreCard = null;
+    genreSlugEdited = false;
+    genreForm?.reset();
+    setSelectedGenreColor('#00d4ff');
+    updateGenreDescriptionCount();
+    genreFormPanel?.classList.remove('is-editing-genre');
+    if (genreSubmitButton) genreSubmitButton.textContent = 'Save Genre';
+    genreNameInput?.focus();
+  }
+
+  function updateGenreEmptyState() {
+    if (!genreGrid || !genreEmptyState) return;
+    const cards = Array.from(genreGrid.querySelectorAll('.genre-card'));
+    const hasGenres = cards.length > 0;
+    genreEmptyState.classList.toggle('is-visible', !hasGenres);
+    genreGrid.style.display = hasGenres ? 'grid' : 'none';
+  }
+
+  function filterGenres() {
+    if (!genreGrid) return;
+    const query = (genreSearchInput?.value || '').trim().toLowerCase();
+    genreGrid.querySelectorAll('.genre-card').forEach(card => {
+      const visible = !query || (card.dataset.name || '').toLowerCase().includes(query);
+      card.style.display = visible ? '' : 'none';
+    });
+  }
+
+  function genreCardTemplate({ name, slug, description, color, songs, artists }) {
+    const safeName = escapeHtml(name);
+    const safeSlug = escapeHtml(slug);
+    const safeDescription = escapeHtml(description || 'No description added.');
+    return `
+      <div class="genre-card-head">
+        <div>
+          <div class="genre-card-title">${safeName}</div>
+          <div class="genre-slug">${safeSlug}</div>
+        </div>
+        <div class="genre-card-actions">
+          <button class="icon-btn" type="button" data-edit-genre aria-label="Edit ${safeName}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+          <button class="icon-btn" type="button" data-delete-genre aria-label="Delete ${safeName}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+        </div>
+      </div>
+      <div class="genre-description">${safeDescription}</div>
+      <div class="genre-counts"><span class="metric-badge cyan">${songs} ${Number(songs) === 1 ? 'song' : 'songs'}</span><span class="metric-badge orange">${artists} ${Number(artists) === 1 ? 'artist' : 'artists'}</span></div>
+      <div class="genre-confirm"><span>Deleting this genre will unassign it from all songs and artists. Continue?</span><div class="genre-confirm-actions"><button class="btn btn-outline" type="button" data-cancel-genre-delete>Cancel</button><button class="btn btn-primary" type="button" data-confirm-genre-delete>Confirm Delete</button></div></div>
+    `;
+  }
+
+  function saveGenreCard(event) {
+    event.preventDefault();
+    const name = genreNameInput.value.trim();
+    const slug = genreSlugify(genreSlugInput.value || name);
+    if (!name || !slug) return;
+
+    const genre = {
+      name,
+      slug,
+      description: genreDescriptionInput.value.trim(),
+      color: getSelectedGenreColor(),
+      songs: editingGenreCard?.dataset.songs || '0',
+      artists: editingGenreCard?.dataset.artists || '0'
+    };
+
+    const card = editingGenreCard || document.createElement('article');
+    card.className = 'genre-card';
+    card.style.setProperty('--genre-color', genre.color);
+    card.dataset.name = genre.name;
+    card.dataset.slug = genre.slug;
+    card.dataset.description = genre.description;
+    card.dataset.color = genre.color;
+    card.dataset.songs = genre.songs;
+    card.dataset.artists = genre.artists;
+    card.innerHTML = genreCardTemplate(genre);
+
+    if (!editingGenreCard) genreGrid?.appendChild(card);
+    updateGenreEmptyState();
+    filterGenres();
+    resetGenreForm();
+  }
+
+  genreNameInput?.addEventListener('input', () => {
+    if (!genreSlugEdited && genreSlugInput) {
+      genreSlugInput.value = genreSlugify(genreNameInput.value);
+    }
+  });
+
+  genreSlugInput?.addEventListener('input', () => {
+    genreSlugEdited = true;
+    genreSlugInput.value = genreSlugify(genreSlugInput.value);
+  });
+
+  genreDescriptionInput?.addEventListener('input', updateGenreDescriptionCount);
+  genreForm?.addEventListener('submit', saveGenreCard);
+  genreSearchInput?.addEventListener('input', filterGenres);
+
+  document.querySelectorAll('[data-clear-genre], [data-cancel-genre-edit]').forEach(button => {
+    button.addEventListener('click', resetGenreForm);
+  });
+
+  document.querySelectorAll('[data-genre-focus]').forEach(button => {
+    button.addEventListener('click', focusGenreForm);
+  });
+
+  genreGrid?.addEventListener('click', event => {
+    const card = event.target.closest('.genre-card');
+    if (!card) return;
+
+    if (event.target.closest('[data-edit-genre]')) {
+      editingGenreCard = card;
+      genreSlugEdited = true;
+      genreNameInput.value = card.dataset.name || '';
+      genreSlugInput.value = card.dataset.slug || '';
+      genreDescriptionInput.value = card.dataset.description || '';
+      setSelectedGenreColor(card.dataset.color || '#00d4ff');
+      updateGenreDescriptionCount();
+      genreFormPanel?.classList.add('is-editing-genre');
+      if (genreSubmitButton) genreSubmitButton.textContent = 'Update Genre';
+      focusGenreForm();
+      return;
+    }
+
+    if (event.target.closest('[data-delete-genre]')) {
+      genreGrid.querySelectorAll('.genre-card').forEach(item => {
+        if (item !== card) item.classList.remove('confirming');
+        item.querySelector('.genre-confirm')?.classList.remove('error');
+      });
+      card.classList.add('confirming');
+      const confirmBox = card.querySelector('.genre-confirm');
+      confirmBox?.classList.remove('error');
+      const text = confirmBox?.querySelector('span');
+      if (text) text.textContent = 'Deleting this genre will unassign it from all songs and artists. Continue?';
+      return;
+    }
+
+    if (event.target.closest('[data-cancel-genre-delete]')) {
+      card.classList.remove('confirming');
+      card.querySelector('.genre-confirm')?.classList.remove('error');
+      return;
+    }
+
+    if (event.target.closest('[data-confirm-genre-delete]')) {
+      const songCount = Number(card.dataset.songs || 0);
+      const confirmBox = card.querySelector('.genre-confirm');
+      const text = confirmBox?.querySelector('span');
+      if (songCount > 0) {
+        confirmBox?.classList.add('error');
+        if (text) text.textContent = `Cannot delete. Reassign or remove ${songCount} ${songCount === 1 ? 'song' : 'songs'} first.`;
+        return;
+      }
+      if (editingGenreCard === card) resetGenreForm();
+      card.remove();
+      updateGenreEmptyState();
+      filterGenres();
+    }
+  });
+
+  updateGenreDescriptionCount();
+  updateGenreEmptyState();
+
+  const songsList = document.querySelector('#songsList');
+  const songsEmptyState = document.querySelector('#songsEmptyState');
+  const songsPagination = document.querySelector('#songsPagination');
+  const songSearchInput = document.querySelector('#songSearchInput');
+  const songGenreFilter = document.querySelector('#songGenreFilter');
+  const songSortSelect = document.querySelector('#songSortSelect');
+  const songEditDrawer = document.querySelector('#songEditDrawer');
+  const songDrawerBackdrop = document.querySelector('#songDrawerBackdrop');
+  const songEditForm = document.querySelector('#songEditForm');
+  const editSongTitle = document.querySelector('#editSongTitle');
+  const editSongArtist = document.querySelector('#editSongArtist');
+  const editSongGenre = document.querySelector('#editSongGenre');
+  const editSongDuration = document.querySelector('#editSongDuration');
+  const editSongStatus = document.querySelector('#editSongStatus');
+  const editSongSlug = document.querySelector('#editSongSlug');
+  const editSongFeatured = document.querySelector('#editSongFeatured');
+  let currentSongPage = 1;
+  let editingSongRow = null;
+
+  function slugify(value) {
+    return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function getSongRows() {
+    return Array.from(songsList?.querySelectorAll('.song-row') || []);
+  }
+
+  function getFilteredSongRows() {
+    const query = (songSearchInput?.value || '').trim().toLowerCase();
+    const genre = songGenreFilter?.value || 'all';
+    const sort = songSortSelect?.value || 'newest';
+    const rows = getSongRows().filter(row => {
+      const haystack = `${row.dataset.title} ${row.dataset.artist} ${row.dataset.genre}`.toLowerCase();
+      const matchesQuery = !query || haystack.includes(query);
+      const matchesGenre = genre === 'all' || row.dataset.genre === genre;
+      return matchesQuery && matchesGenre;
+    });
+
+    rows.sort((a, b) => {
+      if (sort === 'downloads') return Number(b.dataset.downloads || 0) - Number(a.dataset.downloads || 0);
+      if (sort === 'az') return (a.dataset.title || '').localeCompare(b.dataset.title || '');
+      return new Date(b.dataset.date || 0) - new Date(a.dataset.date || 0);
+    });
+
+    return rows;
+  }
+
+  function renderSongPagination(totalPages) {
+    if (!songsPagination) return;
+    songsPagination.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const previous = document.createElement('button');
+    previous.className = 'page-btn';
+    previous.textContent = '<';
+    previous.disabled = currentSongPage === 1;
+    previous.addEventListener('click', () => {
+      currentSongPage = Math.max(1, currentSongPage - 1);
+      renderSongs();
+    });
+    songsPagination.appendChild(previous);
+
+    for (let index = 1; index <= totalPages; index += 1) {
+      const page = document.createElement('button');
+      page.className = `page-btn${index === currentSongPage ? ' active' : ''}`;
+      page.textContent = String(index);
+      page.addEventListener('click', () => {
+        currentSongPage = index;
+        renderSongs();
+      });
+      songsPagination.appendChild(page);
+    }
+
+    const next = document.createElement('button');
+    next.className = 'page-btn';
+    next.textContent = '>';
+    next.disabled = currentSongPage === totalPages;
+    next.addEventListener('click', () => {
+      currentSongPage = Math.min(totalPages, currentSongPage + 1);
+      renderSongs();
+    });
+    songsPagination.appendChild(next);
+  }
+
+  function renderSongs() {
+    if (!songsList || !songsEmptyState) return;
+    const filtered = getFilteredSongRows();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
+    currentSongPage = Math.min(currentSongPage, totalPages);
+    const visible = filtered.slice((currentSongPage - 1) * 10, currentSongPage * 10);
+
+    getSongRows().forEach(row => {
+      row.style.display = visible.includes(row) ? 'grid' : 'none';
+    });
+
+    songsEmptyState.classList.toggle('is-visible', filtered.length === 0);
+    songsList.style.display = filtered.length ? 'flex' : 'none';
+    renderSongPagination(totalPages);
+  }
+
+  function openSongDrawer(row) {
+    editingSongRow = row;
+    editSongTitle.value = row.dataset.title || '';
+    editSongArtist.value = row.dataset.artist || '';
+    editSongGenre.value = row.dataset.genre || 'Soundcheck';
+    editSongDuration.value = row.dataset.duration || '';
+    editSongStatus.value = row.dataset.status || 'Published';
+    editSongSlug.value = slugify(row.dataset.title || '');
+    editSongFeatured.checked = row.dataset.featured === 'true';
+    songEditDrawer?.classList.add('open');
+    songDrawerBackdrop?.classList.add('open');
+    songEditDrawer?.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeSongDrawer() {
+    songEditDrawer?.classList.remove('open');
+    songDrawerBackdrop?.classList.remove('open');
+    songEditDrawer?.setAttribute('aria-hidden', 'true');
+  }
+
+  function updateSongRowFromDrawer(event) {
+    event.preventDefault();
+    if (!editingSongRow) return;
+    const title = editSongTitle.value.trim() || 'Untitled Song';
+    const artist = editSongArtist.value.trim() || 'SG Production';
+    const genre = editSongGenre.value;
+    const duration = editSongDuration.value.trim() || '0:0';
+    const status = editSongStatus.value;
+    const featured = editSongFeatured.checked;
+
+    editingSongRow.dataset.title = title;
+    editingSongRow.dataset.artist = artist;
+    editingSongRow.dataset.genre = genre;
+    editingSongRow.dataset.duration = duration;
+    editingSongRow.dataset.status = status;
+    editingSongRow.dataset.featured = String(featured);
+    editingSongRow.querySelector('.song-title').textContent = title;
+    editingSongRow.querySelector('.song-detail').textContent = `${artist} · ${genre} · ${duration}`;
+    editingSongRow.querySelector('.song-flags').innerHTML = featured ? '<span class="artist-genre-pill">Featured</span>' : '';
+    const statusPill = editingSongRow.querySelector('.status-pill');
+    statusPill.textContent = status;
+    statusPill.className = `status-pill ${status.toLowerCase()}`;
+    const warningText = editingSongRow.querySelector('.song-delete-warning span');
+    if (warningText) warningText.textContent = `Are you sure you want to delete ${title}? This cannot be undone.`;
+    closeSongDrawer();
+    renderSongs();
+  }
+
+  [songSearchInput, songGenreFilter, songSortSelect].forEach(control => {
+    control?.addEventListener('input', () => {
+      currentSongPage = 1;
+      renderSongs();
+    });
+    control?.addEventListener('change', () => {
+      currentSongPage = 1;
+      renderSongs();
+    });
+  });
+
+  songsList?.addEventListener('click', event => {
+    const row = event.target.closest('.song-row');
+    if (!row) return;
+
+    if (event.target.closest('[data-edit-song]')) {
+      openSongDrawer(row);
+      return;
+    }
+
+    if (event.target.closest('[data-delete-song]')) {
+      getSongRows().forEach(item => item.classList.remove('confirming'));
+      row.classList.add('confirming');
+      return;
+    }
+
+    if (event.target.closest('[data-cancel-delete]')) {
+      row.classList.remove('confirming');
+      return;
+    }
+
+    if (event.target.closest('[data-confirm-delete]')) {
+      row.remove();
+      renderSongs();
+      return;
+    }
+
+    if (event.target.closest('[data-play-song]')) {
+      const button = event.target.closest('[data-play-song]');
+      const isPlaying = button.textContent.trim() === 'Playing';
+      songsList.querySelectorAll('[data-play-song]').forEach(item => {
+        item.textContent = 'Play';
+        item.classList.remove('btn-primary');
+        item.classList.add('btn-outline');
+      });
+      if (!isPlaying) {
+        button.textContent = 'Playing';
+        button.classList.remove('btn-outline');
+        button.classList.add('btn-primary');
+      }
+    }
+  });
+
+  document.querySelectorAll('[data-close-song-drawer]').forEach(button => {
+    button.addEventListener('click', closeSongDrawer);
+  });
+  songDrawerBackdrop?.addEventListener('click', closeSongDrawer);
+  songEditForm?.addEventListener('submit', updateSongRowFromDrawer);
+  renderSongs();
+
+  const analyticsTable = document.querySelector('#analyticsTable');
+  const analyticsPagination = document.querySelector('#analyticsPagination');
+  const analyticsExportCsv = document.querySelector('#analyticsExportCsv');
+  let analyticsPage = 1;
+  let analyticsSortKey = 'index';
+  let analyticsSortDir = 1;
+
+  const chartPoints = {
+    Downloads: '45,210 165,178 285,192 405,120 525,145 645,82 765,112 875,54',
+    'Page Views': '45,198 165,152 285,168 405,102 525,126 645,64 765,78 875,42',
+    'Ad Clicks': '45,225 165,214 285,218 405,188 525,202 645,164 765,176 875,142'
+  };
+
+  document.querySelectorAll('.date-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.date-chip').forEach(item => item.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('#analyticsChartToggle button').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('#analyticsChartToggle button').forEach(item => item.classList.remove('active'));
+      button.classList.add('active');
+      const line = document.querySelector('#analyticsLine');
+      const dots = document.querySelector('#analyticsDots');
+      const points = chartPoints[button.dataset.chart] || chartPoints.Downloads;
+      if (line) line.setAttribute('points', points);
+      if (dots) {
+        dots.innerHTML = points.split(' ').map(pair => {
+          const [x, y] = pair.split(',');
+          return `<circle cx="${x}" cy="${y}" r="5"></circle>`;
+        }).join('');
+      }
+    });
+  });
+
+  function getAnalyticsRows() {
+    return Array.from(analyticsTable?.querySelectorAll('tbody tr') || []);
+  }
+
+  function renderAnalyticsTable() {
+    if (!analyticsTable || !analyticsPagination) return;
+    const tbody = analyticsTable.querySelector('tbody');
+    const rows = getAnalyticsRows();
+    rows.sort((a, b) => {
+      const aValue = a.dataset[analyticsSortKey] || '';
+      const bValue = b.dataset[analyticsSortKey] || '';
+      const numeric = !Number.isNaN(Number(aValue)) && !Number.isNaN(Number(bValue));
+      return numeric
+        ? (Number(aValue) - Number(bValue)) * analyticsSortDir
+        : aValue.localeCompare(bValue) * analyticsSortDir;
+    });
+    rows.forEach(row => tbody.appendChild(row));
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / 10));
+    analyticsPage = Math.min(analyticsPage, totalPages);
+    rows.forEach((row, index) => {
+      const visible = index >= (analyticsPage - 1) * 10 && index < analyticsPage * 10;
+      row.style.display = visible ? 'table-row' : 'none';
+    });
+
+    analyticsPagination.innerHTML = '';
+    if (totalPages <= 1) return;
+    for (let index = 1; index <= totalPages; index += 1) {
+      const page = document.createElement('button');
+      page.className = `page-btn${index === analyticsPage ? ' active' : ''}`;
+      page.textContent = String(index);
+      page.addEventListener('click', () => {
+        analyticsPage = index;
+        renderAnalyticsTable();
+      });
+      analyticsPagination.appendChild(page);
+    }
+  }
+
+  analyticsTable?.querySelectorAll('th[data-sort]').forEach(header => {
+    header.addEventListener('click', () => {
+      const key = header.dataset.sort;
+      analyticsSortDir = analyticsSortKey === key ? analyticsSortDir * -1 : 1;
+      analyticsSortKey = key;
+      analyticsPage = 1;
+      renderAnalyticsTable();
+    });
+  });
+
+  analyticsExportCsv?.addEventListener('click', () => {
+    alert('CSV export preview. This will export the analytics table from admin.php when connected.');
+  });
+
+  renderAnalyticsTable();
+
+  const notificationFeed = document.querySelector('#notificationFeed');
+  const markAllReadButton = document.querySelector('#markAllReadButton');
+  const toggleNotificationSettings = document.querySelector('#toggleNotificationSettings');
+  const notificationSettingsPanel = document.querySelector('#notificationSettingsPanel');
+
+  document.querySelectorAll('[data-notification-filter]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[data-notification-filter]').forEach(item => item.classList.remove('active'));
+      tab.classList.add('active');
+      const filter = tab.dataset.notificationFilter;
+      notificationFeed?.querySelectorAll('.notification-item').forEach(item => {
+        const visible = filter === 'all' || item.dataset.type === filter;
+        item.style.display = visible ? 'grid' : 'none';
+      });
+    });
+  });
+
+  markAllReadButton?.addEventListener('click', () => {
+    notificationFeed?.querySelectorAll('.notification-item').forEach(item => {
+      item.dataset.unread = 'false';
+      item.querySelector('.unread-dot')?.remove();
+    });
+  });
+
+  notificationFeed?.addEventListener('click', event => {
+    const dismiss = event.target.closest('.dismiss-notification');
+    if (!dismiss) return;
+    dismiss.closest('.notification-item')?.remove();
+  });
+
+  toggleNotificationSettings?.addEventListener('click', () => {
+    notificationSettingsPanel?.classList.toggle('open');
+    toggleNotificationSettings.textContent = notificationSettingsPanel?.classList.contains('open') ? 'Hide Settings' : 'Show Settings';
   });
 
   const initialSection = location.hash.replace('#', '');

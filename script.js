@@ -182,6 +182,7 @@ const tracks = [
 ];
 
 const latestGrid = document.querySelector("#latestGrid");
+const latestSection = document.querySelector("#latest");
 const trackGrid = document.querySelector("#trackGrid");
 const trackPagination = document.querySelector("#trackPagination");
 const player = document.querySelector("#player");
@@ -238,6 +239,11 @@ let siteSettings = {
     spotify: "https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true",
     appleMusic: "https://music.apple.com/in/artist/sg-production/1580814477",
     youtube: "https://www.youtube.com/@sgproductionindia"
+  },
+  seo: {
+    metaDescription: "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
+    ogImage: "assets/cover-1.jpg",
+    favicon: "assets/sg-logo.svg"
   },
   catalog: {
     latestCount: 5,
@@ -311,6 +317,7 @@ function normalizeUploadedTrack(track) {
     cover: track.cover || "assets/cover-1.jpg",
     previewUrl,
     downloadUrl: rawDownloadUrl,
+    creditText: track.creditText || "",
     isNew: Boolean(track.isNew),
     isFeatured: Boolean(track.isFeatured || track.isNew),
     artistId: track.artistId || "sg-production",
@@ -361,6 +368,10 @@ async function loadSiteSettings() {
         ...siteSettings.links,
         ...(settings.links || {})
       },
+      seo: {
+        ...siteSettings.seo,
+        ...(settings.seo || {})
+      },
       catalog: {
         ...siteSettings.catalog,
         ...(settings.catalog || {})
@@ -389,14 +400,89 @@ function setLink(selector, href) {
   });
 }
 
-function applySiteSettings() {
-  const { site, links, catalog } = siteSettings;
+function absoluteAssetUrl(path) {
+  if (!path) {
+    return "";
+  }
 
-  latestTrackCount = Math.max(1, Math.min(12, Number(catalog.latestCount) || 5));
+  try {
+    return new URL(path, window.location.origin).href;
+  } catch {
+    return path;
+  }
+}
+
+function setMetaTag(attribute, name, value) {
+  if (!value) {
+    return;
+  }
+
+  let tag = document.head.querySelector(`meta[${attribute}="${name}"]`);
+
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute(attribute, name);
+    document.head.append(tag);
+  }
+
+  tag.content = value;
+}
+
+function setIconLink(rel, href) {
+  if (!href) {
+    return;
+  }
+
+  let link = document.head.querySelector(`link[rel="${rel}"]`);
+
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = rel;
+    document.head.append(link);
+  }
+
+  link.href = href;
+}
+
+function updateShareMeta(title, description, image, url) {
+  const shareTitle = title || siteSettings.site.title;
+  const shareDescription = description || siteSettings.seo.metaDescription || siteSettings.site.tagline;
+  const shareImage = absoluteAssetUrl(image || siteSettings.seo.ogImage || "assets/cover-1.jpg");
+  const shareUrl = url || window.location.href.split("#")[0] || window.location.href;
+
+  setMetaTag("name", "description", shareDescription);
+  setMetaTag("property", "og:title", shareTitle);
+  setMetaTag("property", "og:description", shareDescription);
+  setMetaTag("property", "og:image", shareImage);
+  setMetaTag("property", "og:url", shareUrl);
+  setMetaTag("property", "og:type", "website");
+  setMetaTag("name", "twitter:card", "summary_large_image");
+  setMetaTag("name", "twitter:title", shareTitle);
+  setMetaTag("name", "twitter:description", shareDescription);
+  setMetaTag("name", "twitter:image", shareImage);
+}
+
+function siteUrl(path = "/") {
+  return canUseCleanUrls() ? `${window.location.origin}${path}` : window.location.href.split("#")[0];
+}
+
+function applyFavicon() {
+  const favicon = siteSettings.seo.favicon || "assets/sg-logo.svg";
+  setIconLink("icon", favicon);
+  setIconLink("apple-touch-icon", favicon);
+}
+
+function applySiteSettings() {
+  const { site, links, catalog, seo } = siteSettings;
+
+  const configuredLatestCount = Number(catalog.latestCount);
+  latestTrackCount = Number.isFinite(configuredLatestCount) ? Math.max(0, Math.min(12, configuredLatestCount)) : 5;
   allTracksPerPage = Math.max(5, Math.min(50, Number(catalog.tracksPerPage) || 15));
   demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
 
   document.title = `${site.title} | Direct Music Downloads`;
+  updateShareMeta(site.title, seo.metaDescription || site.tagline, seo.ogImage, siteUrl("/"));
+  applyFavicon();
 
   const siteTitle = document.querySelector("#site-title");
   const siteTagline = document.querySelector("#siteTagline");
@@ -1017,9 +1103,38 @@ function renderSongWaveform(track) {
   songWaveform.innerHTML = bars.join("");
 }
 
-function renderSongAd() {
+function sendAdEvent(endpoint, track, adUrl = "") {
+  if (!track || !endpoint) {
+    return Promise.resolve();
+  }
+
+  return fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    keepalive: true,
+    body: JSON.stringify({
+      song_id: track.id,
+      song_title: track.title,
+      timestamp: new Date().toISOString(),
+      ad_url: adUrl,
+      referrer: window.location.href
+    })
+  }).catch(() => {});
+}
+
+function revealCreditText(track) {
+  const credit = String(track.creditText || "").trim();
+
+  creditText.textContent = credit;
+  creditText.hidden = credit === "";
+}
+
+function renderSongAd(track) {
   const advertising = siteSettings.advertising || {};
   const enabled = Boolean(advertising.enabled && advertising.mediaUrl);
+  let impressionSent = false;
 
   songPage.classList.toggle("no-ad", !enabled);
   songAd.classList.remove("is-loaded", "is-failed");
@@ -1035,6 +1150,11 @@ function renderSongAd() {
   const markLoaded = () => {
     songAd.classList.add("is-loaded");
     songAd.classList.remove("is-failed");
+
+    if (!impressionSent) {
+      impressionSent = true;
+      sendAdEvent("/api/ad-impression", track, advertising.linkUrl || "");
+    }
   };
   const markFailed = () => {
     songAd.classList.add("is-failed");
@@ -1072,8 +1192,20 @@ function renderSongAd() {
     link.className = "song-ad-link";
     link.href = advertising.linkUrl;
     link.target = "_blank";
-    link.rel = "noreferrer";
+    link.rel = "noopener noreferrer";
     link.setAttribute("aria-label", "Open advertisement");
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      const newTab = window.open("", "_blank", "noopener,noreferrer");
+
+      sendAdEvent("/api/ad-click", track, advertising.linkUrl).finally(() => {
+        if (newTab) {
+          newTab.location.href = advertising.linkUrl;
+        } else {
+          window.open(advertising.linkUrl, "_blank", "noopener,noreferrer");
+        }
+      });
+    });
     link.append(media);
     songAd.append(link);
     return;
@@ -1102,10 +1234,11 @@ function openSongPage(track, updateUrl = true) {
   songPageTitle.textContent = track.title;
   songArtist.textContent = track.artist;
   songDuration.textContent = track.duration;
-  creditText.textContent = buildCreditText(track);
+  revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
+  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage || track.cover, siteUrl(trackUrl(track)));
   renderSongWaveform(track);
-  renderSongAd();
+  renderSongAd(track);
   syncPlayer();
   clearActiveNav();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1119,6 +1252,7 @@ function closeSongPage(updateUrl = true) {
   document.body.classList.remove("song-view");
   songPage.hidden = true;
   document.title = `${siteSettings.site.title} | Direct Music Downloads`;
+  updateShareMeta(siteSettings.site.title, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage, siteUrl("/"));
 
   if (updateUrl) {
     history.pushState(null, "", canUseCleanUrls() ? "/#all-tracks" : "#all-tracks");
@@ -1187,7 +1321,15 @@ async function initializeCatalog() {
   allTracks = buildDemoTrackPages(tracks);
   normalizeInitialUrl();
   const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
-  renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
+
+  if (latestTrackCount <= 0) {
+    latestSection.hidden = true;
+    latestGrid.replaceChildren();
+  } else {
+    latestSection.hidden = false;
+    renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
+  }
+
   renderAllTracksPage(1);
   syncPlayer();
   openSongFromLocation();

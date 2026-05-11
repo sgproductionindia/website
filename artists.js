@@ -83,6 +83,7 @@ let tracks = [...defaultTracks];
 let siteSettings = {
   site: {
     title: "SG Production",
+    tagline: "Original music • direct download • no barriers",
     contactEmail: "bookings@sgproduction.example"
   },
   links: {
@@ -90,6 +91,11 @@ let siteSettings = {
     spotify: "https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true",
     appleMusic: "https://music.apple.com/in/artist/sg-production/1580814477",
     youtube: "https://www.youtube.com/@sgproductionindia"
+  },
+  seo: {
+    metaDescription: "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
+    ogImage: "assets/cover-1.jpg",
+    favicon: "assets/sg-logo.svg"
   }
 };
 let activeTrackId = "";
@@ -198,10 +204,80 @@ function setLink(selector, href) {
   });
 }
 
+function absoluteAssetUrl(path) {
+  if (!path) {
+    return "";
+  }
+
+  try {
+    return new URL(path, window.location.origin).href;
+  } catch {
+    return path;
+  }
+}
+
+function setMetaTag(attribute, name, value) {
+  if (!value) {
+    return;
+  }
+
+  let tag = document.head.querySelector(`meta[${attribute}="${name}"]`);
+
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute(attribute, name);
+    document.head.append(tag);
+  }
+
+  tag.content = value;
+}
+
+function setIconLink(rel, href) {
+  if (!href) {
+    return;
+  }
+
+  let link = document.head.querySelector(`link[rel="${rel}"]`);
+
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = rel;
+    document.head.append(link);
+  }
+
+  link.href = href;
+}
+
+function updateShareMeta(title, description, image, url) {
+  const shareImage = absoluteAssetUrl(image || siteSettings.seo.ogImage || "assets/cover-1.jpg");
+
+  setMetaTag("name", "description", description);
+  setMetaTag("property", "og:title", title);
+  setMetaTag("property", "og:description", description);
+  setMetaTag("property", "og:image", shareImage);
+  setMetaTag("property", "og:url", url || window.location.href.split("#")[0]);
+  setMetaTag("property", "og:type", "website");
+  setMetaTag("name", "twitter:card", "summary_large_image");
+  setMetaTag("name", "twitter:title", title);
+  setMetaTag("name", "twitter:description", description);
+  setMetaTag("name", "twitter:image", shareImage);
+}
+
+function canUseCleanUrls() {
+  return /^https?:$/.test(window.location.protocol);
+}
+
+function siteUrl(path = "/artists") {
+  return canUseCleanUrls() ? `${window.location.origin}${path}` : window.location.href.split("#")[0];
+}
+
 function applySiteSettings() {
-  const { site, links } = siteSettings;
+  const { site, links, seo } = siteSettings;
 
   document.title = `Artists | ${site.title}`;
+  updateShareMeta(`Artists | ${site.title}`, seo.metaDescription || site.tagline, seo.ogImage, siteUrl("/artists"));
+  setIconLink("icon", seo.favicon || "assets/sg-logo.svg");
+  setIconLink("apple-touch-icon", seo.favicon || "assets/sg-logo.svg");
   setLink('a[aria-label="Instagram"]', links.instagram);
   setLink('a[aria-label="Spotify"]', links.spotify);
   setLink('a[aria-label="Apple Music"]', links.appleMusic);
@@ -231,6 +307,10 @@ async function loadCatalogData() {
     links: {
       ...siteSettings.links,
       ...(loadedSettings.links || {})
+    },
+    seo: {
+      ...siteSettings.seo,
+      ...(loadedSettings.seo || {})
     }
   };
   applySiteSettings();
@@ -340,6 +420,7 @@ function renderArtistProfile(artist) {
   artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
   renderRelatedArtists(artist);
   document.title = `${artist.name} | ${siteSettings.site.title}`;
+  updateShareMeta(`${artist.name} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, artist.image || siteSettings.seo.ogImage, window.location.href);
 }
 
 function showDirectory() {
@@ -347,6 +428,7 @@ function showDirectory() {
   artistDirectory.hidden = false;
   artistProfilePage.hidden = true;
   document.title = `Artists | ${siteSettings.site.title}`;
+  updateShareMeta(`Artists | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage, siteUrl("/artists"));
 }
 
 function showProfile(artist) {

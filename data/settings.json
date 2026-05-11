@@ -12,6 +12,11 @@
     "appleMusic": "https://music.apple.com/in/artist/sg-production/1580814477",
     "youtube": "https://www.youtube.com/@sgproductionindia"
   },
+  "seo": {
+    "metaDescription": "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
+    "ogImage": "assets/cover-1.jpg",
+    "favicon": "assets/sg-logo.svg"
+  },
   "catalog": {
     "latestCount": 5,
     "tracksPerPage": 15,

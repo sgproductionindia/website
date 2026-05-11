@@ -1476,6 +1476,11 @@ body.search-open {
 }
 
 #creditText {
+  max-width: min(100%, 560px);
+  margin: -4px 0 0;
+  color: rgba(209, 222, 230, 0.64);
+  font-size: 13px;
+  line-height: 1.55;
   white-space: pre-line;
 }
 
