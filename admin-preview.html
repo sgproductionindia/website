@@ -277,12 +277,33 @@
   .artist-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .file-trigger {
     width:100%;
+    min-height:40px;
+    border:1px solid var(--cyan);
+    border-radius:999px;
+    background:var(--cyan-dim);
     cursor:pointer;
-    color:var(--text-dim);
-    font-size:12px;
+    color:var(--cyan);
+    font-size:13px;
+    font-weight:700;
     text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 14px;
+    transition:box-shadow .15s, background .15s;
   }
+  .file-trigger:hover { box-shadow:0 0 16px var(--cyan-glow); background:rgba(0,212,255,.18); }
   .file-trigger input { display:none; }
+  .selected-file-name {
+    max-width:100%;
+    color:var(--text-dim);
+    font-size:11px;
+    font-weight:600;
+    text-align:center;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
   .char-row { display:flex; justify-content:space-between; gap:12px; }
   .char-count { color:var(--text-dim); font-size:12px; font-weight:600; }
   .artist-grid {
@@ -901,17 +922,92 @@
   }
   .line-chart-shell {
     position:relative;
-    min-height:320px;
+    min-height:360px;
     border:1px solid var(--border);
     border-radius:14px;
     background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));
-    padding:18px 18px 34px;
+    padding:18px 18px 18px;
     overflow:hidden;
+  }
+  .chart-summary {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+    color:var(--text-dim);
+    font-size:12px;
+    font-weight:700;
+  }
+  .chart-summary strong {
+    color:var(--text);
+    font-size:15px;
   }
   .line-chart-shell svg {
     width:100%;
-    height:260px;
+    height:100%;
     display:block;
+  }
+  .line-chart-shell svg line,
+  .line-chart-shell svg polyline {
+    vector-effect:non-scaling-stroke;
+  }
+  .chart-visual {
+    position:relative;
+    height:268px;
+  }
+  .chart-y-axis {
+    position:absolute;
+    inset:0;
+    z-index:2;
+    pointer-events:none;
+  }
+  .chart-y-axis span {
+    position:absolute;
+    left:0;
+    transform:translateY(-50%);
+    color:var(--text-faint);
+    font-size:10px;
+    font-weight:800;
+  }
+  .chart-point-layer {
+    position:absolute;
+    inset:0;
+    z-index:3;
+  }
+  .chart-point {
+    position:absolute;
+    width:12px;
+    height:12px;
+    border:0;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 0 4px rgba(0,212,255,.12);
+    transform:translate(-50%, -50%);
+    pointer-events:auto;
+    cursor:pointer;
+  }
+  .chart-point-value {
+    position:absolute;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:4px 8px;
+    color:var(--text);
+    background:var(--surface);
+    box-shadow:0 10px 30px rgba(0,0,0,.28);
+    font-size:11px;
+    font-weight:800;
+    opacity:0;
+    white-space:nowrap;
+    transition:opacity .14s ease, transform .14s ease;
+  }
+  .chart-point:hover .chart-point-value,
+  .chart-point:focus-visible .chart-point-value {
+    opacity:1;
+    transform:translateX(-50%) translateY(-2px);
   }
   .chart-axis {
     display:flex;
@@ -919,7 +1015,10 @@
     color:var(--text-faint);
     font-size:11px;
     font-weight:700;
-    padding:0 8px;
+    padding:8px 8px 0 64px;
+  }
+  .chart-value-label {
+    display:none;
   }
   .chart-toggle {
     display:flex;
@@ -1555,7 +1654,7 @@
       min-height:260px;
       padding:14px 12px 30px;
     }
-    .line-chart-shell svg { height:210px; }
+    .chart-visual { height:210px; }
     .chart-axis {
       overflow-x:auto;
       gap:22px;
@@ -2162,19 +2261,40 @@
           </div>
         </div>
         <div class="line-chart-shell">
-          <svg viewBox="0 0 900 260" preserveAspectRatio="none" aria-label="Analytics line chart">
-            <g stroke="rgba(255,255,255,.08)" stroke-width="1">
-              <line x1="40" y1="30" x2="880" y2="30"></line>
-              <line x1="40" y1="85" x2="880" y2="85"></line>
-              <line x1="40" y1="140" x2="880" y2="140"></line>
-              <line x1="40" y1="195" x2="880" y2="195"></line>
-              <line x1="40" y1="238" x2="880" y2="238"></line>
-            </g>
-            <polyline id="analyticsLine" fill="none" stroke="#00d4ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="45,210 165,178 285,192 405,120 525,145 645,82 765,112 875,54"></polyline>
-            <g id="analyticsDots" fill="#00d4ff">
-              <circle cx="45" cy="210" r="5"></circle><circle cx="165" cy="178" r="5"></circle><circle cx="285" cy="192" r="5"></circle><circle cx="405" cy="120" r="5"></circle><circle cx="525" cy="145" r="5"></circle><circle cx="645" cy="82" r="5"></circle><circle cx="765" cy="112" r="5"></circle><circle cx="875" cy="54" r="5"></circle>
-            </g>
-          </svg>
+          <div class="chart-summary">
+            <span><strong id="analyticsChartTotal">3,847</strong> total downloads</span>
+            <span id="analyticsChartPeak">Peak: May 9 · 920</span>
+          </div>
+          <div class="chart-visual">
+            <div class="chart-y-axis" aria-hidden="true">
+              <span style="top:11.5%">1,000</span>
+              <span style="top:32.7%">750</span>
+              <span style="top:53.8%">500</span>
+              <span style="top:75%">250</span>
+              <span style="top:91.5%">0</span>
+            </div>
+            <svg viewBox="0 0 900 260" preserveAspectRatio="none" aria-label="Analytics line chart">
+              <g stroke="rgba(255,255,255,.08)" stroke-width="1">
+                <line x1="70" y1="30" x2="880" y2="30"></line>
+                <line x1="70" y1="85" x2="880" y2="85"></line>
+                <line x1="70" y1="140" x2="880" y2="140"></line>
+                <line x1="70" y1="195" x2="880" y2="195"></line>
+                <line x1="70" y1="238" x2="880" y2="238"></line>
+              </g>
+              <g stroke="rgba(255,255,255,.045)" stroke-width="1">
+                <line x1="80" y1="30" x2="80" y2="238"></line>
+                <line x1="194" y1="30" x2="194" y2="238"></line>
+                <line x1="308" y1="30" x2="308" y2="238"></line>
+                <line x1="422" y1="30" x2="422" y2="238"></line>
+                <line x1="536" y1="30" x2="536" y2="238"></line>
+                <line x1="650" y1="30" x2="650" y2="238"></line>
+                <line x1="764" y1="30" x2="764" y2="238"></line>
+                <line x1="875" y1="30" x2="875" y2="238"></line>
+              </g>
+              <polyline id="analyticsLine" fill="none" stroke="#00d4ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,210 194,178 308,192 422,120 536,145 650,82 764,112 875,54"></polyline>
+            </svg>
+            <div class="chart-point-layer" id="analyticsPointLayer" aria-label="Chart values"></div>
+          </div>
           <div class="chart-axis"><span>May 2</span><span>May 3</span><span>May 4</span><span>May 5</span><span>May 6</span><span>May 7</span><span>May 8</span><span>May 9</span></div>
         </div>
       </div>
@@ -2258,12 +2378,11 @@
           <div class="panel-header">
             <span class="panel-title">Song Details</span>
           </div>
-          <form class="admin-form" id="uploadSongForm" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="upload">
+          <form class="admin-form" id="uploadSongForm">
             <div class="form-grid">
               <label class="form-field">
                 Song Title
-                <input type="text" name="title" placeholder="Nagin Theme" value="Nagin Theme" required>
+                <input type="text" name="title" placeholder="Nagin Theme" value="Nagin Theme">
               </label>
               <label class="form-field">
                 Artist
@@ -2277,10 +2396,10 @@
               <label class="form-field">
                 Artist Profile
                 <select name="artistId">
-                  <option value="sg-production">SG Production</option>
-                  <option value="sg-soundcheck">SG Soundcheck</option>
-                  <option value="marathi-pulse">Marathi Pulse</option>
-                  <option value="hindi-wave">Hindi Wave</option>
+                  <option>SG Production</option>
+                  <option>SG Soundcheck</option>
+                  <option>Marathi Pulse</option>
+                  <option>Hindi Wave</option>
                 </select>
               </label>
               <label class="form-field">
@@ -2294,7 +2413,7 @@
               </label>
               <label class="form-field full">
                 Preview Song File
-                <input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" required>
+                <input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg">
                 <span class="form-help">Accepts MP3/WAV. Duration will be detected from this file.</span>
                 <div class="file-meta" id="previewFileMeta">
                   <span id="previewFileName">No file selected</span>
@@ -2308,27 +2427,23 @@
               <label class="form-field">
                 Wave Style
                 <select name="wave">
-                  <option value="sine">Sine</option>
-                  <option value="square">Square</option>
-                  <option value="sawtooth">Sawtooth</option>
-                  <option value="triangle">Triangle</option>
+                  <option>Sine</option>
+                  <option>Square</option>
+                  <option>Sawtooth</option>
+                  <option>Custom</option>
                 </select>
               </label>
               <label class="form-field full">
                 WAV Download URL
-                <input type="url" name="downloadUrl" placeholder="https://example.com/downloads/nagin-theme.wav" required>
+                <input type="url" name="downloadUrl" placeholder="https://example.com/downloads/nagin-theme.wav">
                 <span class="form-help">Direct URL for the full-quality WAV download.</span>
-              </label>
-              <label class="form-field">
-                Credit Text
-                <input type="text" name="creditText" placeholder="Optional artist credit">
               </label>
               <label class="form-field full">
                 Cover Image
                 <div class="cover-upload-row">
                   <div class="cover-preview-thumb" id="uploadCoverPreview">Cover</div>
                   <div>
-                    <input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required>
+                    <input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                     <span class="form-help">Image preview appears after selection.</span>
                   </div>
                 </div>
@@ -2338,11 +2453,11 @@
             <div class="check-grid">
               <label class="check-card toggle-card">
                 <span>Show in Latest Releases</span>
-                <input type="checkbox" name="isNew" checked>
+                <input type="checkbox" checked>
               </label>
               <label class="check-card toggle-card">
                 <span>Mark as Featured</span>
-                <input type="checkbox" name="isFeatured">
+                <input type="checkbox">
               </label>
             </div>
 
@@ -2538,30 +2653,37 @@
           <span class="panel-title">Add / Edit Artist</span>
           <button class="panel-action" type="button" data-clear-artist>Clear Form</button>
         </div>
-        <form class="admin-form" id="artistForm" method="POST" enctype="multipart/form-data">
-          <input type="hidden" name="action" value="save_artist">
-          <input type="hidden" name="artistId" id="artistIdInput" value="">
+        <form class="admin-form" id="artistForm">
           <div class="artist-form-layout">
             <div class="form-grid">
               <label class="form-field">
                 Artist Name
-                <input id="artistNameInput" type="text" name="artistName" placeholder="SG Production" required>
+                <input id="artistNameInput" type="text" placeholder="SG Production" required>
               </label>
               <label class="form-field">
                 Artist Style
-                <input id="artistStyleInput" type="text" name="artistStyle" placeholder="Original Mix, Soundcheck" required>
+                <input id="artistStyleInput" type="text" placeholder="Original Mix, Soundcheck" required>
               </label>
-              <label class="form-field">
-                Year Active
-                <input id="artistYearInput" type="text" name="artistYear" placeholder="2026">
-              </label>
-              <label class="form-field">
+              <label class="form-field full">
                 Assigned Genres
-                <input id="genreTagInput" type="hidden" name="artistGenres" value="">
                 <div class="tag-input-shell" id="genreTagShell">
+                  <span class="genre-tag" data-genre="Original Mix">Original Mix <button type="button" aria-label="Remove Original Mix">x</button></span>
+                  <span class="genre-tag" data-genre="Soundcheck">Soundcheck <button type="button" aria-label="Remove Soundcheck">x</button></span>
                   <input id="genreTagInput" type="text" placeholder="Type genre and press Enter">
                 </div>
                 <span class="form-help">Examples: Marathi, Hindi, Original Mix, Soundcheck.</span>
+              </label>
+              <label class="form-field full">
+                <span class="char-row">
+                  <span>Artist Bio</span>
+                  <span class="char-count"><span id="bioCount">0</span>/200</span>
+                </span>
+                <textarea id="artistBioInput" rows="4" maxlength="200" placeholder="Short description for the artist page."></textarea>
+              </label>
+              <label class="form-field full">
+                Social Link
+                <input id="artistSocialInput" type="url" placeholder="https://youtube.com/@sgproductionindia">
+                <span class="form-help">Optional YouTube or Instagram profile link.</span>
               </label>
             </div>
 
@@ -2570,9 +2692,10 @@
                 <img id="artistPreviewImage" src="assets/artist-photo-1.svg" alt="Artist profile preview">
               </div>
               <label class="file-trigger">
-                Artist Profile Image
-                <input id="artistImageInput" name="artistImage" type="file" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+                Choose Artist Profile Image
+                <input id="artistImageInput" type="file" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
               </label>
+              <span class="selected-file-name" id="artistImageFileName">No image selected</span>
               <span class="form-help">Circular preview. Square image recommended.</span>
             </div>
           </div>
@@ -2805,14 +2928,13 @@
         <div class="panel-header">
           <span class="panel-title">Update Ad</span>
         </div>
-        <form class="admin-form" id="adUpdateForm" method="POST" enctype="multipart/form-data">
-          <input type="hidden" name="action" value="save_ad">
+        <form class="admin-form" id="adUpdateForm">
           <div class="ad-upload-layout">
             <div class="form-grid">
               <label class="form-field full">
                 Advertising Media
-                <input id="adMediaInput" type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime">
-                <span class="form-help">Accepts JPG, PNG, WEBP, or video. 9:16 ratio recommended.</span>
+                <input id="adMediaInput" type="file" accept=".jpg,.jpeg,.png,.mp4,image/jpeg,image/png,video/mp4">
+                <span class="form-help">Accepts JPG, PNG, or MP4. 9:16 ratio recommended. MP4 should be muted looping video.</span>
               </label>
               <div class="ad-media-meta full" id="adMediaMeta">
                 <span id="adFileName">No file selected</span>
@@ -2822,12 +2944,12 @@
               <div class="ratio-warning full" id="adRatioWarning">For best results use 9:16 aspect ratio</div>
               <label class="form-field full">
                 Advertisement Click URL
-                <input id="adClickUrlInput" type="url" name="adLinkUrl" value="https://example.com/campaign">
+                <input id="adClickUrlInput" type="url" value="https://example.com/campaign">
                 <span class="form-help">User will be redirected here when they click the ad</span>
               </label>
               <label class="check-card toggle-card">
                 <span>Show advertisement on single song pages</span>
-                <input type="checkbox" name="adEnabled" checked>
+                <input type="checkbox" checked>
               </label>
               <label class="check-card toggle-card">
                 <span>Show advertisement on homepage</span>
@@ -2890,8 +3012,7 @@
         </div>
       </div>
 
-      <form class="settings-stack" id="websiteSettingsForm" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="action" value="save_site">
+      <form class="settings-stack" id="websiteSettingsForm">
         <div class="settings-card-grid">
           <div class="panel">
             <div class="panel-header">
@@ -2900,43 +3021,35 @@
             <div class="admin-form">
               <label class="form-field">
                 Website Title
-                <input type="text" name="siteTitle" value="SG Production">
+                <input type="text" value="SG Production">
               </label>
               <label class="form-field">
                 Tagline
-                <input type="text" name="tagline" value="Original music • direct download • no barriers">
+                <input type="text" value="Original music • direct download • no barriers">
               </label>
               <label class="form-field">
-                Contact Email
-                <input type="email" name="contactEmail" value="bookings@sgproduction.example">
-              </label>
-              <label class="form-field">
-                YouTube Section Heading
-                <input type="text" name="youtubeHeading" value="Subscribe on YouTube">
-              </label>
-              <label class="form-field">
-                YouTube Section Text
-                <textarea name="youtubeText" rows="2" placeholder="Describe your YouTube channel..."></textarea>
+                YouTube Subscribe Link
+                <input type="url" value="https://www.youtube.com/@sgproductionindia">
               </label>
             </div>
           </div>
 
           <div class="panel">
             <div class="panel-header">
-              <span class="panel-title">Catalog Settings</span>
+              <span class="panel-title">SEO</span>
             </div>
             <div class="admin-form">
               <label class="form-field">
-                Latest Releases Count
-                <input type="number" name="latestCount" value="5" min="1" max="12">
+                Default Page Title
+                <input type="text" value="SG Production - Original Music Downloads">
               </label>
               <label class="form-field">
-                Tracks Per Page
-                <input type="number" name="tracksPerPage" value="15" min="5" max="50">
+                Clean URL Format
+                <input type="text" value="https://sgproduction.music/song-name">
               </label>
               <label class="form-field">
-                Pagination Demo Pages
-                <input type="number" name="paginationDemoPages" value="12" min="1" max="40">
+                Default Share Title
+                <input type="text" value="Download music from SG Production">
               </label>
             </div>
           </div>
@@ -2952,21 +3065,67 @@
                 <span>Meta Description</span>
                 <span class="char-count"><span id="metaDescriptionCount">0</span>/160</span>
               </span>
-              <textarea id="metaDescriptionInput" name="metaDescription" rows="3" maxlength="160" placeholder="Short description shown in search results."></textarea>
+              <textarea id="metaDescriptionInput" rows="3" maxlength="160" placeholder="Short description shown in search results."></textarea>
             </label>
             <label class="form-field">
               OG Image
               <div class="settings-upload-row">
                 <div class="settings-preview" id="ogImagePreview">OG</div>
-                <input id="ogImageInput" name="ogImage" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                <input id="ogImageInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
               </div>
             </label>
             <label class="form-field">
               Favicon
               <div class="settings-upload-row">
                 <div class="settings-preview square" id="faviconPreview">Icon</div>
-                <input id="faviconInput" name="favicon" type="file" accept=".ico,.png,.jpg,.jpeg,.webp,.svg,image/vnd.microsoft.icon,image/x-icon,image/jpeg,image/png,image/webp,image/svg+xml">
+                <input id="faviconInput" type="file" accept=".ico,.png,.svg,image/png,image/svg+xml">
               </div>
+            </label>
+            <label class="form-field full">
+              Google Analytics ID
+              <input type="text" placeholder="G-XXXXXXXXXX">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">HOMEPAGE LAYOUT</span>
+          </div>
+          <div class="check-grid">
+            <label class="check-card toggle-card"><span>Latest Releases</span><input type="checkbox" checked></label>
+            <label class="check-card toggle-card"><span>Featured Artists</span><input type="checkbox" checked></label>
+            <label class="check-card toggle-card"><span>YouTube Section</span><input type="checkbox" checked></label>
+            <label class="check-card toggle-card"><span>Free Download Banner</span><input type="checkbox" checked></label>
+          </div>
+          <div class="form-grid" style="margin-top:16px;">
+            <label class="form-field">
+              Homepage Hero Text
+              <input type="text" value="SG Production">
+            </label>
+            <label class="form-field">
+              Homepage Sub-text
+              <input type="text" value="Original music • direct download • no barriers">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">DOWNLOAD SETTINGS</span>
+          </div>
+          <div class="check-grid">
+            <label class="check-card toggle-card"><span>Require ad view before download</span><input type="checkbox"></label>
+            <label class="check-card toggle-card"><span>Show WAV quality badge on song cards</span><input type="checkbox" checked></label>
+          </div>
+          <div class="form-grid" style="margin-top:16px;">
+            <label class="form-field">
+              Download Button Label
+              <input type="text" value="Download Track">
+            </label>
+            <label class="form-field full">
+              Custom Download Page Message
+              <textarea rows="4" placeholder="Add a custom message shown before download starts."></textarea>
             </label>
           </div>
         </div>
@@ -2978,19 +3137,27 @@
           <div class="form-grid">
             <label class="form-field">
               Instagram
-              <input type="url" name="instagram" value="https://www.instagram.com/sgproduction.music">
-            </label>
-            <label class="form-field">
-              Spotify
-              <input type="url" name="spotify" placeholder="https://open.spotify.com/artist/...">
-            </label>
-            <label class="form-field">
-              Apple Music
-              <input type="url" name="appleMusic" placeholder="https://music.apple.com/...">
+              <input type="url" value="https://instagram.com/sgproduction.music">
             </label>
             <label class="form-field">
               YouTube
-              <input type="url" name="youtube" value="https://www.youtube.com/@sgproductionindia">
+              <input type="url" value="https://www.youtube.com/@sgproductionindia">
+            </label>
+            <label class="form-field">
+              Spotify
+              <input type="url" placeholder="https://open.spotify.com/artist/...">
+            </label>
+            <label class="form-field">
+              SoundCloud
+              <input type="url" placeholder="https://soundcloud.com/...">
+            </label>
+            <label class="form-field">
+              Twitter/X
+              <input type="url" placeholder="https://x.com/...">
+            </label>
+            <label class="form-field">
+              WhatsApp Contact Link
+              <input type="url" placeholder="https://wa.me/91XXXXXXXXXX">
             </label>
           </div>
         </div>
@@ -3353,6 +3520,7 @@
   const artistSocialInput = document.querySelector('#artistSocialInput');
   const artistImageInput = document.querySelector('#artistImageInput');
   const artistPreviewImage = document.querySelector('#artistPreviewImage');
+  const artistImageFileName = document.querySelector('#artistImageFileName');
   const genreTagShell = document.querySelector('#genreTagShell');
   const genreTagInput = document.querySelector('#genreTagInput');
   const bioCount = document.querySelector('#bioCount');
@@ -3396,6 +3564,7 @@
     selectedGenres = ['Original Mix', 'Soundcheck'];
     renderGenreTags();
     if (artistPreviewImage) artistPreviewImage.src = 'assets/artist-photo-1.svg';
+    if (artistImageFileName) artistImageFileName.textContent = 'No image selected';
     if (bioCount) bioCount.textContent = '0';
     artistNameInput?.focus();
   }
@@ -3476,6 +3645,7 @@
     const file = artistImageInput.files && artistImageInput.files[0];
     if (!file || !artistPreviewImage) return;
     artistPreviewImage.src = URL.createObjectURL(file);
+    if (artistImageFileName) artistImageFileName.textContent = file.name;
   });
 
   artistBioInput?.addEventListener('input', () => {
@@ -3514,6 +3684,7 @@
       selectedGenres = (card.dataset.genres || '').split(',').map(item => item.trim()).filter(Boolean);
       renderGenreTags();
       if (artistPreviewImage) artistPreviewImage.src = card.dataset.image || 'assets/artist-photo-1.svg';
+      if (artistImageFileName) artistImageFileName.textContent = 'Current profile image';
       if (bioCount) bioCount.textContent = String(artistBioInput.value.length);
       focusArtistForm();
     }
@@ -3934,11 +4105,52 @@
   let analyticsSortKey = 'index';
   let analyticsSortDir = 1;
 
-  const chartPoints = {
-    Downloads: '45,210 165,178 285,192 405,120 525,145 645,82 765,112 875,54',
-    'Page Views': '45,198 165,152 285,168 405,102 525,126 645,64 765,78 875,42',
-    'Ad Clicks': '45,225 165,214 285,218 405,188 525,202 645,164 765,176 875,142'
+  const chartData = {
+    Downloads: {
+      points: '80,210 194,178 308,192 422,120 536,145 650,82 764,112 875,54',
+      values: ['420', '560', '510', '760', '650', '870', '740', '920'],
+      total: '3,847',
+      label: 'total downloads',
+      peak: 'Peak: May 9 · 920'
+    },
+    'Page Views': {
+      points: '80,198 194,152 308,168 422,102 536,126 650,64 764,78 875,42',
+      values: ['920', '1.2k', '1.1k', '1.5k', '1.3k', '1.8k', '1.7k', '2.0k'],
+      total: '8,120',
+      label: 'total page views',
+      peak: 'Peak: May 9 · 2,020'
+    },
+    'Ad Clicks': {
+      points: '80,225 194,214 308,218 422,188 536,202 650,164 764,176 875,142',
+      values: ['18', '24', '21', '42', '36', '58', '49', '66'],
+      total: '284',
+      label: 'total ad clicks',
+      peak: 'Peak: May 9 · 66'
+    }
   };
+
+  function renderAnalyticsChart(type) {
+    const data = chartData[type] || chartData.Downloads;
+    const line = document.querySelector('#analyticsLine');
+    const pointLayer = document.querySelector('#analyticsPointLayer');
+    const total = document.querySelector('#analyticsChartTotal');
+    const peak = document.querySelector('#analyticsChartPeak');
+    const summaryLabel = total?.parentElement;
+
+    if (line) line.setAttribute('points', data.points);
+    if (pointLayer) {
+      pointLayer.innerHTML = data.points.split(' ').map((pair, index) => {
+        const [x, y] = pair.split(',').map(Number);
+        const left = (x / 900) * 100;
+        const top = (y / 260) * 100;
+        const value = data.values[index];
+        return `<button class="chart-point" type="button" style="left:${left}%;top:${top}%;" aria-label="${value} ${data.label}"><span class="chart-point-value">${value}</span></button>`;
+      }).join('');
+    }
+    if (total) total.textContent = data.total;
+    if (summaryLabel) summaryLabel.lastChild.textContent = ` ${data.label}`;
+    if (peak) peak.textContent = data.peak;
+  }
 
   document.querySelectorAll('.date-chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -3951,18 +4163,11 @@
     button.addEventListener('click', () => {
       document.querySelectorAll('#analyticsChartToggle button').forEach(item => item.classList.remove('active'));
       button.classList.add('active');
-      const line = document.querySelector('#analyticsLine');
-      const dots = document.querySelector('#analyticsDots');
-      const points = chartPoints[button.dataset.chart] || chartPoints.Downloads;
-      if (line) line.setAttribute('points', points);
-      if (dots) {
-        dots.innerHTML = points.split(' ').map(pair => {
-          const [x, y] = pair.split(',');
-          return `<circle cx="${x}" cy="${y}" r="5"></circle>`;
-        }).join('');
-      }
+      renderAnalyticsChart(button.dataset.chart);
     });
   });
+
+  renderAnalyticsChart('Downloads');
 
   function getAnalyticsRows() {
     return Array.from(analyticsTable?.querySelectorAll('tbody tr') || []);

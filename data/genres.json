@@ -1,0 +1,30 @@
+[
+  {
+    "id": "original-mix",
+    "name": "Original Mix",
+    "slug": "original-mix",
+    "description": "Original SG Production mixes and main catalog releases.",
+    "color": "#10d9ff"
+  },
+  {
+    "id": "soundcheck",
+    "name": "Soundcheck",
+    "slug": "soundcheck",
+    "description": "Soundcheck focused drops and test mixes.",
+    "color": "#00e6a8"
+  },
+  {
+    "id": "marathi",
+    "name": "Marathi",
+    "slug": "marathi",
+    "description": "Marathi inspired releases.",
+    "color": "#8b5cf6"
+  },
+  {
+    "id": "hindi",
+    "name": "Hindi",
+    "slug": "hindi",
+    "description": "Hindi catalog releases.",
+    "color": "#f6b73c"
+  }
+]

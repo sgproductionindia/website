@@ -7,6 +7,7 @@ const ADMIN_PASSWORD = 'hyqhyp-viKfa3-timfaw';
 const TRACKS_FILE = __DIR__ . '/data/tracks.json';
 const SETTINGS_FILE = __DIR__ . '/data/settings.json';
 const ARTISTS_FILE = __DIR__ . '/data/artists.json';
+const GENRES_FILE = __DIR__ . '/data/genres.json';
 const AD_STATS_FILE = __DIR__ . '/data/ad-stats.json';
 const COVER_DIR = __DIR__ . '/uploads/covers';
 const AUDIO_DIR = __DIR__ . '/uploads/audio';
@@ -48,6 +49,10 @@ function ensureStorage(): void
 
     if (!file_exists(ARTISTS_FILE)) {
         file_put_contents(ARTISTS_FILE, json_encode(defaultArtists(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
+    }
+
+    if (!file_exists(GENRES_FILE)) {
+        file_put_contents(GENRES_FILE, json_encode(defaultGenres(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
 
     if (!file_exists(AD_STATS_FILE)) {
@@ -162,6 +167,40 @@ function defaultAdStats(): array
     ];
 }
 
+function defaultGenres(): array
+{
+    return [
+        [
+            'id' => 'original-mix',
+            'name' => 'Original Mix',
+            'slug' => 'original-mix',
+            'description' => 'Original SG Production mixes and main catalog releases.',
+            'color' => '#10d9ff',
+        ],
+        [
+            'id' => 'soundcheck',
+            'name' => 'Soundcheck',
+            'slug' => 'soundcheck',
+            'description' => 'Soundcheck focused drops and test mixes.',
+            'color' => '#00e6a8',
+        ],
+        [
+            'id' => 'marathi',
+            'name' => 'Marathi',
+            'slug' => 'marathi',
+            'description' => 'Marathi inspired releases.',
+            'color' => '#8b5cf6',
+        ],
+        [
+            'id' => 'hindi',
+            'name' => 'Hindi',
+            'slug' => 'hindi',
+            'description' => 'Hindi catalog releases.',
+            'color' => '#f6b73c',
+        ],
+    ];
+}
+
 function defaultArtists(): array
 {
     return [
@@ -228,6 +267,49 @@ function readArtists(): array
     $artists = json_decode($json ?: '[]', true);
 
     return is_array($artists) ? $artists : defaultArtists();
+}
+
+function readGenres(): array
+{
+    ensureStorage();
+    $json = file_get_contents(GENRES_FILE);
+    $genres = json_decode($json ?: '[]', true);
+
+    return is_array($genres) ? $genres : defaultGenres();
+}
+
+function writeGenres(array $genres): void
+{
+    $json = json_encode(array_values($genres), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    if ($json === false || file_put_contents(GENRES_FILE, $json . "\n", LOCK_EX) === false) {
+        throw new RuntimeException('Could not save genres.');
+    }
+}
+
+function genreUsageCounts(string $genreName, array $tracks, array $artists): array
+{
+    $needle = strtolower(trim($genreName));
+    $songCount = 0;
+    $artistCount = 0;
+
+    foreach ($tracks as $track) {
+        if (is_array($track) && strtolower(trim((string) ($track['genre'] ?? ''))) === $needle) {
+            $songCount += 1;
+        }
+    }
+
+    foreach ($artists as $artist) {
+        $artistGenres = is_array($artist['trackGenres'] ?? null) ? $artist['trackGenres'] : [];
+        foreach ($artistGenres as $artistGenre) {
+            if (strtolower(trim((string) $artistGenre)) === $needle) {
+                $artistCount += 1;
+                break;
+            }
+        }
+    }
+
+    return ['songs' => $songCount, 'artists' => $artistCount];
 }
 
 function readAdStats(): array
@@ -931,10 +1013,97 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
     }
 }
 
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_genre') {
+    try {
+        $genres = readGenres();
+        $genreId = trim((string) ($_POST['genreId'] ?? ''));
+        $name = trim((string) ($_POST['genreName'] ?? ''));
+        $slug = slugify((string) ($_POST['genreSlug'] ?? $name));
+        $description = substr(trim((string) ($_POST['genreDescription'] ?? '')), 0, 150);
+        $color = trim((string) ($_POST['genreColor'] ?? '#10d9ff'));
+
+        if ($name === '') {
+            throw new RuntimeException('Genre name is required.');
+        }
+
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            $color = '#10d9ff';
+        }
+
+        $isNewGenre = $genreId === '';
+        $genreId = $isNewGenre ? $slug : $genreId;
+        $index = findIndexById($genres, $genreId);
+
+        if ($isNewGenre && $index !== null) {
+            throw new RuntimeException('This genre already exists.');
+        }
+
+        $genre = [
+            'id' => $genreId,
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $description,
+            'color' => $color,
+        ];
+
+        if ($index === null) {
+            array_unshift($genres, $genre);
+        } else {
+            $genres[$index] = $genre;
+        }
+
+        writeGenres($genres);
+        $_SESSION['flash_success'] = 'Genre saved.';
+        header('Location: admin.php#genres');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_genre') {
+    try {
+        $genreId = (string) ($_POST['genreId'] ?? '');
+        $genres = readGenres();
+        $tracksForGenre = readTracks();
+        $artistsForGenre = readArtists();
+        $index = findIndexById($genres, $genreId);
+
+        if ($index === null) {
+            throw new RuntimeException('Genre not found.');
+        }
+
+        $genreName = (string) ($genres[$index]['name'] ?? '');
+        $counts = genreUsageCounts($genreName, $tracksForGenre, $artistsForGenre);
+
+        if ($counts['songs'] > 0) {
+            throw new RuntimeException('Cannot delete. Reassign or remove ' . $counts['songs'] . ' songs first.');
+        }
+
+        foreach ($artistsForGenre as $artistIndex => $artist) {
+            if (!is_array($artist)) {
+                continue;
+            }
+
+            $artistGenres = is_array($artist['trackGenres'] ?? null) ? $artist['trackGenres'] : [];
+            $artistsForGenre[$artistIndex]['trackGenres'] = array_values(array_filter($artistGenres, static fn ($artistGenre): bool => strtolower(trim((string) $artistGenre)) !== strtolower(trim($genreName))));
+        }
+
+        array_splice($genres, $index, 1);
+        writeGenres($genres);
+        writeArtists($artistsForGenre);
+        $_SESSION['flash_success'] = 'Genre deleted.';
+        header('Location: admin.php#genres');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
+
 $settings = readSettings();
 $tracks = readTracks();
 $artists = readArtists();
-$adStats = readAdStats();
+$genres = readGenres();
 ?>
 <!doctype html>
 <html lang="en">
@@ -973,25 +1142,6 @@ $adStats = readAdStats();
       a {
         color: inherit;
         text-decoration: none;
-      }
-
-      .alert {
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-        font-weight: 600;
-      }
-
-      .alert-error {
-        background: rgba(255, 69, 96, 0.12);
-        color: #ff4560;
-        border: 1px solid rgba(255, 69, 96, 0.25);
-      }
-
-      .alert-success {
-        background: rgba(0, 255, 136, 0.1);
-        color: #00ff88;
-        border: 1px solid rgba(0, 255, 136, 0.25);
       }
 
       .admin-shell {
@@ -1275,6 +1425,61 @@ $adStats = readAdStats();
         background: #0b0f14;
       }
 
+      .genre-admin-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .genre-admin-card {
+        border: 1px solid var(--line);
+        border-top: 4px solid var(--genre-color, var(--cyan));
+        border-radius: 8px;
+        padding: 14px;
+        background: #0b0f14;
+      }
+
+      .genre-admin-card strong,
+      .genre-admin-card code {
+        display: block;
+      }
+
+      .genre-admin-card code {
+        margin-top: 5px;
+        color: #7a8fa6;
+        font-size: 0.82rem;
+      }
+
+      .genre-counts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .genre-counts span {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: #c8d0d8;
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .color-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .color-row input[type="color"] {
+        width: 54px;
+        min-height: 44px;
+        padding: 4px;
+      }
+
       .artist-admin-head {
         display: grid;
         grid-template-columns: 58px minmax(0, 1fr);
@@ -1289,6 +1494,65 @@ $adStats = readAdStats();
         border-radius: 8px;
         object-fit: cover;
         background: #020305;
+      }
+
+      .artist-image-panel {
+        min-height: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        background: #0b0f14;
+        display: grid;
+        place-items: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .artist-image-panel input[type="file"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+      }
+
+      .artist-form-preview {
+        width: 116px;
+        height: 116px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        overflow: hidden;
+        background: radial-gradient(circle at 30% 20%, rgba(16, 217, 255, 0.42), transparent 36%), #121922;
+      }
+
+      .artist-form-preview img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      .artist-file-button {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(16, 217, 255, 0.55);
+        border-radius: 999px;
+        padding: 0 14px;
+        color: var(--cyan);
+        background: rgba(16, 217, 255, 0.1);
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .artist-file-name {
+        max-width: 100%;
+        color: var(--muted);
+        font-size: 0.78rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .ad-preview {
@@ -1348,7 +1612,8 @@ $adStats = readAdStats();
         }
 
         .dashboard-grid,
-        .artist-admin-list {
+        .artist-admin-list,
+        .genre-admin-list {
           grid-template-columns: 1fr;
         }
       }
@@ -1389,11 +1654,12 @@ $adStats = readAdStats();
       }
 
       .sidebar-brand strong,
-      .sidebar-brand span:not(.logo) {
+      .sidebar-brand-text,
+      .sidebar-role {
         display: block;
       }
 
-      .sidebar-brand span:not(.logo) {
+      .sidebar-role {
         margin-top: 2px;
         color: #7a8fa6;
         font-size: 0.68rem;
@@ -1565,9 +1831,9 @@ $adStats = readAdStats();
                 <path d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"></path>
               </svg>
             </span>
-            <span>
+            <span class="sidebar-brand-text">
               <strong>SG Production</strong>
-              <span>Admin Studio</span>
+              <span class="sidebar-role">Admin Studio</span>
             </span>
           </a>
           <div class="sidebar-section">
@@ -1579,6 +1845,7 @@ $adStats = readAdStats();
             <a class="sidebar-link" href="#upload-song" data-admin-nav="upload-song">Upload New Song</a>
             <a class="sidebar-link" href="#uploaded-songs" data-admin-nav="uploaded-songs">Uploaded Songs</a>
             <a class="sidebar-link" href="#artists" data-admin-nav="artists">Artist Management</a>
+            <a class="sidebar-link" href="#genres" data-admin-nav="genres">Genre Management</a>
           </div>
           <div class="sidebar-section">
             <span class="sidebar-label">Monetization</span>
@@ -1652,6 +1919,10 @@ $adStats = readAdStats();
           $seo = is_array($settings['seo'] ?? null) ? $settings['seo'] : defaultSettings()['seo'];
           $catalog = is_array($settings['catalog'] ?? null) ? $settings['catalog'] : [];
           $adStats = readAdStats();
+          $genreNames = array_values(array_filter(array_map(static fn ($genre): string => is_array($genre) ? (string) ($genre['name'] ?? '') : '', $genres)));
+          if ($genreNames === []) {
+              $genreNames = ['Soundcheck', 'Marathi', 'Hindi', 'Original Mix'];
+          }
           $featuredCount = count(array_filter($tracks, static fn ($track): bool => is_array($track) && !empty($track['isFeatured'] ?? $track['isNew'] ?? false)));
           $storageUsed = folderSize(__DIR__ . '/uploads');
           $lastTrack = is_array($tracks[0] ?? null) ? $tracks[0] : null;
@@ -1785,10 +2056,9 @@ $adStats = readAdStats();
             <label>
               Genre
               <select name="genre">
-                <option>Soundcheck</option>
-                <option>Marathi</option>
-                <option>Hindi</option>
-                <option>Original Mix</option>
+                <?php foreach ($genreNames as $genreName): ?>
+                  <option><?= e($genreName) ?></option>
+                <?php endforeach; ?>
               </select>
             </label>
             <label>
@@ -1919,9 +2189,14 @@ $adStats = readAdStats();
               Release Year
               <input type="text" name="artistYear" value="<?= e(date('Y')) ?>">
             </label>
-            <label>
-              Artist Image
-              <input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+            <label class="artist-image-panel">
+              <span class="artist-form-preview">
+                <img data-artist-preview="new" src="assets/artist-photo-1.svg" alt="Artist profile preview">
+              </span>
+              <span class="artist-file-button">Choose Artist Profile Image</span>
+              <input data-artist-image-input data-preview-target="new" data-file-name-target="new" type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+              <span class="artist-file-name" data-file-name="new">No image selected</span>
+              <span class="muted">Circular preview. Square image recommended.</span>
             </label>
             <label class="full">
               Genres Assigned
@@ -1964,9 +2239,13 @@ $adStats = readAdStats();
                       Release Year
                       <input type="text" name="artistYear" value="<?= e((string) ($artist['year'] ?? date('Y'))) ?>">
                     </label>
-                    <label>
-                      Replace Image
-                      <input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+                    <label class="artist-image-panel">
+                      <span class="artist-form-preview">
+                        <img data-artist-preview="<?= e($artistId) ?>" src="<?= e((string) ($artist['image'] ?? 'assets/artist-photo-1.svg')) ?>" alt="Artist profile preview">
+                      </span>
+                      <span class="artist-file-button">Replace Profile Image</span>
+                      <input data-artist-image-input data-preview-target="<?= e($artistId) ?>" data-file-name-target="<?= e($artistId) ?>" type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml">
+                      <span class="artist-file-name" data-file-name="<?= e($artistId) ?>">Current profile image</span>
                     </label>
                     <label class="full">
                       Genres Assigned
@@ -1985,6 +2264,102 @@ $adStats = readAdStats();
               </article>
             <?php endforeach; ?>
           </div>
+        </section>
+
+        <section class="panel admin-section" id="genres">
+          <h1>Genre Management</h1>
+          <p class="muted">Add and manage genres for your songs and artists.</p>
+          <form class="grid" method="post">
+            <input type="hidden" name="action" value="save_genre">
+            <label>
+              Genre Name
+              <input id="genreNameInput" type="text" name="genreName" placeholder="Original Mix" required>
+            </label>
+            <label>
+              Genre Slug
+              <input id="genreSlugInput" type="text" name="genreSlug" placeholder="original-mix" required>
+            </label>
+            <label class="full">
+              Genre Description
+              <textarea name="genreDescription" maxlength="150" rows="3" placeholder="Optional short description for this genre."></textarea>
+            </label>
+            <label>
+              Genre Color
+              <span class="color-row">
+                <input type="color" name="genreColor" value="#10d9ff">
+                <span class="muted">Used as the accent color for genre cards and future song pills.</span>
+              </span>
+            </label>
+            <div class="full">
+              <button class="button primary" type="submit">Save Genre</button>
+              <button class="button" type="reset">Clear</button>
+            </div>
+          </form>
+
+          <?php if ($genres === []): ?>
+            <p class="muted">No genres added yet.</p>
+          <?php else: ?>
+            <label style="margin-top: 18px;">
+              Search Genres
+              <input id="genreSearchInput" type="search" placeholder="Search by genre name">
+            </label>
+            <div class="genre-admin-list">
+              <?php foreach ($genres as $genre): ?>
+                <?php if (!is_array($genre)) { continue; } ?>
+                <?php
+                  $genreId = (string) ($genre['id'] ?? '');
+                  $genreName = (string) ($genre['name'] ?? 'Genre');
+                  $genreCounts = genreUsageCounts($genreName, $tracks, $artists);
+                  $genreColor = (string) ($genre['color'] ?? '#10d9ff');
+                  if (!preg_match('/^#[0-9a-fA-F]{6}$/', $genreColor)) {
+                      $genreColor = '#10d9ff';
+                  }
+                ?>
+                <article class="genre-admin-card" id="genre-<?= e($genreId) ?>" data-genre-name="<?= e(strtolower($genreName)) ?>" style="--genre-color: <?= e($genreColor) ?>;">
+                  <strong><?= e($genreName) ?></strong>
+                  <code><?= e((string) ($genre['slug'] ?? $genreId)) ?></code>
+                  <?php if (!empty($genre['description'])): ?>
+                    <p class="muted"><?= e((string) $genre['description']) ?></p>
+                  <?php endif; ?>
+                  <div class="genre-counts">
+                    <span><?= e((string) $genreCounts['songs']) ?> songs</span>
+                    <span><?= e((string) $genreCounts['artists']) ?> artists</span>
+                  </div>
+                  <details class="editor">
+                    <summary>Edit genre</summary>
+                    <form class="grid" method="post">
+                      <input type="hidden" name="action" value="save_genre">
+                      <input type="hidden" name="genreId" value="<?= e($genreId) ?>">
+                      <label>
+                        Genre Name
+                        <input type="text" name="genreName" value="<?= e($genreName) ?>" required>
+                      </label>
+                      <label>
+                        Genre Slug
+                        <input type="text" name="genreSlug" value="<?= e((string) ($genre['slug'] ?? $genreId)) ?>" required>
+                      </label>
+                      <label class="full">
+                        Genre Description
+                        <textarea name="genreDescription" maxlength="150" rows="3"><?= e((string) ($genre['description'] ?? '')) ?></textarea>
+                      </label>
+                      <label>
+                        Genre Color
+                        <input type="color" name="genreColor" value="<?= e($genreColor) ?>">
+                      </label>
+                      <div class="full">
+                        <button class="button primary" type="submit">Update Genre</button>
+                      </div>
+                    </form>
+                    <form class="mini-form" method="post" onsubmit="return confirm('Deleting this genre will unassign it from all artists and cannot be done while songs use it. Continue?');">
+                      <input type="hidden" name="action" value="delete_genre">
+                      <input type="hidden" name="genreId" value="<?= e($genreId) ?>">
+                      <button class="button danger" type="submit">Delete Genre</button>
+                    </form>
+                  </details>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
         </section>
 
         <section class="panel admin-section" id="uploaded-songs">
@@ -2019,9 +2394,9 @@ $adStats = readAdStats();
                       <button class="button" type="submit" <?= $trackIndex === count($tracks) - 1 ? 'disabled' : '' ?>>Down</button>
                     </form>
                     <?php if (!empty($track['previewUrl'])): ?>
-                      <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Preview</a>
+                      <a class="button" href="<?= e((string) $track['previewUrl']) ?>">Play</a>
                     <?php elseif (!empty($track['downloadUrl']) && !isHttpUrl((string) $track['downloadUrl'])): ?>
-                      <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Preview</a>
+                      <a class="button" href="<?= e((string) $track['downloadUrl']) ?>">Play</a>
                     <?php endif; ?>
                     <?php if (!empty($track['downloadUrl'])): ?>
                       <a class="button" href="<?= e((string) $track['downloadUrl']) ?>" target="_blank" rel="noreferrer">Download</a>
@@ -2054,7 +2429,7 @@ $adStats = readAdStats();
                       <label>
                         Genre
                         <select name="genre">
-                          <?php foreach (['Soundcheck', 'Marathi', 'Hindi', 'Original Mix'] as $genreOption): ?>
+                          <?php foreach ($genreNames as $genreOption): ?>
                             <option <?= ((string) ($track['genre'] ?? '')) === $genreOption ? 'selected' : '' ?>><?= e($genreOption) ?></option>
                           <?php endforeach; ?>
                         </select>
@@ -2170,6 +2545,61 @@ $adStats = readAdStats();
       if (adminSections.length > 0) {
         showAdminSection(window.location.hash.replace("#", "") || "dashboard", false);
       }
+
+      function selectorValue(value) {
+        return window.CSS && CSS.escape ? CSS.escape(value) : String(value).replace(/"/g, '\\"');
+      }
+
+      document.querySelectorAll("[data-artist-image-input]").forEach((input) => {
+        input.addEventListener("change", () => {
+          const file = input.files && input.files[0];
+          const previewKey = input.dataset.previewTarget || "";
+          const nameKey = input.dataset.fileNameTarget || previewKey;
+          const preview = document.querySelector(`[data-artist-preview="${selectorValue(previewKey)}"]`);
+          const fileName = document.querySelector(`[data-file-name="${selectorValue(nameKey)}"]`);
+
+          if (!file) {
+            return;
+          }
+
+          if (preview) {
+            preview.src = URL.createObjectURL(file);
+          }
+
+          if (fileName) {
+            fileName.textContent = file.name;
+          }
+        });
+      });
+
+      const genreNameInput = document.querySelector("#genreNameInput");
+      const genreSlugInput = document.querySelector("#genreSlugInput");
+
+      function slugifyAdmin(value) {
+        return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      }
+
+      genreNameInput?.addEventListener("input", () => {
+        if (!genreSlugInput || genreSlugInput.dataset.touched === "true") {
+          return;
+        }
+
+        genreSlugInput.value = slugifyAdmin(genreNameInput.value);
+      });
+
+      genreSlugInput?.addEventListener("input", () => {
+        genreSlugInput.dataset.touched = "true";
+      });
+
+      const genreSearchInput = document.querySelector("#genreSearchInput");
+      const genreCards = Array.from(document.querySelectorAll(".genre-admin-card"));
+
+      genreSearchInput?.addEventListener("input", () => {
+        const query = genreSearchInput.value.trim().toLowerCase();
+        genreCards.forEach((card) => {
+          card.hidden = query !== "" && !(card.dataset.genreName || "").includes(query);
+        });
+      });
 
       const audioInput = document.querySelector("#audioInput");
       const durationInput = document.querySelector("#durationInput");
