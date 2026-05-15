@@ -340,8 +340,6 @@
     background:var(--surface3);
   }
   .artist-name { font-size:16px; font-weight:800; color:var(--text); }
-  .artist-style { margin-top:4px; font-size:13px; color:var(--text-dim); }
-  .artist-genres { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin-top:14px; }
   .artist-card-actions {
     position:absolute;
     inset:0;
@@ -560,7 +558,7 @@
   .song-row {
     position:relative;
     display:grid;
-    grid-template-columns:minmax(280px,1.45fr) 120px 110px 110px 120px 260px;
+    grid-template-columns:minmax(280px,1.45fr) 120px 110px 110px 120px 128px;
     gap:14px;
     align-items:center;
     border:1px solid var(--border);
@@ -619,6 +617,16 @@
   .status-pill.unlisted { background:var(--red-dim); color:var(--red); }
   .song-flags { display:flex; flex-wrap:wrap; gap:6px; }
   .song-actions { display:flex; justify-content:flex-end; gap:8px; }
+  .song-action-btn.is-playing {
+    border-color:var(--cyan);
+    color:var(--cyan);
+    background:var(--cyan-dim);
+  }
+  .song-action-btn.danger:hover {
+    border-color:var(--red);
+    color:var(--red);
+    background:var(--red-dim);
+  }
   .song-delete-warning {
     grid-column:1 / -1;
     display:none;
@@ -915,6 +923,41 @@
     background:var(--cyan);
     color:#000;
   }
+  .custom-date-range {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .range-field {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--surface);
+    padding:4px 8px 4px 12px;
+  }
+  .range-field span {
+    color:var(--text-faint);
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .range-field .admin-control {
+    width:150px;
+    min-height:34px;
+    border:0;
+    border-radius:999px;
+    background:var(--surface2);
+    padding:7px 10px;
+  }
+  .date-range-apply {
+    min-height:42px;
+    padding-inline:16px;
+  }
   .analytics-kpis {
     display:grid;
     grid-template-columns:repeat(6,minmax(0,1fr));
@@ -977,20 +1020,39 @@
   }
   .chart-point {
     position:absolute;
+    width:28px;
+    height:28px;
+    border:0;
+    border-radius:50%;
+    background:transparent;
+    transform:translate(-50%, -50%);
+    pointer-events:auto;
+    cursor:pointer;
+    padding:0;
+  }
+  .chart-point::before {
+    content:'';
+    position:absolute;
+    left:50%;
+    top:50%;
     width:12px;
     height:12px;
-    border:0;
     border-radius:50%;
     background:var(--cyan);
     box-shadow:0 0 0 4px rgba(0,212,255,.12);
     transform:translate(-50%, -50%);
-    pointer-events:auto;
-    cursor:pointer;
+    transition:box-shadow .14s ease, transform .14s ease;
+  }
+  .chart-point:hover::before,
+  .chart-point:focus::before,
+  .chart-point:focus-visible::before {
+    box-shadow:0 0 0 6px rgba(0,212,255,.16), 0 0 18px rgba(0,212,255,.38);
+    transform:translate(-50%, -50%) scale(1.04);
   }
   .chart-point-value {
     position:absolute;
     left:50%;
-    bottom:18px;
+    bottom:30px;
     transform:translateX(-50%);
     border:1px solid var(--border);
     border-radius:999px;
@@ -1005,6 +1067,7 @@
     transition:opacity .14s ease, transform .14s ease;
   }
   .chart-point:hover .chart-point-value,
+  .chart-point:focus .chart-point-value,
   .chart-point:focus-visible .chart-point-value {
     opacity:1;
     transform:translateX(-50%) translateY(-2px);
@@ -1633,6 +1696,19 @@
     .admin-control {
       width:100%;
     }
+    .custom-date-range {
+      justify-content:flex-start;
+      width:100%;
+    }
+    .range-field {
+      flex:1 1 180px;
+    }
+    .range-field .admin-control {
+      width:100%;
+    }
+    .date-range-apply {
+      flex:1 1 120px;
+    }
     .panel,
     .analytics-table-wrap {
       overflow-x:auto;
@@ -1736,14 +1812,9 @@
       width:fit-content;
     }
     .song-actions {
-      justify-content:stretch;
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
+      justify-content:flex-start;
+      display:flex;
       gap:8px;
-    }
-    .song-actions .btn {
-      width:100%;
-      padding-inline:8px;
     }
     .song-delete-warning {
       flex-direction:column;
@@ -2234,12 +2305,22 @@
 
       <div class="analytics-filter-bar">
         <div class="date-chip-group">
-          <button class="date-chip active" type="button">7D</button>
-          <button class="date-chip" type="button">30D</button>
-          <button class="date-chip" type="button">90D</button>
-          <button class="date-chip" type="button">All Time</button>
+          <button class="date-chip active" type="button" data-analytics-range="7D">7D</button>
+          <button class="date-chip" type="button" data-analytics-range="30D">30D</button>
+          <button class="date-chip" type="button" data-analytics-range="90D">90D</button>
+          <button class="date-chip" type="button" data-analytics-range="all">All Time</button>
         </div>
-        <input class="admin-control" type="date" value="2026-05-09">
+        <div class="custom-date-range" aria-label="Custom analytics date range">
+          <label class="range-field">
+            <span>From</span>
+            <input class="admin-control" id="analyticsStartDate" type="date" value="2026-05-02">
+          </label>
+          <label class="range-field">
+            <span>To</span>
+            <input class="admin-control" id="analyticsEndDate" type="date" value="2026-05-09">
+          </label>
+          <button class="btn btn-outline date-range-apply" type="button" id="analyticsApplyRange">Apply</button>
+        </div>
       </div>
 
       <div class="analytics-kpis">
@@ -2528,73 +2609,73 @@
           <div><span class="metric-badge orange">92 ad clicks</span></div>
           <div class="song-flags"><span class="artist-genre-pill">Featured</span></div>
           <div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Midnight Echo? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Neon Pulse" data-artist="SG Production" data-genre="Soundcheck" data-duration="2:55" data-downloads="987" data-clicks="71" data-featured="true" data-status="Published" data-cover="assets/cover-2.jpg" data-date="2026-05-07">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-2.jpg" alt="Neon Pulse cover"></div><div><div class="song-title">Neon Pulse</div><div class="song-detail">SG Production · Soundcheck · 2:55</div></div></div>
           <div><span class="metric-badge cyan">987 downloads</span></div><div><span class="metric-badge orange">71 ad clicks</span></div><div class="song-flags"><span class="artist-genre-pill">Featured</span></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Neon Pulse? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Dark Frequency" data-artist="SG Production" data-genre="Hindi" data-duration="4:10" data-downloads="763" data-clicks="48" data-featured="false" data-status="Published" data-cover="assets/cover-3.jpg" data-date="2026-05-06">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-3.jpg" alt="Dark Frequency cover"></div><div><div class="song-title">Dark Frequency</div><div class="song-detail">SG Production · Hindi · 4:10</div></div></div>
           <div><span class="metric-badge cyan">763 downloads</span></div><div><span class="metric-badge orange">48 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Dark Frequency? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Electric Dream" data-artist="SG Production" data-genre="Original Mix" data-duration="5:20" data-downloads="642" data-clicks="43" data-featured="false" data-status="Draft" data-cover="assets/cover-4.jpg" data-date="2026-05-05">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-4.jpg" alt="Electric Dream cover"></div><div><div class="song-title">Electric Dream</div><div class="song-detail">SG Production · Original Mix · 5:20</div></div></div>
           <div><span class="metric-badge cyan">642 downloads</span></div><div><span class="metric-badge orange">43 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill draft">Draft</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Electric Dream? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Shadow Wave" data-artist="SG Production" data-genre="Marathi" data-duration="3:15" data-downloads="531" data-clicks="38" data-featured="true" data-status="Unlisted" data-cover="assets/cover-5.jpg" data-date="2026-05-04">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-5.jpg" alt="Shadow Wave cover"></div><div><div class="song-title">Shadow Wave</div><div class="song-detail">SG Production · Marathi · 3:15</div></div></div>
           <div><span class="metric-badge cyan">531 downloads</span></div><div><span class="metric-badge orange">38 ad clicks</span></div><div class="song-flags"><span class="artist-genre-pill">Featured</span></div><div><span class="status-pill unlisted">Unlisted</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Shadow Wave? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Lost Signal" data-artist="SG Production" data-genre="Soundcheck" data-duration="4:05" data-downloads="498" data-clicks="35" data-featured="false" data-status="Published" data-cover="assets/cover-6.jpg" data-date="2026-05-03">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-6.jpg" alt="Lost Signal cover"></div><div><div class="song-title">Lost Signal</div><div class="song-detail">SG Production · Soundcheck · 4:05</div></div></div>
           <div><span class="metric-badge cyan">498 downloads</span></div><div><span class="metric-badge orange">35 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Lost Signal? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Void Rhythm" data-artist="SG Production" data-genre="Hindi" data-duration="2:48" data-downloads="452" data-clicks="31" data-featured="false" data-status="Published" data-cover="assets/cover-7.jpg" data-date="2026-05-02">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-7.jpg" alt="Void Rhythm cover"></div><div><div class="song-title">Void Rhythm</div><div class="song-detail">SG Production · Hindi · 2:48</div></div></div>
           <div><span class="metric-badge cyan">452 downloads</span></div><div><span class="metric-badge orange">31 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Void Rhythm? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Raw Energy" data-artist="SG Production" data-genre="Marathi" data-duration="3:30" data-downloads="419" data-clicks="28" data-featured="false" data-status="Published" data-cover="assets/cover-1.jpg" data-date="2026-05-01">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-1.jpg" alt="Raw Energy cover"></div><div><div class="song-title">Raw Energy</div><div class="song-detail">SG Production · Marathi · 3:30</div></div></div>
           <div><span class="metric-badge cyan">419 downloads</span></div><div><span class="metric-badge orange">28 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Raw Energy? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Night Circuit" data-artist="SG Production" data-genre="Original Mix" data-duration="3:47" data-downloads="388" data-clicks="24" data-featured="false" data-status="Draft" data-cover="assets/cover-2.jpg" data-date="2026-04-30">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-2.jpg" alt="Night Circuit cover"></div><div><div class="song-title">Night Circuit</div><div class="song-detail">SG Production · Original Mix · 3:47</div></div></div>
           <div><span class="metric-badge cyan">388 downloads</span></div><div><span class="metric-badge orange">24 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill draft">Draft</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Night Circuit? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Stellar Drift" data-artist="SG Production" data-genre="Soundcheck" data-duration="5:10" data-downloads="351" data-clicks="22" data-featured="false" data-status="Published" data-cover="assets/cover-3.jpg" data-date="2026-04-29">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-3.jpg" alt="Stellar Drift cover"></div><div><div class="song-title">Stellar Drift</div><div class="song-detail">SG Production · Soundcheck · 5:10</div></div></div>
           <div><span class="metric-badge cyan">351 downloads</span></div><div><span class="metric-badge orange">22 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Stellar Drift? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Hyper Drive" data-artist="SG Production" data-genre="Hindi" data-duration="3:01" data-downloads="322" data-clicks="19" data-featured="false" data-status="Unlisted" data-cover="assets/cover-4.jpg" data-date="2026-04-28">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-4.jpg" alt="Hyper Drive cover"></div><div><div class="song-title">Hyper Drive</div><div class="song-detail">SG Production · Hindi · 3:01</div></div></div>
           <div><span class="metric-badge cyan">322 downloads</span></div><div><span class="metric-badge orange">19 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill unlisted">Unlisted</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Hyper Drive? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
         <article class="song-row" data-title="Phantom Bass" data-artist="SG Production" data-genre="Original Mix" data-duration="3:38" data-downloads="304" data-clicks="16" data-featured="false" data-status="Published" data-cover="assets/cover-5.jpg" data-date="2026-04-27">
           <div class="song-main"><div class="song-thumb"><img src="assets/cover-5.jpg" alt="Phantom Bass cover"></div><div><div class="song-title">Phantom Bass</div><div class="song-detail">SG Production · Original Mix · 3:38</div></div></div>
           <div><span class="metric-badge cyan">304 downloads</span></div><div><span class="metric-badge orange">16 ad clicks</span></div><div class="song-flags"></div><div><span class="status-pill published">Published</span></div>
-          <div class="song-actions"><button class="btn btn-outline" type="button" data-edit-song>Edit</button><button class="btn btn-outline" type="button" data-play-song>Play</button><button class="btn btn-outline" type="button" data-delete-song>Delete</button></div>
+          <div class="song-actions"><button class="icon-btn song-action-btn" type="button" data-edit-song aria-label="Edit song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button><button class="icon-btn song-action-btn" type="button" data-play-song aria-label="Play song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7-11-7z"/></svg></button><button class="icon-btn song-action-btn danger" type="button" data-delete-song aria-label="Delete song"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
           <div class="song-delete-warning"><span>Are you sure you want to delete Phantom Bass? This cannot be undone.</span><div><button class="btn btn-outline" type="button" data-cancel-delete>Cancel</button> <button class="btn btn-primary" type="button" data-confirm-delete>Confirm Delete</button></div></div>
         </article>
       </div>
@@ -2639,11 +2720,11 @@
       </aside>
     </section>
 
-    <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Add artists and connect them to genres">
+    <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Add artist profiles for the website">
       <div class="artist-toolbar">
         <div>
           <h2>Artist Management</h2>
-          <p>Add artists and connect them to genres</p>
+          <p>Add artist profiles for the website</p>
         </div>
         <button class="btn btn-primary" type="button" data-artist-focus>+ Add New Artist</button>
       </div>
@@ -2659,31 +2740,6 @@
               <label class="form-field">
                 Artist Name
                 <input id="artistNameInput" type="text" placeholder="SG Production" required>
-              </label>
-              <label class="form-field">
-                Artist Style
-                <input id="artistStyleInput" type="text" placeholder="Original Mix, Soundcheck" required>
-              </label>
-              <label class="form-field full">
-                Assigned Genres
-                <div class="tag-input-shell" id="genreTagShell">
-                  <span class="genre-tag" data-genre="Original Mix">Original Mix <button type="button" aria-label="Remove Original Mix">x</button></span>
-                  <span class="genre-tag" data-genre="Soundcheck">Soundcheck <button type="button" aria-label="Remove Soundcheck">x</button></span>
-                  <input id="genreTagInput" type="text" placeholder="Type genre and press Enter">
-                </div>
-                <span class="form-help">Examples: Marathi, Hindi, Original Mix, Soundcheck.</span>
-              </label>
-              <label class="form-field full">
-                <span class="char-row">
-                  <span>Artist Bio</span>
-                  <span class="char-count"><span id="bioCount">0</span>/200</span>
-                </span>
-                <textarea id="artistBioInput" rows="4" maxlength="200" placeholder="Short description for the artist page."></textarea>
-              </label>
-              <label class="form-field full">
-                Social Link
-                <input id="artistSocialInput" type="url" placeholder="https://youtube.com/@sgproductionindia">
-                <span class="form-help">Optional YouTube or Instagram profile link.</span>
               </label>
             </div>
 
@@ -2714,58 +2770,38 @@
         <div class="empty-state" id="artistEmptyState">
           <div>
             <h3>No artists added yet</h3>
-            <p>Create your first artist profile and connect it to genres.</p>
+            <p>Create your first artist profile for the website.</p>
             <button class="btn btn-primary" type="button" data-artist-focus>Add Your First Artist</button>
           </div>
         </div>
         <div class="artist-grid" id="artistGrid">
-          <article class="artist-card" data-name="SG Production" data-style="Original Mix" data-genres="Original Mix,Marathi" data-image="assets/artist-photo-1.svg" data-bio="Original releases and direct artist downloads." data-social="https://youtube.com/@sgproductionindia">
+          <article class="artist-card" data-name="SG Production" data-image="assets/artist-photo-1.svg">
             <div class="artist-avatar"><img src="assets/artist-photo-1.svg" alt="SG Production"></div>
             <div class="artist-name">SG Production</div>
-            <div class="artist-style">Original Mix</div>
-            <div class="artist-genres">
-              <span class="artist-genre-pill">Original Mix</span>
-              <span class="artist-genre-pill">Marathi</span>
-            </div>
             <div class="artist-card-actions">
               <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
               <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
             </div>
           </article>
-          <article class="artist-card" data-name="SG Soundcheck" data-style="Soundcheck" data-genres="Soundcheck,Hindi" data-image="assets/artist-photo-2.svg" data-bio="Soundcheck focused drops and testing mixes." data-social="">
+          <article class="artist-card" data-name="SG Soundcheck" data-image="assets/artist-photo-2.svg">
             <div class="artist-avatar"><img src="assets/artist-photo-2.svg" alt="SG Soundcheck"></div>
             <div class="artist-name">SG Soundcheck</div>
-            <div class="artist-style">Soundcheck</div>
-            <div class="artist-genres">
-              <span class="artist-genre-pill">Soundcheck</span>
-              <span class="artist-genre-pill">Hindi</span>
-            </div>
             <div class="artist-card-actions">
               <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
               <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
             </div>
           </article>
-          <article class="artist-card" data-name="Marathi Pulse" data-style="Marathi" data-genres="Marathi,Original Mix" data-image="assets/artist-photo-3.svg" data-bio="Marathi inspired rhythms for fresh releases." data-social="">
+          <article class="artist-card" data-name="Marathi Pulse" data-image="assets/artist-photo-3.svg">
             <div class="artist-avatar"><img src="assets/artist-photo-3.svg" alt="Marathi Pulse"></div>
             <div class="artist-name">Marathi Pulse</div>
-            <div class="artist-style">Marathi</div>
-            <div class="artist-genres">
-              <span class="artist-genre-pill">Marathi</span>
-              <span class="artist-genre-pill">Original Mix</span>
-            </div>
             <div class="artist-card-actions">
               <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
               <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
             </div>
           </article>
-          <article class="artist-card" data-name="Hindi Wave" data-style="Hindi" data-genres="Hindi,Soundcheck" data-image="assets/artist-photo-4.svg" data-bio="Hindi wave catalog profile." data-social="">
+          <article class="artist-card" data-name="Hindi Wave" data-image="assets/artist-photo-4.svg">
             <div class="artist-avatar"><img src="assets/artist-photo-4.svg" alt="Hindi Wave"></div>
             <div class="artist-name">Hindi Wave</div>
-            <div class="artist-style">Hindi</div>
-            <div class="artist-genres">
-              <span class="artist-genre-pill">Hindi</span>
-              <span class="artist-genre-pill">Soundcheck</span>
-            </div>
             <div class="artist-card-actions">
               <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
               <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
@@ -3365,6 +3401,17 @@
   const adStatusPill = document.querySelector('#adStatusPill');
   const adUpdateForm = document.querySelector('#adUpdateForm');
 
+  function showToast(message) {
+    if (!settingsToast) return;
+    const defaultText = settingsToast.textContent || 'Settings saved ✓';
+    settingsToast.textContent = message;
+    settingsToast.classList.add('show');
+    setTimeout(() => {
+      settingsToast.classList.remove('show');
+      settingsToast.textContent = defaultText;
+    }, 2200);
+  }
+
   function formatFileSize(bytes) {
     if (!bytes) return '0 MB';
     const mb = bytes / 1024 / 1024;
@@ -3515,19 +3562,12 @@
 
   const artistForm = document.querySelector('#artistForm');
   const artistNameInput = document.querySelector('#artistNameInput');
-  const artistStyleInput = document.querySelector('#artistStyleInput');
-  const artistBioInput = document.querySelector('#artistBioInput');
-  const artistSocialInput = document.querySelector('#artistSocialInput');
   const artistImageInput = document.querySelector('#artistImageInput');
   const artistPreviewImage = document.querySelector('#artistPreviewImage');
   const artistImageFileName = document.querySelector('#artistImageFileName');
-  const genreTagShell = document.querySelector('#genreTagShell');
-  const genreTagInput = document.querySelector('#genreTagInput');
-  const bioCount = document.querySelector('#bioCount');
   const artistGrid = document.querySelector('#artistGrid');
   const artistEmptyState = document.querySelector('#artistEmptyState');
   let editingArtistCard = null;
-  let selectedGenres = Array.from(document.querySelectorAll('.genre-tag')).map(tag => tag.dataset.genre);
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, char => ({
@@ -3539,33 +3579,11 @@
     }[char]));
   }
 
-  function renderGenreTags() {
-    if (!genreTagShell || !genreTagInput) return;
-    genreTagShell.querySelectorAll('.genre-tag').forEach(tag => tag.remove());
-    selectedGenres.forEach(genre => {
-      const tag = document.createElement('span');
-      tag.className = 'genre-tag';
-      tag.dataset.genre = genre;
-      tag.innerHTML = `${escapeHtml(genre)} <button type="button" aria-label="Remove ${escapeHtml(genre)}">x</button>`;
-      genreTagShell.insertBefore(tag, genreTagInput);
-    });
-  }
-
-  function addGenreTag(value) {
-    const genre = value.trim().replace(/,$/, '');
-    if (!genre || selectedGenres.includes(genre)) return;
-    selectedGenres.push(genre);
-    renderGenreTags();
-  }
-
   function resetArtistForm() {
     editingArtistCard = null;
     artistForm?.reset();
-    selectedGenres = ['Original Mix', 'Soundcheck'];
-    renderGenreTags();
     if (artistPreviewImage) artistPreviewImage.src = 'assets/artist-photo-1.svg';
     if (artistImageFileName) artistImageFileName.textContent = 'No image selected';
-    if (bioCount) bioCount.textContent = '0';
     artistNameInput?.focus();
   }
 
@@ -3581,13 +3599,10 @@
     artistGrid.style.display = hasArtists ? 'grid' : 'none';
   }
 
-  function artistCardTemplate({ name, style, genres, image, bio, social }) {
-    const genrePills = genres.map(genre => `<span class="artist-genre-pill">${escapeHtml(genre)}</span>`).join('');
+  function artistCardTemplate({ name, image }) {
     return `
       <div class="artist-avatar"><img src="${escapeHtml(image)}" alt="${escapeHtml(name)}"></div>
       <div class="artist-name">${escapeHtml(name)}</div>
-      <div class="artist-style">${escapeHtml(style)}</div>
-      <div class="artist-genres">${genrePills}</div>
       <div class="artist-card-actions">
         <button class="btn btn-primary" type="button" data-edit-artist>Edit</button>
         <button class="btn btn-outline" type="button" data-delete-artist>Delete</button>
@@ -3598,26 +3613,17 @@
   function saveArtistCard(event) {
     event.preventDefault();
     const name = artistNameInput.value.trim();
-    const style = artistStyleInput.value.trim();
-    if (!name || !style) return;
+    if (!name) return;
 
     const artist = {
       name,
-      style,
-      genres: selectedGenres.length ? selectedGenres : ['Original Mix'],
-      image: artistPreviewImage?.getAttribute('src') || 'assets/artist-photo-1.svg',
-      bio: artistBioInput.value.trim(),
-      social: artistSocialInput.value.trim()
+      image: artistPreviewImage?.getAttribute('src') || 'assets/artist-photo-1.svg'
     };
 
     const card = editingArtistCard || document.createElement('article');
     card.className = 'artist-card';
     card.dataset.name = artist.name;
-    card.dataset.style = artist.style;
-    card.dataset.genres = artist.genres.join(',');
     card.dataset.image = artist.image;
-    card.dataset.bio = artist.bio;
-    card.dataset.social = artist.social;
     card.innerHTML = artistCardTemplate(artist);
 
     if (!editingArtistCard) artistGrid.appendChild(card);
@@ -3625,31 +3631,11 @@
     resetArtistForm();
   }
 
-  genreTagInput?.addEventListener('keydown', event => {
-    if (event.key === 'Enter' || event.key === ',') {
-      event.preventDefault();
-      addGenreTag(genreTagInput.value);
-      genreTagInput.value = '';
-    }
-  });
-
-  genreTagShell?.addEventListener('click', event => {
-    const button = event.target.closest('.genre-tag button');
-    if (!button) return;
-    const genre = button.closest('.genre-tag').dataset.genre;
-    selectedGenres = selectedGenres.filter(item => item !== genre);
-    renderGenreTags();
-  });
-
   artistImageInput?.addEventListener('change', () => {
     const file = artistImageInput.files && artistImageInput.files[0];
     if (!file || !artistPreviewImage) return;
     artistPreviewImage.src = URL.createObjectURL(file);
     if (artistImageFileName) artistImageFileName.textContent = file.name;
-  });
-
-  artistBioInput?.addEventListener('input', () => {
-    if (bioCount) bioCount.textContent = String(artistBioInput.value.length);
   });
 
   artistForm?.addEventListener('submit', saveArtistCard);
@@ -3678,19 +3664,12 @@
     if (event.target.closest('[data-edit-artist]')) {
       editingArtistCard = card;
       artistNameInput.value = card.dataset.name || '';
-      artistStyleInput.value = card.dataset.style || '';
-      artistBioInput.value = card.dataset.bio || '';
-      artistSocialInput.value = card.dataset.social || '';
-      selectedGenres = (card.dataset.genres || '').split(',').map(item => item.trim()).filter(Boolean);
-      renderGenreTags();
       if (artistPreviewImage) artistPreviewImage.src = card.dataset.image || 'assets/artist-photo-1.svg';
       if (artistImageFileName) artistImageFileName.textContent = 'Current profile image';
-      if (bioCount) bioCount.textContent = String(artistBioInput.value.length);
       focusArtistForm();
     }
   });
 
-  renderGenreTags();
   updateArtistEmptyState();
 
   const genreFormPanel = document.querySelector('#genreFormPanel');
@@ -4077,16 +4056,14 @@
 
     if (event.target.closest('[data-play-song]')) {
       const button = event.target.closest('[data-play-song]');
-      const isPlaying = button.textContent.trim() === 'Playing';
+      const isPlaying = button.classList.contains('is-playing');
       songsList.querySelectorAll('[data-play-song]').forEach(item => {
-        item.textContent = 'Play';
-        item.classList.remove('btn-primary');
-        item.classList.add('btn-outline');
+        item.classList.remove('is-playing');
+        item.setAttribute('aria-label', 'Play song');
       });
       if (!isPlaying) {
-        button.textContent = 'Playing';
-        button.classList.remove('btn-outline');
-        button.classList.add('btn-primary');
+        button.classList.add('is-playing');
+        button.setAttribute('aria-label', 'Pause song preview');
       }
     }
   });
@@ -4101,6 +4078,9 @@
   const analyticsTable = document.querySelector('#analyticsTable');
   const analyticsPagination = document.querySelector('#analyticsPagination');
   const analyticsExportCsv = document.querySelector('#analyticsExportCsv');
+  const analyticsStartDate = document.querySelector('#analyticsStartDate');
+  const analyticsEndDate = document.querySelector('#analyticsEndDate');
+  const analyticsApplyRange = document.querySelector('#analyticsApplyRange');
   let analyticsPage = 1;
   let analyticsSortKey = 'index';
   let analyticsSortDir = 1;
@@ -4152,11 +4132,31 @@
     if (peak) peak.textContent = data.peak;
   }
 
-  document.querySelectorAll('.date-chip').forEach(chip => {
+  document.querySelectorAll('[data-analytics-range]').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.querySelectorAll('.date-chip').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('[data-analytics-range]').forEach(item => item.classList.remove('active'));
       chip.classList.add('active');
     });
+  });
+
+  [analyticsStartDate, analyticsEndDate].forEach(input => {
+    input?.addEventListener('change', () => {
+      document.querySelectorAll('[data-analytics-range]').forEach(item => item.classList.remove('active'));
+    });
+  });
+
+  analyticsApplyRange?.addEventListener('click', () => {
+    const start = analyticsStartDate?.value;
+    const end = analyticsEndDate?.value;
+    if (!start || !end) {
+      showToast('Select start and end dates');
+      return;
+    }
+    if (start > end) {
+      showToast('Start date must be before end date');
+      return;
+    }
+    showToast(`Analytics range applied: ${start} to ${end}`);
   });
 
   document.querySelectorAll('#analyticsChartToggle button').forEach(button => {
