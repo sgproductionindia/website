@@ -285,6 +285,10 @@ function trackUrl(track) {
   return canUseCleanUrls() ? `/${trackSlug(track)}` : `#song-${track.id}`;
 }
 
+function downloadEndpoint(track) {
+  return `api/download.php?id=${encodeURIComponent(track.id || trackSlug(track))}`;
+}
+
 function isLocalAudioPath(url) {
   return /^uploads\/audio\//.test(url);
 }
@@ -1066,8 +1070,7 @@ function writeString(view, offset, value) {
 function downloadTrack(track) {
   if (track.downloadUrl) {
     const link = document.createElement("a");
-    link.href = track.downloadUrl;
-    link.download = `${trackSlug(track)}.wav`;
+    link.href = downloadEndpoint(track);
     link.rel = "noreferrer";
     document.body.append(link);
     link.click();

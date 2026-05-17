@@ -1,21 +1,34 @@
 :root {
   color-scheme: dark;
-  --bg: #050608;
-  --panel: rgba(18, 22, 28, 0.78);
-  --panel-strong: rgba(24, 29, 36, 0.9);
-  --line: rgba(255, 255, 255, 0.105);
-  --muted: #9aa3ae;
-  --text: #f5f8fb;
-  --cyan: #10d9ff;
-  --cyan-soft: rgba(16, 217, 255, 0.18);
-  --gold: #f2b84b;
-  --violet: #8d5cf6;
-  --green: #2fd39a;
-  --surface: rgba(255, 255, 255, 0.055);
-  --surface-hover: rgba(255, 255, 255, 0.085);
-  --separator: rgba(255, 255, 255, 0.1);
-  --focus-ring: rgba(16, 217, 255, 0.72);
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  --bg: #000000;
+  --panel: #1c1c1e;
+  --panel-strong: #1c1c1e;
+  --line: rgba(84, 84, 88, 0.65);
+  --muted: rgba(235, 235, 245, 0.6);
+  --text: #ffffff;
+  --cyan: #0a84ff;
+  --cyan-soft: rgba(10, 132, 255, 0.15);
+  --gold: #ff9f0a;
+  --violet: #bf5af2;
+  --green: #2ebd6b;
+  --surface: #1c1c1e;
+  --surface-hover: #2c2c2e;
+  --separator: rgba(84, 84, 88, 0.65);
+  --focus-ring: rgba(10, 132, 255, 0.78);
+  --shadow: none;
+  --system-background: #000000;
+  --secondary-system-background: #1c1c1e;
+  --tertiary-system-background: #2c2c2e;
+  --label: #ffffff;
+  --secondary-label: rgba(235, 235, 245, 0.6);
+  --tertiary-label: rgba(235, 235, 245, 0.3);
+  --system-blue: #0a84ff;
+  --hig-radius-sm: 8px;
+  --hig-radius-md: 12px;
+  --hig-radius-lg: 16px;
+  --hig-radius-xl: 20px;
+  --hig-ease: cubic-bezier(0.2, 0, 0, 1);
+  --hig-duration: 200ms;
   --nav-collapsed: 56px;
   --nav-expanded: 248px;
 }
@@ -31,12 +44,9 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(16, 217, 255, 0.06), transparent 34%),
-    radial-gradient(circle at 92% 12%, rgba(242, 184, 75, 0.035), transparent 32%),
-    var(--bg);
+  background: var(--system-background);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", sans-serif;
   font-size: 15px;
   font-weight: 400;
   line-height: 1.45;
@@ -2574,5 +2584,403 @@ body.search-open {
 
   .player-center {
     grid-row: 2;
+  }
+}
+
+/* Apple HIG dark mode frontend refresh. This layer intentionally overrides
+   earlier neon styling while keeping the existing HTML and JS contracts. */
+*,
+*::before,
+*::after {
+  text-shadow: none;
+  box-shadow: none;
+}
+
+:where(.mobile-topbar, .side-nav, .player) {
+  background: rgba(28, 28, 30, 0.82);
+  border-color: var(--separator);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+}
+
+:where(.nav-link, .mobile-menu-toggle, .primary-action, .secondary-action, .ghost-button, .download-now, .youtube-subscribe, .round-button, .song-back, .song-play, .song-download, .copy-credit, .search-close, .search-result, .pagination-button, .artist-profile-back, .artist-track-play, .artist-track-download, .player-control) {
+  min-width: 44px;
+  min-height: 44px;
+  transition:
+    background var(--hig-duration) var(--hig-ease),
+    border-color var(--hig-duration) var(--hig-ease),
+    color var(--hig-duration) var(--hig-ease),
+    opacity var(--hig-duration) var(--hig-ease),
+    transform var(--hig-duration) var(--hig-ease);
+}
+
+:where(.track-card, .artist-card img, .artist-track-list, .artist-track-row, .search-result, .search-panel, .info-band, .artist-empty, .search-empty, .player, .song-back, .song-download, .artist-profile-back, .artist-track-download, .artist-search, .artist-select, .search-field) {
+  border-color: var(--separator);
+  box-shadow: none;
+}
+
+.page,
+.hero,
+.artist-section,
+.artist-profile-page,
+.artist-profile-hero,
+.artist-related,
+.song-page {
+  background: var(--system-background);
+}
+
+.hero {
+  min-height: 210px;
+  border-bottom: 1px solid var(--separator);
+}
+
+.hero-inner {
+  min-height: 210px;
+}
+
+.side-nav {
+  background: rgba(28, 28, 30, 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+  transition: width var(--hig-duration) var(--hig-ease);
+}
+
+.side-nav:hover,
+.side-nav:focus-within,
+.side-nav.is-expanded {
+  box-shadow: none;
+}
+
+.nav-brand,
+.nav-link {
+  height: 44px;
+  border-radius: var(--hig-radius-sm);
+  color: var(--secondary-label);
+  transition:
+    width var(--hig-duration) var(--hig-ease),
+    background var(--hig-duration) var(--hig-ease),
+    color var(--hig-duration) var(--hig-ease);
+}
+
+.nav-logo {
+  background: var(--system-background);
+  border: 1px solid var(--separator);
+  box-shadow: none;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible,
+.nav-link.active-line {
+  color: var(--label);
+  background: var(--tertiary-system-background);
+}
+
+.nav-link.active-line::before {
+  background: var(--system-blue);
+  box-shadow: none;
+}
+
+.nav-utility,
+.nav-social {
+  border-top-color: var(--separator);
+}
+
+.brand-block h1,
+.song-main h2,
+.artist-profile-heading h1 {
+  color: var(--label);
+  font-weight: 700;
+  text-transform: none;
+}
+
+.section-heading h2,
+.info-band h2,
+.artist-title-row h1,
+.artist-title-row h2,
+.artist-profile-tracks h2,
+.artist-related h2,
+.song-info-grid h3,
+.artist-card h3,
+.track-title {
+  color: var(--label);
+  font-weight: 600;
+  text-transform: none;
+}
+
+.tagline,
+.artist-name,
+.artist-card p,
+.song-artist,
+.song-duration,
+.progress-time,
+.artist-track-time,
+.info-band p,
+.search-copy span,
+.search-kind,
+.player-meta span {
+  color: var(--secondary-label);
+}
+
+.tagline span::before {
+  color: var(--tertiary-label);
+}
+
+.artist-mark,
+.song-kicker {
+  color: var(--system-blue);
+}
+
+.primary-action,
+.download-now,
+.round-button,
+.player-control,
+.artist-track-play,
+.artist-track-download {
+  color: #fff;
+  background: var(--system-blue);
+  border-color: var(--system-blue);
+  box-shadow: none;
+}
+
+.primary-action,
+.secondary-action,
+.ghost-button,
+.download-now,
+.youtube-subscribe,
+.song-back,
+.song-download,
+.artist-profile-back,
+.artist-track-download,
+.search-close,
+.search-field,
+.search-result,
+.artist-search,
+.artist-select,
+.pagination-button,
+.pagination-ellipsis {
+  min-height: 44px;
+  border-radius: var(--hig-radius-md);
+}
+
+.round-button,
+.player-control,
+.song-play,
+.artist-track-play,
+.copy-credit,
+.search-thumb,
+.player-cover {
+  border-radius: 50%;
+}
+
+.secondary-action,
+.ghost-button,
+.song-back,
+.search-close,
+.artist-search,
+.artist-select,
+.search-field,
+.search-result,
+.copy-credit,
+.pagination-button,
+.pagination-ellipsis,
+.round-button.secondary {
+  color: var(--secondary-label);
+  background: var(--secondary-system-background);
+  border: 1px solid var(--separator);
+  box-shadow: none;
+}
+
+:where(.primary-action, .secondary-action, .ghost-button, .download-now, .youtube-subscribe, .round-button, .song-back, .song-play, .song-download, .artist-profile-back, .artist-track-play, .artist-track-download, .search-close, .search-result, .pagination-button, .player-control):hover,
+:where(.primary-action, .secondary-action, .ghost-button, .download-now, .youtube-subscribe, .round-button, .song-back, .song-play, .song-download, .artist-profile-back, .artist-track-play, .artist-track-download, .search-close, .search-result, .pagination-button, .player-control):focus-visible {
+  transform: none;
+  box-shadow: none;
+  outline: none;
+}
+
+:where(.secondary-action, .ghost-button, .song-back, .search-close, .search-result, .artist-profile-back, .pagination-button):hover,
+:where(.secondary-action, .ghost-button, .song-back, .search-close, .search-result, .artist-profile-back, .pagination-button):focus-visible {
+  color: var(--label);
+  background: var(--tertiary-system-background);
+  border-color: var(--separator);
+}
+
+.track-card {
+  border-radius: var(--hig-radius-md);
+  border-color: var(--separator);
+  background: var(--secondary-system-background);
+  box-shadow: none;
+  transition:
+    background var(--hig-duration) var(--hig-ease),
+    border-color var(--hig-duration) var(--hig-ease);
+}
+
+.track-card:hover,
+.track-card:focus-within,
+.track-card:focus-visible {
+  transform: none;
+  border-color: var(--separator);
+  background: var(--tertiary-system-background);
+  box-shadow: none;
+}
+
+.track-card:hover .cover-link img,
+.artist-card-link:hover img {
+  transform: none;
+  filter: none;
+}
+
+.cover-link,
+.artist-card img,
+.artist-profile-portrait,
+.artist-track-list,
+.search-result,
+.artist-empty,
+.search-empty,
+.info-band {
+  border-radius: var(--hig-radius-md);
+}
+
+.track-body,
+.artist-track-row {
+  background: transparent;
+}
+
+.badge {
+  color: #fff;
+  background: var(--system-blue);
+  box-shadow: none;
+}
+
+.duration {
+  color: var(--label);
+  background: rgba(28, 28, 30, 0.82);
+}
+
+.genre-pill,
+.genre-pill.marathi,
+.genre-pill.hindi,
+.genre-pill.original-mix {
+  color: var(--secondary-label);
+  border-color: var(--separator);
+  background: var(--tertiary-system-background);
+}
+
+.info-band {
+  background: var(--secondary-system-background);
+}
+
+.youtube-subscribe {
+  background: #ff3b30;
+  border-color: #ff3b30;
+  box-shadow: none;
+}
+
+.song-page {
+  background: var(--system-background);
+}
+
+.song-play {
+  border-color: var(--separator);
+  color: var(--label);
+  background: var(--secondary-system-background);
+}
+
+.song-waveform span {
+  background: var(--secondary-label);
+  box-shadow: none;
+}
+
+.song-download {
+  color: var(--label);
+  border: 1px solid var(--separator);
+  background: transparent;
+}
+
+.song-download:hover,
+.song-download:focus-visible {
+  color: #fff;
+  background: var(--system-blue);
+  border-color: var(--system-blue);
+}
+
+.song-ad-media {
+  transition: opacity var(--hig-duration) var(--hig-ease);
+}
+
+.search-overlay {
+  background: rgba(0, 0, 0, 0.62);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  transition: opacity var(--hig-duration) var(--hig-ease);
+}
+
+.search-panel {
+  border-radius: var(--hig-radius-xl);
+  background: transparent;
+  box-shadow: none;
+}
+
+.search-field:focus-within,
+.artist-search:focus-within,
+.artist-select:focus-within {
+  border-color: var(--system-blue);
+  box-shadow: none;
+  outline: 3px solid rgba(10, 132, 255, 0.15);
+  outline-offset: 0;
+}
+
+.search-thumb {
+  color: var(--system-blue);
+  background: var(--tertiary-system-background);
+}
+
+.player {
+  background: rgba(28, 28, 30, 0.82);
+  border-color: var(--separator);
+  border-radius: var(--hig-radius-xl);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: none;
+}
+
+.progress-shell,
+.artist-track-progress-shell {
+  background: var(--tertiary-system-background);
+}
+
+.progress-bar,
+.artist-track-progress-bar {
+  background: var(--system-blue);
+}
+
+.footer {
+  border-top-color: var(--separator);
+  color: var(--tertiary-label);
+}
+
+@media (max-width: 780px) {
+  .mobile-topbar {
+    background: rgba(28, 28, 30, 0.82);
+    border-bottom-color: var(--separator);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: none;
+  }
+
+  .side-nav {
+    background: rgba(28, 28, 30, 0.88);
+    border-color: var(--separator);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: none;
+    transition: transform var(--hig-duration) var(--hig-ease);
+  }
+
+  .side-nav:hover,
+  .side-nav:focus-within,
+  .side-nav.is-expanded {
+    box-shadow: none;
   }
 }
