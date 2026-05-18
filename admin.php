@@ -4181,7 +4181,113 @@ $downloadChartData = [
             <?php endforeach; ?>
           </div><div class="pagination" id="songsPagination"></div></section>
 
-          <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Add artist profiles for the website"><div class="artist-toolbar"><div><h2>Artist Management</h2><p>Add artist profiles for the website</p></div><button class="btn btn-primary" type="button" data-artist-focus>+ Add New Artist</button></div><div class="panel"><div class="panel-header"><span class="panel-title">Add / Edit Artist</span></div><form class="admin-form" id="artistForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_artist"><div class="artist-form-layout"><div class="form-grid"><label class="form-field">Artist Name<input id="artistNameInput" type="text" name="artistName" placeholder="SG Production" required></label></div><div class="image-preview-box"><div class="artist-preview"><img id="artistPreviewImage" data-artist-preview="new" src="assets/artist-photo-1.svg" alt="Artist profile preview"></div><label class="file-trigger">Choose Artist Profile Image<input id="artistImageInput" data-artist-image-input data-preview-target="new" data-file-name-target="new" type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml"></label><span class="selected-file-name" id="artistImageFileName" data-file-name="new">No image selected</span><span class="form-help">Circular preview. Square image recommended.</span></div></div><div class="form-actions"><button class="btn btn-outline" type="reset" data-clear-artist>Clear Form</button><button class="btn btn-primary" type="submit">Save Artist</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Existing Artists</span></div><div class="empty-state <?= $artistCount === 0 ? 'is-visible' : '' ?>" id="artistEmptyState"><div><h3>No artists added yet</h3><p>Add your first artist profile to connect songs and covers.</p><button class="btn btn-primary" type="button" data-artist-focus>Add Your First Artist</button></div></div><div class="artist-grid" id="artistGrid" style="display:<?= $artistCount > 0 ? 'grid' : 'none' ?>"><?php foreach ($artists as $artist): if (!is_array($artist)) continue; $artistId=(string)($artist['id']??''); ?><article class="artist-card"><div class="artist-avatar"><img src="<?= e((string) ($artist['image'] ?? 'assets/artist-photo-1.svg')) ?>" alt="<?= e((string) ($artist['name'] ?? 'Artist')) ?>"></div><div class="artist-name"><?= e((string) ($artist['name'] ?? 'Artist')) ?></div><div class="artist-card-actions"><details class="editor"><summary class="btn btn-primary">Edit</summary><form class="admin-form" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_artist"><input type="hidden" name="artistId" value="<?= e($artistId) ?>"><label class="form-field">Artist Name<input type="text" name="artistName" value="<?= e((string) ($artist['name'] ?? '')) ?>" required></label><label class="form-field">Replace Image<input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml"></label><button class="btn btn-primary" type="submit">Save</button></form></details><form method="post" onsubmit="return confirm('Delete this artist?');"><input type="hidden" name="action" value="delete_artist"><input type="hidden" name="artistId" value="<?= e($artistId) ?>"><button class="btn btn-outline" type="submit">Delete</button></form></div></article><?php endforeach; ?></div></div></section>
+          <section class="view-section" id="artists-section" data-title="Artist Management" data-subtitle="Add artist profiles for the website">
+            <div class="artist-toolbar">
+              <div>
+                <h2>Artist Management</h2>
+                <p>Add artist profiles for the website</p>
+              </div>
+              <button class="btn btn-primary" type="button" data-artist-focus>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add New Artist
+              </button>
+            </div>
+
+            <div class="panel" id="artistFormPanel">
+              <div class="panel-header">
+                <span class="panel-title" id="artistFormTitle">Add Artist</span>
+                <button class="panel-action" type="button" data-clear-artist>Clear</button>
+              </div>
+
+              <form class="am-form-layout" id="artistForm" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="save_artist">
+
+                <div class="am-fields">
+                  <div class="form-field">
+                    <label for="artistNameInput">Artist Name</label>
+                    <input id="artistNameInput" type="text" name="artistName" placeholder="e.g. SG Production" autocomplete="off" spellcheck="false" required>
+                  </div>
+
+                  <div class="form-field" style="margin-top:var(--sp-4);">
+                    <label for="artistBioInput">Bio</label>
+                    <textarea id="artistBioInput" rows="3" placeholder="Short description about the artist..." style="resize:none;height:88px;line-height:1.5;"></textarea>
+                  </div>
+
+                  <div class="form-field" style="margin-top:var(--sp-4);">
+                    <label>Genre</label>
+                    <div class="am-chips">
+                      <button type="button" class="am-chip active" onclick="this.classList.toggle('active')">Hindi</button>
+                      <button type="button" class="am-chip" onclick="this.classList.toggle('active')">Marathi</button>
+                      <button type="button" class="am-chip" onclick="this.classList.toggle('active')">Pop</button>
+                      <button type="button" class="am-chip" onclick="this.classList.toggle('active')">Electronic</button>
+                      <button type="button" class="am-chip" onclick="this.classList.toggle('active')">Classical</button>
+                      <button type="button" class="am-chip" onclick="this.classList.toggle('active')">Jazz</button>
+                    </div>
+                  </div>
+
+                  <div class="form-actions" style="margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--separator);">
+                    <button class="btn btn-ghost" type="reset" data-clear-artist>Clear Form</button>
+                    <button class="btn btn-primary" type="submit" style="flex:1;border-radius:var(--radius-md);">Save Artist</button>
+                  </div>
+                </div>
+
+                <div class="am-image-box">
+                  <div class="panel-title" style="margin-bottom:var(--sp-4);">Profile Image</div>
+
+                  <div class="am-avatar" id="amAvatarWrap">
+                    <img id="artistPreviewImage" data-artist-preview="new" src="assets/artist-photo-1.svg" alt="Artist profile preview">
+                  </div>
+
+                  <input id="artistImageInput" data-artist-image-input data-preview-target="new" data-file-name-target="new" type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;clip:rect(0,0,0,0);">
+
+                  <button type="button" class="am-upload-btn" onclick="document.getElementById('artistImageInput').click(); event.stopPropagation();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 20h16"/></svg>
+                    Choose Image
+                  </button>
+
+                  <p class="am-upload-hint" id="artistImageFileName" data-file-name="new">No image selected.<br>Square image recommended.</p>
+                </div>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <span class="panel-title">Existing Artists <span class="am-count" id="artistCount"><?= e((string) $artistCount) ?></span></span>
+              </div>
+
+              <div class="am-empty" id="artistEmptyState" style="display:<?= $artistCount === 0 ? 'flex' : 'none' ?>;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="36" height="36" style="opacity:0.25;"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3"/><path d="M19 17c0-1.86-1.34-3.4-3-3.86"/><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>
+                <p style="color:var(--label-tertiary);font-size:14px;margin-top:var(--sp-2);">No artists added yet</p>
+                <button class="btn btn-primary" type="button" style="margin-top:var(--sp-3);" data-artist-focus>Add Your First Artist</button>
+              </div>
+
+              <div class="artist-grid" id="artistGrid" style="display:<?= $artistCount > 0 ? 'grid' : 'none' ?>">
+                <?php foreach ($artists as $artist): if (!is_array($artist)) continue; $artistId=(string)($artist['id']??''); ?>
+                  <article class="artist-card">
+                    <div class="artist-avatar"><img src="<?= e((string) ($artist['image'] ?? 'assets/artist-photo-1.svg')) ?>" alt="<?= e((string) ($artist['name'] ?? 'Artist')) ?>"></div>
+                    <div class="artist-name"><?= e((string) ($artist['name'] ?? 'Artist')) ?></div>
+                    <div class="artist-card-actions">
+                      <details class="editor">
+                        <summary class="icon-btn" aria-label="Edit artist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></summary>
+                        <form class="admin-form" method="post" enctype="multipart/form-data">
+                          <input type="hidden" name="action" value="save_artist">
+                          <input type="hidden" name="artistId" value="<?= e($artistId) ?>">
+                          <label class="form-field">Artist Name<input type="text" name="artistName" value="<?= e((string) ($artist['name'] ?? '')) ?>" required></label>
+                          <label class="form-field">Replace Image<input type="file" name="artistImage" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml"></label>
+                          <button class="btn btn-primary" type="submit">Save</button>
+                        </form>
+                      </details>
+                      <form method="post" onsubmit="return confirm('Delete this artist?');">
+                        <input type="hidden" name="action" value="delete_artist">
+                        <input type="hidden" name="artistId" value="<?= e($artistId) ?>">
+                        <button class="icon-btn danger" type="submit" aria-label="Delete artist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+                      </form>
+                    </div>
+                  </article>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          </section>
 
           <section class="view-section" id="genres-section" data-title="Genre Management" data-subtitle="Add and manage genres for your songs and artists"><div class="management-toolbar"><div><h2>Genre Management</h2><p>Add and manage genres for your songs and artists</p></div></div><div class="panel" id="genreFormPanel"><div class="panel-header"><span class="panel-title">Add New Genre</span></div><form class="admin-form" id="genreForm" method="post"><input type="hidden" name="action" value="save_genre"><div class="form-grid"><label class="form-field">Genre Name<input id="genreNameInput" name="genreName" placeholder="Original Mix" required></label><label class="form-field">Genre Slug<input id="genreSlugInput" name="genreSlug" placeholder="original-mix"></label><label class="form-field full"><span class="char-row"><span>Genre Description</span><span class="char-count"><span id="genreDescriptionCount">0</span>/150</span></span><textarea id="genreDescriptionInput" name="genreDescription" maxlength="150" rows="3"></textarea></label><label class="form-field">Genre Color<input type="color" name="genreColor" value="#0a84ff"></label></div><div class="form-actions"><button class="btn btn-outline" type="reset" data-clear-genre>Clear</button><button class="btn btn-primary" id="genreSubmitButton" type="submit">Save Genre</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Existing Genres</span><input class="admin-control" id="genreSearchInput" type="search" placeholder="Search genres"></div><div class="genre-grid" id="genreGrid"><?php foreach ($genres as $genre): if (!is_array($genre)) continue; $genreName=(string)($genre['name']??'Genre'); $counts=genreUsageCounts($genreName,$tracks,$artists); ?><article class="genre-card" style="--genre-color:<?= e((string)($genre['color']??'#0a84ff')) ?>" data-name="<?= e($genreName) ?>"><div class="genre-card-head"><div><div class="genre-card-title"><?= e($genreName) ?></div><div class="genre-slug"><?= e((string)($genre['slug']??'')) ?></div></div><div class="genre-card-actions"><details class="editor"><summary class="icon-btn" aria-label="Edit genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></summary><form class="admin-form" method="post"><input type="hidden" name="action" value="save_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><label class="form-field">Genre Name<input name="genreName" value="<?= e($genreName) ?>" required></label><label class="form-field">Genre Slug<input name="genreSlug" value="<?= e((string)($genre['slug']??'')) ?>"></label><label class="form-field">Color<input type="color" name="genreColor" value="<?= e((string)($genre['color']??'#0a84ff')) ?>"></label><label class="form-field full">Description<textarea name="genreDescription" rows="3"><?= e((string)($genre['description']??'')) ?></textarea></label><button class="btn btn-primary" type="submit">Update Genre</button></form></details><form method="post" onsubmit="return confirm('Deleting this genre will unassign it from all songs and artists. Continue?');"><input type="hidden" name="action" value="delete_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><button class="icon-btn" type="submit" aria-label="Delete genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></form></div></div><div class="genre-description"><?= e((string)($genre['description']??'')) ?></div><div class="genre-counts"><span class="metric-badge cyan"><?= e((string)$counts['songs']) ?> songs</span><span class="metric-badge orange"><?= e((string)$counts['artists']) ?> artists</span></div></article><?php endforeach; ?></div></div></section>
 
@@ -4372,7 +4478,7 @@ $downloadChartData = [
     button.addEventListener('click', () => {
       window.setTimeout(() => {
         if (artistPreviewImage) artistPreviewImage.src = 'assets/artist-photo-1.svg';
-        if (artistImageFileName) artistImageFileName.textContent = 'No image selected';
+        if (artistImageFileName) artistImageFileName.innerHTML = 'No image selected.<br>Square image recommended.';
         artistNameInput?.focus();
       }, 0);
     });
