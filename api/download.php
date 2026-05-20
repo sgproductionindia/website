@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-const TRACKS_FILE = __DIR__ . '/../data/tracks.json';
+require_once rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/') . '/config.php';
+
+define('TRACKS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : dirname(__DIR__)) . '/data/tracks.json');
 
 function cleanText(mixed $value, int $limit = 180): string
 {

@@ -1,7 +1,10 @@
 <?php
 declare(strict_types=1);
 
-const AD_STATS_FILE = __DIR__ . '/../data/ad-stats.json';
+// Load central config (defines ROOT_DIR and UPLOADS_DIR)
+require_once rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/') . '/config.php';
+
+define('AD_STATS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : dirname(__DIR__)) . '/data/ad-stats.json');
 
 function defaultAdStats(): array
 {

@@ -3,17 +3,20 @@ declare(strict_types=1);
 
 session_start();
 
+// Load central config (defines ROOT_DIR and UPLOADS_DIR and $pdo)
+require_once rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/') . '/config.php';
+
 define('ADMIN_PASSWORD', (string) (getenv('ADMIN_PASSWORD') ?: 'change-me-before-deploy'));
-const TRACKS_FILE = __DIR__ . '/data/tracks.json';
-const SETTINGS_FILE = __DIR__ . '/data/settings.json';
-const ARTISTS_FILE = __DIR__ . '/data/artists.json';
-const GENRES_FILE = __DIR__ . '/data/genres.json';
-const AD_STATS_FILE = __DIR__ . '/data/ad-stats.json';
-const COVER_DIR = __DIR__ . '/uploads/covers';
-const AUDIO_DIR = __DIR__ . '/uploads/audio';
-const AD_DIR = __DIR__ . '/uploads/ads';
-const ARTIST_DIR = __DIR__ . '/uploads/artists';
-const SITE_MEDIA_DIR = __DIR__ . '/uploads/site';
+define('TRACKS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/tracks.json');
+define('SETTINGS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/settings.json');
+define('ARTISTS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/artists.json');
+define('GENRES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/genres.json');
+define('AD_STATS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/ad-stats.json');
+define('COVER_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/covers');
+define('AUDIO_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/audio');
+define('AD_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/ads');
+define('ARTIST_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/artists');
+define('SITE_MEDIA_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/site');
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 120 * 1024 * 1024;
 const MAX_AD_BYTES = 60 * 1024 * 1024;
@@ -477,7 +480,9 @@ function uploadFile(string $field, array $extensions, array $mimeTypes, int $max
         throw new RuntimeException('Could not save the uploaded file. Check that the Coolify volume for uploads is writable by PHP.');
     }
 
-    return str_replace(__DIR__ . '/', '', $target);
+    $baseRoot = defined('ROOT_DIR') ? ROOT_DIR : __DIR__;
+    $webPath = '/' . ltrim(str_replace($baseRoot, '', $target), '/');
+    return $webPath;
 }
 
 function uploadOptionalFile(string $field, array $extensions, array $mimeTypes, int $maxBytes, string $directory, string $baseName): ?string
