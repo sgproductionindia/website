@@ -1280,7 +1280,8 @@ $downloadChartData = [
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-/* ════════════════════════════════════════════
+
+  /* ════════════════════════════════════════════
      APPLE HIG — DARK MODE DESIGN SYSTEM
      • Semantic color layers (bg → surface → elevated)
      • 44×44pt minimum touch targets
@@ -1574,7 +1575,7 @@ $downloadChartData = [
     align-items: center;
     justify-content: center;
     gap: var(--sp-2);
-    min-height: 44px;
+    min-height: 36px;
     padding: 0 var(--sp-4);
     border-radius: var(--radius-pill);
     border: none;
@@ -1883,9 +1884,9 @@ $downloadChartData = [
   .song-actions { display:flex; justify-content:flex-end; gap:var(--sp-2); }
 
   .icon-btn {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     border: 1px solid var(--separator);
     border-radius: var(--radius-sm);
     background: var(--bg-tertiary);
@@ -2257,7 +2258,6 @@ $downloadChartData = [
      MANAGEMENT TOOLBARS
   ════════════════════════ */
   .management-toolbar { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-5); }
-  .management-toolbar + .analytics-filter-bar { display:flex; align-items:center; gap:var(--sp-3); margin-left:auto; }
   .management-toolbar h2 { font-size:20px; font-weight:700; line-height:1.2; margin-bottom:var(--sp-1); letter-spacing:-0.02em; }
   .management-toolbar p { color:var(--label-secondary); font-size:14px; }
 
@@ -2356,25 +2356,21 @@ $downloadChartData = [
   .analytics-filter-bar { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap; }
 
   .date-chip-group {
-    display:flex; gap:12px; padding:6px;
-    border-radius:999px;
-    background: rgba(18,18,20,0.6);
-    border:1px solid rgba(255,255,255,0.04);
+    display:flex; gap:var(--sp-1); padding:3px;
+    border:1px solid var(--separator); border-radius:var(--radius-pill);
+    background:var(--bg-secondary);
     align-items:center;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
   }
   .date-chip {
-    border:0; border-radius:999px;
+    border:0; border-radius:var(--radius-pill);
     background:transparent; color:var(--label-secondary);
-    padding:10px 26px; font:inherit; font-size:13px; font-weight:600; cursor:pointer;
-    transition:background var(--duration) var(--ease-out), color var(--duration) var(--ease-out), transform 120ms;
-    min-height:44px;
+    padding:var(--sp-2) var(--sp-4); font:inherit; font-size:12px; font-weight:600; cursor:pointer;
+    transition:background var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
+    min-height:32px;
   }
-  .date-chip:hover { background: rgba(255,255,255,0.02); color:var(--label); }
+  .date-chip:hover { background: rgba(255,255,255,0.04); color:var(--label); }
   .date-chip.active {
     background: var(--tint); color:#fff;
-    box-shadow: 0 8px 20px rgba(10,132,255,0.14);
-    transform: translateY(-1px);
   }
 
   .custom-date-range { display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; justify-content:flex-end; }
@@ -2465,7 +2461,7 @@ $downloadChartData = [
   .donut-chart {
     width:160px; aspect-ratio:1; border-radius:50%;
     background:conic-gradient(
-      #0a84ff 0 38%,
+      #00d4ff 0 38%,
       #2ebd6b 38% 64%,
       #ff9f43 64% 84%,
       #a855f7 84% 100%
@@ -2539,6 +2535,7 @@ $downloadChartData = [
   .ad-preview-thumb img, .ad-preview-thumb video { width:100%; height:100%; object-fit:cover; display:block; }
   .ad-detail-list { display:flex; flex-direction:column; gap:var(--sp-2); color:var(--label-secondary); font-size:13px; }
   .ad-detail-list strong { color:var(--label); }
+  .ad-upload-layout { display:grid; grid-template-columns:1fr 180px; gap:var(--sp-5); align-items:start; }
   .ad-media-meta {
     display:none; flex-direction:column; gap:var(--sp-2);
     border:1px solid var(--separator); border-radius:var(--radius-sm);
@@ -2776,7 +2773,7 @@ $downloadChartData = [
     .content { padding:var(--sp-4); gap:var(--sp-4); }
     .view-section { gap:var(--sp-4); }
     .two-col, .three-col, .section-grid, .upload-layout, .artist-form-layout,
-    .settings-card-grid, .ad-status-layout, .ad-update-layout { grid-template-columns:1fr; }
+    .settings-card-grid, .ad-status-layout, .ad-upload-layout { grid-template-columns:1fr; }
     .artist-grid, .genre-grid { grid-template-columns:repeat(2,1fr); }
     .ad-summary-grid { grid-template-columns:repeat(2,1fr); }
     .management-toolbar, .artist-toolbar, .analytics-filter-bar,
@@ -2869,17 +2866,7 @@ $downloadChartData = [
   /* green dot for actual success events is kept in HTML */
 
   /* AD STAT VALUES — neutral white */
-  .ad-stat-val { color: var(--label) !important; font-size: 14px; font-weight: 600; }
-
-  /* STAT VALUES — neutral per HIG; card strip/status carries the color meaning */
-  .stat-value,
-  .stat-value.cyan,
-  .stat-value.green,
-  .stat-value.orange,
-  .stat-value.purple,
-  .stat-value.red {
-    color: var(--label) !important;
-  }
+  .ad-stat-val { color: var(--label); font-size: 14px; font-weight: 600; }
 
   /* STATUS PILLS — keep semantic (these communicate state) */
   /* published=green, draft=orange, unlisted=red — these are correct HIG usage */
@@ -3276,7 +3263,7 @@ $downloadChartData = [
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 200px;
+    max-width: 100%;
   }
 
   /* Performance mini cards */
@@ -3348,8 +3335,6 @@ $downloadChartData = [
   }
   .ad-upload-btn:hover { background: rgba(10,132,255,0.22); border-style: solid; }
   .ad-upload-btn:active { transform: scale(0.99); }
-
-  .ad-file-input { display:none; }
 
   /* File meta row */
   .ad-media-meta {
@@ -3432,6 +3417,9 @@ $downloadChartData = [
   /* Responsive */
   @media (max-width: 960px) {
     .ad-top-grid { grid-template-columns: 1fr; }
+    .ad-current-layout { grid-template-columns: 1fr; gap: var(--sp-4); }
+    .ad-current-right { display: none; }
+    .ad-thumb-vertical { width: 100%; max-width: 140px; min-width: auto; }
     .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
     .ad-update-layout { grid-template-columns: 1fr; }
     .ad-update-preview { flex-direction: row; align-items: flex-start; gap: var(--sp-4); }
@@ -3440,8 +3428,17 @@ $downloadChartData = [
   }
 
   @media (max-width: 620px) {
-    .ad-current-layout { grid-template-columns: 70px 1fr; }
-    .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
+    .ad-current-layout {
+      grid-template-columns: 1fr;
+      gap: var(--sp-3);
+    }
+    .ad-thumb-vertical {
+      width: 80px;
+      max-width: 80px;
+      margin: 0 auto var(--sp-2);
+    }
+    .ad-perf-grid { grid-template-columns: 1fr 1fr; }
+    .ad-perf-bar-row { grid-template-columns: 100px 1fr 40px; }
     .ad-toggles { grid-template-columns: 1fr; }
   }
 
@@ -3548,15 +3545,7 @@ $downloadChartData = [
     margin-bottom: var(--sp-4);
   }
 
-  /* Responsive for new 3-col current ad */
-  @media (max-width: 960px) {
-    .ad-current-layout { grid-template-columns: 100px 1fr; }
-    .ad-current-right { display: none; }
-    .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 620px) {
-    .ad-current-layout { grid-template-columns: 80px 1fr; }
-  }
+  /* Responsive handled above */
 
 
   /* ════════════════════════════════════════
@@ -4206,7 +4195,6 @@ $downloadChartData = [
   .status-pill.published { color: var(--sys-green); background: var(--sys-green-bg); }
   .status-pill.draft { color: var(--sys-orange); background: var(--sys-orange-bg); }
   .status-pill.unlisted { color: var(--sys-red); background: var(--sys-red-bg); }
-
     </style>
   </head>
   <body>
@@ -4396,7 +4384,7 @@ $downloadChartData = [
 
           <section class="view-section" id="genres-section" data-title="Genre Management" data-subtitle="Add and manage genres for your songs and artists"><div class="management-toolbar"><div><h2>Genre Management</h2><p>Add and manage genres for your songs and artists</p></div></div><div class="panel" id="genreFormPanel"><div class="panel-header"><span class="panel-title">Add New Genre</span></div><form class="admin-form" id="genreForm" method="post"><input type="hidden" name="action" value="save_genre"><div class="form-grid"><label class="form-field">Genre Name<input id="genreNameInput" name="genreName" placeholder="Original Mix" required></label><label class="form-field">Genre Slug<input id="genreSlugInput" name="genreSlug" placeholder="original-mix"></label><label class="form-field full"><span class="char-row"><span>Genre Description</span><span class="char-count"><span id="genreDescriptionCount">0</span>/150</span></span><textarea id="genreDescriptionInput" name="genreDescription" maxlength="150" rows="3"></textarea></label><label class="form-field">Genre Color<input type="color" name="genreColor" value="#0a84ff"></label></div><div class="form-actions"><button class="btn btn-outline" type="reset" data-clear-genre>Clear</button><button class="btn btn-primary" id="genreSubmitButton" type="submit">Save Genre</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Existing Genres</span><input class="admin-control" id="genreSearchInput" type="search" placeholder="Search genres"></div><div class="genre-grid" id="genreGrid"><?php foreach ($genres as $genre): if (!is_array($genre)) continue; $genreName=(string)($genre['name']??'Genre'); $counts=genreUsageCounts($genreName,$tracks,$artists); ?><article class="genre-card" style="--genre-color:<?= e((string)($genre['color']??'#0a84ff')) ?>" data-name="<?= e($genreName) ?>"><div class="genre-card-head"><div><div class="genre-card-title"><?= e($genreName) ?></div><div class="genre-slug"><?= e((string)($genre['slug']??'')) ?></div></div><div class="genre-card-actions"><details class="editor"><summary class="icon-btn" aria-label="Edit genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></summary><form class="admin-form" method="post"><input type="hidden" name="action" value="save_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><label class="form-field">Genre Name<input name="genreName" value="<?= e($genreName) ?>" required></label><label class="form-field">Genre Slug<input name="genreSlug" value="<?= e((string)($genre['slug']??'')) ?>"></label><label class="form-field">Color<input type="color" name="genreColor" value="<?= e((string)($genre['color']??'#0a84ff')) ?>"></label><label class="form-field full">Description<textarea name="genreDescription" rows="3"><?= e((string)($genre['description']??'')) ?></textarea></label><button class="btn btn-primary" type="submit">Update Genre</button></form></details><form method="post" onsubmit="return confirm('Deleting this genre will unassign it from all songs and artists. Continue?');"><input type="hidden" name="action" value="delete_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><button class="icon-btn" type="submit" aria-label="Delete genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></form></div></div><div class="genre-description"><?= e((string)($genre['description']??'')) ?></div><div class="genre-counts"><span class="metric-badge cyan"><?= e((string)$counts['songs']) ?> songs</span><span class="metric-badge orange"><?= e((string)$counts['artists']) ?> artists</span></div></article><?php endforeach; ?></div></div></section>
 
-          <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Manage ads shown on song pages"><div class="management-toolbar"><div><h2>Advertising</h2><p>Manage ads shown on song pages</p></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Current Ad Status</span><span class="status-pill <?= $adEnabled ? 'published' : 'unlisted' ?>" id="adStatusPill"><?= $adEnabled ? 'Active' : 'Inactive' ?></span></div><div class="ad-status-layout"><div class="ad-preview-thumb"><?php if ($adMediaUrl !== ''): ?><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img src="<?= e($adMediaUrl) ?>" alt="Current advertisement preview"><?php endif; ?><?php else: ?>N/A<?php endif; ?></div><div class="ad-detail-list"><div><strong>File:</strong> <?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></div><div><strong>Type:</strong> <?= e($adMediaType !== '' ? $adMediaType : 'N/A') ?></div><div><strong>Click URL:</strong> <?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></div><div><strong>Last updated:</strong> N/A</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Update Ad</span></div><form class="admin-form" id="adUpdateForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_ad"><div class="ad-update-layout"><div class="ad-update-fields"><label class="form-field">Advertising Media</label><input id="adMediaInput" class="ad-file-input" type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm"><button type="button" class="ad-upload-btn" id="adUploadButton">Choose media file</button><span class="form-help">Accepts JPG, PNG, WEBP, MP4, WEBM, or MOV. 9:16 ratio recommended.</span><div class="ad-media-meta" id="adMediaMeta"><span id="adFileName">No file selected</span><span id="adFileSize">0 MB</span><span id="adDimensions">Dimensions pending</span></div><div class="ratio-warning" id="adRatioWarning">For best results use 9:16 aspect ratio</div><label class="form-field">Advertisement Click URL<input id="adClickUrlInput" type="url" name="adLinkUrl" value="<?= e($adLinkUrl) ?>"></label><div class="ad-toggles"><label class="check-card toggle-card"><span>Show advertisement on single song pages</span><input id="sitewideAdToggle" type="checkbox" name="adEnabled" <?= $adEnabled ? 'checked' : '' ?>></label></div></div><div class="ad-update-preview"><div class="ad-preview-label">Preview</div><div class="ad-preview-frame" id="adSelectedPreview">Preview</div><div class="ad-preview-hint">Upload a portrait file to match song page ad display.</div></div></div><div class="panel-header" style="margin-top:24px"><span class="panel-title">Grid Ad (Music Library Card)</span><span class="status-pill <?= $gridAdEnabled ? 'published' : 'unlisted' ?>"><?= $gridAdEnabled ? 'Active' : 'Inactive' ?></span></div><p style="font-size:0.82rem;color:var(--secondary-label);margin:0 0 16px">Square 1:1 ad card inserted into the track grid on the homepage.</p><div class="form-grid"><div class="form-field full"><label style="display:block;margin-bottom:6px;font-weight:600">Ad Image (1:1 square)</label><?php if ($gridAdImageUrl !== ''): ?><img src="<?= e($gridAdImageUrl) ?>" alt="Grid ad preview" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block"><?php endif; ?><input type="file" name="gridAdImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Use 1:1 ratio for best results.</span></div><label class="form-field">Advertiser Name<input type="text" name="gridAdName" value="<?= e($gridAdName) ?>" placeholder="e.g. Acme Corp"></label><label class="form-field">Subtext<input type="text" name="gridAdSubtext" value="<?= e($gridAdSubtext) ?>" placeholder="e.g. Premium Sponsor"></label><label class="form-field">Button Text<input type="text" name="gridAdButtonText" value="<?= e($gridAdButtonText) ?>" placeholder="Learn more"></label><label class="form-field">Button Background Color<input type="color" name="gridAdButtonColor" value="<?= e($gridAdButtonColor ?: '#ffffff') ?>"></label><label class="form-field">Button Text Color<input type="color" name="gridAdButtonTextColor" value="<?= e($gridAdButtonTextColor ?: '#000000') ?>"></label><label class="form-field full">Click URL<input type="url" name="gridAdLinkUrl" value="<?= e($gridAdLinkUrl) ?>" placeholder="https://advertiser.com"></label><label class="form-field">Grid Position (1 = first card)<input type="number" name="gridAdPosition" min="1" max="50" value="<?= e((string)$gridAdPosition) ?>"></label><div class="form-field full"><label class="check-card toggle-card"><span>Show grid ad on homepage</span><input type="checkbox" name="gridAdEnabled" <?= $gridAdEnabled ? 'checked' : '' ?>></label></div></div><div class="form-actions"><button class="btn btn-primary" type="submit">Save Advertising</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad Performance Summary</span><button class="panel-action" type="button" data-action-section="analytics">View Full Ad Report →</button></div><div class="ad-summary-grid"><div class="stat-card cyan"><div class="stat-label">Total Impressions</div><div class="stat-value cyan"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card orange"><div class="stat-label">Total Clicks</div><div class="stat-value orange"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card purple"><div class="stat-label">CTR</div><div class="stat-value purple"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change up">Campaign average</div></div><div class="stat-card green"><div class="stat-label">Top Song</div><div class="stat-value green" style="font-size:24px;">N/A</div><div class="stat-change up">N/A ad clicks</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad History</span></div><div class="analytics-table-wrap"><table class="history-table"><thead><tr><th>Thumbnail</th><th>File Name</th><th>Period Active</th><th>Total Impressions</th><th>Total Clicks</th><th>CTR</th><th>Click URL</th></tr></thead><tbody><tr><td><?php if ($adMediaUrl !== ''): ?><div class="table-cover"><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img src="<?= e($adMediaUrl) ?>" alt=""><?php endif; ?></div><?php else: ?>N/A<?php endif; ?></td><td><?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></td><td>N/A</td><td><?= e($statText($adImpressions,$hasAdData)) ?></td><td><?= e($statText($adClicks,$hasAdData)) ?></td><td><?= e($statSmallText($ctr,$hasAdData,'%')) ?></td><td><?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></td></tr></tbody></table></div></div></section>
+          <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Manage ads shown on song pages"><div class="management-toolbar"><div><h2>Advertising</h2><p>Manage ads shown on song pages</p></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Current Ad Status</span><span class="status-pill <?= $adEnabled ? 'published' : 'unlisted' ?>" id="adStatusPill"><?= $adEnabled ? 'Active' : 'Inactive' ?></span></div><div class="ad-status-layout"><div class="ad-preview-thumb"><?php if ($adMediaUrl !== ''): ?><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img src="<?= e($adMediaUrl) ?>" alt="Current advertisement preview"><?php endif; ?><?php else: ?>N/A<?php endif; ?></div><div class="ad-detail-list"><div><strong>File:</strong> <?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></div><div><strong>Type:</strong> <?= e($adMediaType !== '' ? $adMediaType : 'N/A') ?></div><div><strong>Click URL:</strong> <?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></div><div><strong>Last updated:</strong> N/A</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Update Ad</span></div><form class="admin-form" id="adUpdateForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_ad"><div class="ad-update-layout"><div class="ad-update-fields"><label class="form-field">Advertising Media</label><input id="adMediaInput" class="ad-file-input" type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm"><button type="button" class="ad-upload-btn" id="adUploadButton">Choose media file</button><span class="form-help">Accepts JPG, PNG, WEBP, MP4, WEBM, or MOV. 9:16 ratio recommended.</span><div class="ad-media-meta" id="adMediaMeta"><span id="adFileName">No file selected</span><span id="adFileSize">0 MB</span><span id="adDimensions">Dimensions pending</span></div><div class="ratio-warning" id="adRatioWarning">For best results use 9:16 aspect ratio</div><label class="form-field">Advertisement Click URL<input id="adClickUrlInput" type="url" name="adLinkUrl" value="<?= e($adLinkUrl) ?>"></label><div class="ad-toggles"><label class="check-card toggle-card"><span>Show advertisement on single song pages</span><input id="sitewideAdToggle" type="checkbox" name="adEnabled" <?= $adEnabled ? 'checked' : '' ?>></label></div></div><div class="ad-update-preview"><div class="ad-preview-label">Preview</div><div class="ad-preview-frame" id="adSelectedPreview">Preview</div><div class="ad-preview-hint">Upload a portrait file to match song page ad display.</div></div></div><div class="panel-header" style="margin-top:24px"><span class="panel-title">Grid Ad (Music Library Card)</span><span class="status-pill <?= $gridAdEnabled ? 'published' : 'unlisted' ?>"><?= $gridAdEnabled ? 'Active' : 'Inactive' ?></span></div><p style="font-size:0.82rem;color:var(--label-secondary);margin:0 0 16px">Square 1:1 ad card inserted into the track grid on the homepage.</p><div class="form-grid"><div class="form-field full"><label style="display:block;margin-bottom:6px;font-weight:600">Ad Image (1:1 square)</label><?php if ($gridAdImageUrl !== ''): ?><img src="<?= e($gridAdImageUrl) ?>" alt="Grid ad preview" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block"><?php endif; ?><input type="file" name="gridAdImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Use 1:1 ratio for best results.</span></div><label class="form-field">Advertiser Name<input type="text" name="gridAdName" value="<?= e($gridAdName) ?>" placeholder="e.g. Acme Corp"></label><label class="form-field">Subtext<input type="text" name="gridAdSubtext" value="<?= e($gridAdSubtext) ?>" placeholder="e.g. Premium Sponsor"></label><label class="form-field">Button Text<input type="text" name="gridAdButtonText" value="<?= e($gridAdButtonText) ?>" placeholder="Learn more"></label><label class="form-field">Button Background Color<input type="color" name="gridAdButtonColor" value="<?= e($gridAdButtonColor ?: '#ffffff') ?>"></label><label class="form-field">Button Text Color<input type="color" name="gridAdButtonTextColor" value="<?= e($gridAdButtonTextColor ?: '#000000') ?>"></label><label class="form-field full">Click URL<input type="url" name="gridAdLinkUrl" value="<?= e($gridAdLinkUrl) ?>" placeholder="https://advertiser.com"></label><label class="form-field">Grid Position (1 = first card)<input type="number" name="gridAdPosition" min="1" max="50" value="<?= e((string)$gridAdPosition) ?>"></label><div class="form-field full"><label class="check-card toggle-card"><span>Show grid ad on homepage</span><input type="checkbox" name="gridAdEnabled" <?= $gridAdEnabled ? 'checked' : '' ?>></label></div></div><div class="form-actions"><button class="btn btn-primary" type="submit">Save Advertising</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad Performance Summary</span><button class="panel-action" type="button" data-action-section="analytics">View Full Ad Report →</button></div><div class="ad-summary-grid"><div class="stat-card cyan"><div class="stat-label">Total Impressions</div><div class="stat-value cyan"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card orange"><div class="stat-label">Total Clicks</div><div class="stat-value orange"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card purple"><div class="stat-label">CTR</div><div class="stat-value purple"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change up">Campaign average</div></div><div class="stat-card green"><div class="stat-label">Top Song</div><div class="stat-value green" style="font-size:24px;">N/A</div><div class="stat-change up">N/A ad clicks</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad History</span></div><div class="analytics-table-wrap"><table class="history-table"><thead><tr><th>Thumbnail</th><th>File Name</th><th>Period Active</th><th>Total Impressions</th><th>Total Clicks</th><th>CTR</th><th>Click URL</th></tr></thead><tbody><tr><td><?php if ($adMediaUrl !== ''): ?><div class="table-cover"><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img src="<?= e($adMediaUrl) ?>" alt=""><?php endif; ?></div><?php else: ?>N/A<?php endif; ?></td><td><?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></td><td>N/A</td><td><?= e($statText($adImpressions,$hasAdData)) ?></td><td><?= e($statText($adClicks,$hasAdData)) ?></td><td><?= e($statSmallText($ctr,$hasAdData,'%')) ?></td><td><?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></td></tr></tbody></table></div></div></section>
 
           <section class="view-section" id="settings-section" data-title="Website Settings" data-subtitle="Site controls"><div class="management-toolbar"><div><h2>Website Settings</h2><p>Control public content, SEO, downloads, layout, and social links</p></div></div><form class="settings-stack" id="websiteSettingsForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_site"><div class="settings-card-grid"><div class="panel"><div class="panel-header"><span class="panel-title">Website Content</span></div><div class="admin-form"><label class="form-field">Website Title<input type="text" name="siteTitle" value="<?= e((string)($site['title']??'SG Production')) ?>"></label><label class="form-field">Tagline<input type="text" name="tagline" value="<?= e((string)($site['tagline']??'')) ?>"></label><label class="form-field">YouTube Subscribe Link<input type="url" name="youtube" value="<?= e((string)($links['youtube']??'')) ?>"></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SEO</span></div><div class="admin-form"><label class="form-field">Default Page Title<input type="text" value="SG Production - Original Music Downloads" disabled></label><label class="form-field">Clean URL Format<input type="text" value="https://sgproduction.music/song-name" disabled></label><label class="form-field">Default Share Title<input type="text" value="Download music from SG Production" disabled></label></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SEO & META</span></div><div class="form-grid"><label class="form-field full"><span class="char-row"><span>Meta Description</span><span class="char-count"><span id="metaDescriptionCount">0</span>/160</span></span><textarea id="metaDescriptionInput" name="metaDescription" rows="3" maxlength="160"><?= e((string)($seo['metaDescription']??'')) ?></textarea></label><label class="form-field">OG Image<input id="ogImageInput" type="file" name="ogImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">Current: <?= e((string)($seo['ogImage']??'N/A')) ?></span></label><label class="form-field">Favicon<input id="faviconInput" type="file" name="favicon" accept=".ico,.png,.svg,image/png,image/svg+xml"><span class="form-help">Current: <?= e((string)($seo['favicon']??'N/A')) ?></span></label><label class="form-field full">Google Analytics ID<input type="text" placeholder="G-XXXXXXXXXX" disabled></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">HOMEPAGE LAYOUT</span></div><div class="form-grid"><label class="form-field">Homepage Hero Text<input type="text" name="youtubeHeading" value="<?= e((string)($site['youtubeHeading']??'')) ?>"></label><label class="form-field">Homepage Sub-text<input type="text" name="youtubeText" value="<?= e((string)($site['youtubeText']??'')) ?>"></label><label class="form-field">Latest Count<input type="number" name="latestCount" min="0" max="12" value="<?= e((string)($catalog['latestCount']??5)) ?>"></label><label class="form-field">Songs Per Page<input type="number" name="tracksPerPage" min="5" max="50" value="<?= e((string)($catalog['tracksPerPage']??15)) ?>"></label><label class="form-field">Demo Page Count<input type="number" name="paginationDemoPages" min="1" max="40" value="<?= e((string)($catalog['paginationDemoPages']??12)) ?>"></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SOCIAL LINKS</span></div><div class="form-grid"><label class="form-field">Instagram<input type="url" name="instagram" value="<?= e((string)($links['instagram']??'')) ?>"></label><label class="form-field">YouTube<input type="url" name="youtube" value="<?= e((string)($links['youtube']??'')) ?>"></label><label class="form-field">Spotify<input type="url" name="spotify" value="<?= e((string)($links['spotify']??'')) ?>"></label><label class="form-field">Apple Music<input type="url" name="appleMusic" value="<?= e((string)($links['appleMusic']??'')) ?>"></label><label class="form-field">Contact Email<input type="email" name="contactEmail" value="<?= e((string)($site['contactEmail']??'')) ?>"></label></div></div><div class="sticky-save-bar"><div><strong>Website Settings</strong><div class="save-copy">Save layout, SEO, download, and social changes together.</div></div><button class="btn btn-primary" type="submit">Save All Settings</button></div></form></section>
 
