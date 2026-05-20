@@ -303,7 +303,7 @@ a {
 .page {
   min-height: 100vh;
   margin-left: var(--nav-collapsed);
-  padding-bottom: 42px;
+  padding-bottom: 106px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0) 260px),
     var(--bg);
@@ -2009,8 +2009,6 @@ body.search-open {
 /* HIG-inspired refinement layer: content-first hierarchy, clear controls, material depth, and accessible focus. */
 .mobile-topbar,
 .side-nav,
-.player,
-
 .hero,
 .artist-profile-hero,
 .song-page {
@@ -2417,7 +2415,7 @@ body.search-open {
   .page {
     margin-left: 0;
     padding-top: 58px;
-    padding-bottom: 72px;
+    padding-bottom: 146px;
   }
 
   .search-overlay {
