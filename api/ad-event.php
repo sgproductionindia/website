@@ -58,6 +58,7 @@ function recordAdEvent(string $type): void
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
         header('Allow: POST');
+        header('Content-Type: application/json');
         echo json_encode(['ok' => false, 'error' => 'POST required']);
         return;
     }

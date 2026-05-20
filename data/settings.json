@@ -23,9 +23,20 @@
     "paginationDemoPages": 12
   },
   "advertising": {
-    "enabled": true,
-    "mediaUrl": "assets/ad-sample.jpg",
-    "mediaType": "image",
-    "linkUrl": ""
+    "enabled": false,
+    "mediaUrl": "",
+    "mediaType": "",
+    "linkUrl": "",
+    "gridAd": {
+      "enabled": false,
+      "imageUrl": "",
+      "name": "",
+      "subtext": "",
+      "buttonText": "Learn more",
+      "buttonColor": "#ffffff",
+      "buttonTextColor": "#000000",
+      "linkUrl": "",
+      "position": 8
+    }
   }
 }

@@ -759,24 +759,16 @@ body.search-open {
 }
 
 .artist-track-list {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
+  /* grid layout inherited from .track-grid */
 }
 
-.artist-track-row {
-  display: grid;
-  grid-template-columns: minmax(160px, 0.65fr) minmax(280px, 1.35fr) auto;
-  align-items: center;
-  gap: 24px;
-  min-height: 78px;
-  padding: 16px 22px;
-  border-bottom: 1px solid var(--line);
-}
-
-.artist-track-row:last-child {
+.artist-track-row.track-card {
+  display: flex;
+  flex-direction: column;
+  min-height: unset;
+  padding: 0;
   border-bottom: 0;
+  gap: 0;
 }
 
 .artist-track-title strong {
@@ -946,6 +938,47 @@ body.search-open {
   gap: 14px;
 }
 
+.grid-ad-card {
+  cursor: default;
+}
+
+.grid-ad-card:hover,
+.grid-ad-card:focus-within,
+.grid-ad-card:focus-visible {
+  transform: none;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.grid-ad-image {
+  cursor: default;
+}
+
+.genre-pill.grid-ad-badge {
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.grid-ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+
+.grid-ad-btn:hover {
+  opacity: 0.85;
+}
+
 .track-pagination {
   display: flex;
   align-items: center;
@@ -977,7 +1010,7 @@ body.search-open {
 .pagination-button:hover,
 .pagination-button:focus-visible,
 .pagination-button.is-active {
-  color: #031016;
+  color: #ffffff;
   border-color: rgba(16, 217, 255, 0.72);
   background: var(--cyan);
   outline: none;
@@ -1296,11 +1329,11 @@ body.search-open {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
+  border: 0;
+  border-radius: 14px;
   padding: 0 16px;
-  color: #9aa3ae;
-  background: rgba(255, 255, 255, 0.035);
+  color: #c8cdd3;
+  background: rgba(255, 255, 255, 0.10);
   font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
@@ -1350,28 +1383,40 @@ body.search-open {
 
 .song-wave-row {
   display: grid;
-  grid-template-columns: 42px minmax(420px, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 18px;
-  width: min(100%, 760px);
+  column-gap: 20px;
+  row-gap: 10px;
+  width: min(100%, 820px);
   margin-top: clamp(32px, 5vh, 46px);
 }
 
 .song-play {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border: 2px solid #f4f8fb;
+  border: 0;
   border-radius: 50%;
-  color: #f4f8fb;
-  background: transparent;
+  color: #060f1a;
+  background: #ffffff;
   cursor: pointer;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 180ms ease, color 180ms ease;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.song-play:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
 }
 
 .song-play svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.2;
@@ -1388,54 +1433,74 @@ body.search-open {
   display: block;
 }
 
+.song-play.is-playing {
+  background: var(--cyan);
+  color: #040c12;
+  animation: song-play-pulse 2s ease-out infinite;
+}
+
+@keyframes song-play-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 217, 255, 0.45); }
+  65%  { box-shadow: 0 0 0 14px rgba(16, 217, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 217, 255, 0); }
+}
+
 .song-waveform {
-  height: 64px;
+  position: relative;
+  height: 68px;
   display: flex;
-  align-items: end;
-  gap: 3px;
+  align-items: center;
+  gap: 2px;
   overflow: hidden;
   width: 100%;
   max-width: 100%;
-  padding-top: 4px;
+  grid-column: 2;
+  grid-row: 1;
+  cursor: pointer;
+  touch-action: none;
 }
 
+
 .song-waveform span {
-  width: 2px;
-  flex: 0 0 2px;
-  border-radius: 999px 999px 0 0;
-  background: linear-gradient(180deg, #ffffff, #8d97a4);
-  box-shadow: 0 0 10px rgba(16, 217, 255, 0.16);
+  width: 3px;
+  flex: 0 0 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
 }
 
 .song-duration {
-  align-self: end;
-  margin-bottom: 7px;
-  color: #a8b0ba;
-  font-size: 0.72rem;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  color: #8f99a6;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .song-download {
-  width: min(100%, 620px);
-  min-height: 46px;
-  margin-top: clamp(24px, 4vh, 30px);
+  width: min(100%, 820px);
+  min-height: 52px;
+  margin-top: clamp(20px, 3.5vh, 28px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 2px solid #f1f5f8;
-  border-radius: 999px;
-  color: #f7fafc;
-  background: transparent;
-  font-size: 0.9rem;
+  border: 0;
+  border-radius: 16px;
+  color: #ffffff;
+  background: var(--cyan);
+  font-size: 0.92rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  transition: filter 160ms ease;
 }
 
 .song-download:hover,
 .song-download:focus-visible {
-  color: #031016;
-  background: var(--cyan);
-  border-color: var(--cyan);
+  filter: brightness(1.1);
   outline: none;
 }
 
@@ -1752,7 +1817,7 @@ body.search-open {
   z-index: 30;
   min-height: 70px;
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.5fr) auto;
+  grid-template-columns: minmax(200px, 0.8fr) minmax(280px, 1.5fr) auto auto;
   align-items: center;
   gap: 22px;
   border: 1px solid rgba(16, 217, 255, 0.24);
@@ -1841,11 +1906,12 @@ body.search-open {
 
 .progress-shell {
   height: 6px;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   touch-action: none;
+  position: relative;
 }
 
 .progress-bar {
@@ -1853,6 +1919,28 @@ body.search-open {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--cyan), var(--gold));
+  position: relative;
+}
+
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.35);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.progress-shell:hover .progress-bar::after,
+.progress-shell.is-seeking .progress-bar::after {
+  opacity: 1;
 }
 
 .progress-time {
@@ -1865,19 +1953,63 @@ body.search-open {
 
 .download-now {
   min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
   border-color: rgba(16, 217, 255, 0.34);
-  color: #041117;
+  color: #ffffff;
   background: var(--cyan);
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.download-now svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.player-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  color: rgba(235, 235, 245, 0.4);
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--hig-duration) var(--hig-ease), border-color var(--hig-duration) var(--hig-ease), background var(--hig-duration) var(--hig-ease);
+}
+
+.player-close:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-close svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
 }
 
 /* HIG-inspired refinement layer: content-first hierarchy, clear controls, material depth, and accessible focus. */
 .mobile-topbar,
 .side-nav,
 .player,
-.artist-track-list {
-  background-color: rgba(12, 15, 20, 0.78);
-  backdrop-filter: blur(18px) saturate(1.16);
-}
 
 .hero,
 .artist-profile-hero,
@@ -1929,7 +2061,6 @@ body.search-open {
 .search-field,
 .artist-search,
 .track-card,
-.artist-track-list,
 .player {
   border-color: var(--line);
 }
@@ -1959,7 +2090,6 @@ body.search-open {
 .artist-search,
 .search-field,
 .track-card,
-.artist-track-list,
 .artist-track-row,
 .search-result {
   background: var(--surface);
@@ -1989,7 +2119,6 @@ body.search-open {
 .track-card,
 .artist-card img,
 .artist-profile-portrait,
-.artist-track-list,
 .player {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.045) inset;
 }
@@ -2177,11 +2306,11 @@ body.search-open {
   .side-nav {
     inset: 58px 0 0 0;
     width: 100%;
-    height: calc(100vh - 58px);
+    height: calc(100dvh - 58px);
     flex-direction: column;
     justify-content: flex-start;
     overflow-y: auto;
-    padding: 28px 14px 32px;
+    padding: 28px 14px calc(32px + env(safe-area-inset-bottom, 0px));
     border-top: 0;
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     background:
@@ -2446,8 +2575,9 @@ body.search-open {
   }
 
   .song-wave-row {
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 8px;
     width: 100%;
     margin-top: 34px;
   }
@@ -2458,9 +2588,7 @@ body.search-open {
   }
 
   .song-duration {
-    grid-column: 2;
-    justify-self: end;
-    margin-top: -10px;
+    font-size: 0.7rem;
   }
 
   .song-info-grid {
@@ -2485,10 +2613,16 @@ body.search-open {
     right: 10px;
     bottom: 10px;
     min-height: 116px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 12px 14px;
     border-radius: 30px;
     padding: 12px;
+  }
+
+  .player-close {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
   }
 
   .player-track {
@@ -2573,16 +2707,25 @@ body.search-open {
   }
 
   .player {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
+  }
+
+  .player-close {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
   }
 
   .download-now {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 3;
     justify-self: stretch;
+    border-radius: var(--hig-radius-md);
+    justify-content: center;
   }
 
   .player-center {
+    grid-column: 1 / -1;
     grid-row: 2;
   }
 }
@@ -2769,9 +2912,12 @@ body.search-open {
 .song-play,
 .artist-track-play,
 .copy-credit,
-.search-thumb,
-.player-cover {
+.search-thumb {
   border-radius: 50%;
+}
+
+.player-cover {
+  border-radius: var(--hig-radius-sm);
 }
 
 .secondary-action,
@@ -2882,27 +3028,26 @@ body.search-open {
 }
 
 .song-play {
-  border-color: var(--separator);
-  color: var(--label);
-  background: var(--secondary-system-background);
+  border: 0;
+  color: var(--system-background);
+  background: var(--label);
+  box-shadow: none;
 }
 
 .song-waveform span {
-  background: var(--secondary-label);
+  background: var(--separator);
   box-shadow: none;
 }
 
 .song-download {
-  color: var(--label);
-  border: 1px solid var(--separator);
-  background: transparent;
+  color: #fff;
+  border: 0;
+  background: var(--system-blue);
 }
 
 .song-download:hover,
 .song-download:focus-visible {
-  color: #fff;
-  background: var(--system-blue);
-  border-color: var(--system-blue);
+  filter: brightness(1.1);
 }
 
 .song-ad-media {

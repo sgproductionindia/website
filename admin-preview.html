@@ -377,6 +377,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--sp-3);
     margin-bottom: var(--sp-4);
   }
 
@@ -1019,6 +1020,32 @@
   .settings-preview img { width:100%; height:100%; object-fit:cover; display:block; }
   .settings-upload-row { display:flex; align-items:center; gap:var(--sp-4); }
 
+  /* Compact colour picker */
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 40px;
+    height: 40px;
+    padding: 3px;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 7px; }
+  input[type="color"]::-moz-color-swatch { border: none; border-radius: 7px; }
+  input[type="color"]:hover { border-color: rgba(255,255,255,0.28); }
+  .form-field:has(input[type="color"]) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .form-field:has(input[type="color"]) > span,
+  .form-field:has(input[type="color"]) > label { flex: 1; }
+
   .color-swatch-grid { display:flex; flex-wrap:wrap; gap:var(--sp-2); }
   .color-swatch-option {
     width:36px; height:36px; border-radius:var(--radius-pill);
@@ -1057,6 +1084,7 @@
     display:flex; gap:var(--sp-1); padding:3px;
     border:1px solid var(--separator); border-radius:var(--radius-pill);
     background:var(--bg-secondary);
+    align-items:center;
   }
   .date-chip {
     border:0; border-radius:var(--radius-pill);
@@ -1065,7 +1093,10 @@
     transition:background var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
     min-height:32px;
   }
-  .date-chip.active, .date-chip:hover { background:var(--tint); color:#fff; }
+  .date-chip:hover { background: rgba(255,255,255,0.04); color:var(--label); }
+  .date-chip.active {
+    background: var(--tint); color:#fff;
+  }
 
   .custom-date-range { display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; justify-content:flex-end; }
   .range-field {
@@ -1084,10 +1115,11 @@
     border:1px solid var(--separator); border-radius:var(--radius-lg);
     background:var(--bg-secondary); padding:var(--sp-5); overflow:hidden;
   }
-  .chart-summary { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-bottom:var(--sp-3); color:var(--label-secondary); font-size:12px; font-weight:600; }
+  .chart-summary { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); margin-bottom:var(--sp-3); color:var(--label-secondary); font-size:12px; font-weight:600; flex-wrap:wrap; }
   .chart-summary strong { color:var(--label); font-size:15px; }
   .line-chart-shell svg { width:100%; height:100%; display:block; }
-  .line-chart-shell svg line, .line-chart-shell svg polyline { vector-effect:non-scaling-stroke; }
+  .line-chart-shell svg line { vector-effect:non-scaling-stroke; }
+  .line-chart-shell svg polyline { vector-effect:non-scaling-stroke; stroke-width:2; }
   .chart-visual { position:relative; height:240px; }
   .chart-y-axis { position:absolute; inset:0; z-index:2; pointer-events:none; }
   .chart-y-axis span { position:absolute; left:0; transform:translateY(-50%); color:var(--label-tertiary); font-size:10px; font-weight:600; }
@@ -1118,16 +1150,30 @@
   .chart-value-label { display:none; }
   .chart-toggle {
     display:flex; gap:var(--sp-1); padding:3px;
-    border:1px solid var(--separator); border-radius:var(--radius-pill); background:var(--bg-tertiary);
+    border:1px solid var(--separator); border-radius:var(--radius-pill);
+    background:var(--bg-secondary);
+    flex-wrap:wrap;
   }
   .chart-toggle button {
-    border:0; border-radius:var(--radius-pill); background:transparent;
-    color:var(--label-secondary); padding:var(--sp-1) var(--sp-3);
+    flex:0 0 auto;
+    min-width:0;
+    border:0;
+    border-radius:var(--radius-pill);
+    background:transparent;
+    color:var(--label-secondary);
+    padding:var(--sp-2) var(--sp-4);
     font:inherit; font-size:12px; font-weight:600; cursor:pointer;
-    min-height:28px;
+    min-height:32px;
     transition:background var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
   }
-  .chart-toggle button.active, .chart-toggle button:hover { background:var(--tint-bg); color:var(--tint); }
+  .chart-toggle button.active {
+    background:var(--tint);
+    color:#fff;
+  }
+  .chart-toggle button:hover:not(.active) {
+    background:var(--tint-bg);
+    color:var(--tint);
+  }
 
   .horizontal-bars { display:flex; flex-direction:column; gap:var(--sp-4); }
   .hbar-row { display:grid; grid-template-columns:130px 1fr 48px; gap:var(--sp-3); align-items:center; }
@@ -1189,6 +1235,7 @@
   .notification-item.error    { border-left-color:var(--sys-red); }
   .notification-item.system   { border-left-color:var(--sys-purple); }
   .notification-icon { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--bg-tertiary); color:var(--tint); border:1px solid var(--separator); }
+  .notification-icon svg { width:20px; height:20px; }
   .notification-title-row { display:flex; align-items:center; gap:var(--sp-2); margin-bottom:3px; }
   .notification-title { font-size:15px; font-weight:600; color:var(--label); }
   .unread-dot { width:8px; height:8px; border-radius:50%; background:var(--tint); }
@@ -1456,6 +1503,10 @@
     .ad-summary-grid { grid-template-columns:repeat(2,1fr); }
     .management-toolbar, .artist-toolbar, .analytics-filter-bar,
     .panel-header, .export-box, .sticky-save-bar { align-items:stretch; flex-direction:column; }
+    .chart-summary { align-items:flex-start; }
+    .chart-toggle { width:auto; justify-content:flex-start; flex-wrap:wrap; }
+    .chart-toggle button { width:auto; flex:0 0 auto; }
+    .chart-axis { padding-left:var(--sp-4); }
     .song-controls { display:grid; grid-template-columns:1fr; width:100%; }
     .song-search, .admin-control { width:100%; }
 
@@ -1937,7 +1988,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 200px;
+    max-width: 100%;
   }
 
   /* Performance mini cards */
@@ -2091,6 +2142,9 @@
   /* Responsive */
   @media (max-width: 960px) {
     .ad-top-grid { grid-template-columns: 1fr; }
+    .ad-current-layout { grid-template-columns: 1fr; gap: var(--sp-4); }
+    .ad-current-right { display: none; }
+    .ad-thumb-vertical { width: 100%; max-width: 140px; min-width: auto; }
     .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
     .ad-update-layout { grid-template-columns: 1fr; }
     .ad-update-preview { flex-direction: row; align-items: flex-start; gap: var(--sp-4); }
@@ -2099,8 +2153,17 @@
   }
 
   @media (max-width: 620px) {
-    .ad-current-layout { grid-template-columns: 70px 1fr; }
-    .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
+    .ad-current-layout {
+      grid-template-columns: 1fr;
+      gap: var(--sp-3);
+    }
+    .ad-thumb-vertical {
+      width: 80px;
+      max-width: 80px;
+      margin: 0 auto var(--sp-2);
+    }
+    .ad-perf-grid { grid-template-columns: 1fr 1fr; }
+    .ad-perf-bar-row { grid-template-columns: 100px 1fr 40px; }
     .ad-toggles { grid-template-columns: 1fr; }
   }
 
@@ -2207,15 +2270,7 @@
     margin-bottom: var(--sp-4);
   }
 
-  /* Responsive for new 3-col current ad */
-  @media (max-width: 960px) {
-    .ad-current-layout { grid-template-columns: 100px 1fr; }
-    .ad-current-right { display: none; }
-    .ad-perf-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 620px) {
-    .ad-current-layout { grid-template-columns: 80px 1fr; }
-  }
+  /* Responsive handled above */
 
 
   /* ════════════════════════════════════════
@@ -2847,7 +2902,7 @@
     <div class="nav-section">
       <div class="nav-label">Monetization</div>
       <a class="nav-item" href="#advertising" data-section="advertising">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 10.5V6a1 1 0 0 0-1.447-.894L5 11H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2l3.5 1.75M19 10.5V15M19 10.5l2-1.5M19 15l2 1.5M7.5 15.75V19a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-3"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-miterlimit="10"><polygon points="6,19 3,19 3,13 6,13 29,6 29,26"/><path d="M15,21.8l-0.3,1c-0.5,1.7-2.3,2.6-3.9,2.1l0,0c-1.7-0.5-2.6-2.3-2.1-3.9L9,20"/></svg>
         Advertising
       </a>
     </div>
@@ -3017,7 +3072,7 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Ad Performance Breakdown</span>
-          <button class="panel-action" onclick="alert('CSV export preview. This will connect to real data inside admin.php.')">Export CSV →</button>
+          <button class="panel-action" type="button" onclick="alert('CSV export preview. This will connect to real data inside admin.php.')">Export CSV →</button>
         </div>
         <div class="ad-stat-row">
           <div class="ad-stat-label">
@@ -3185,9 +3240,9 @@
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="btn btn-primary" style="width:100%;text-align:center;padding:9px;" onclick="alert('Downloading PDF report...')">Download PDF Report</button>
-          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;" onclick="alert('Downloading CSV...')">Export as CSV</button>
-          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;color:var(--sys-cyan);border-color:var(--tint-bg);" onclick="alert('Link copied!')">Copy Shareable Link</button>
+          <button class="btn btn-primary" style="width:100%;text-align:center;padding:9px;" type="button" onclick="alert('Downloading PDF report...')">Download PDF Report</button>
+          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;" type="button" onclick="alert('Downloading CSV...')">Export as CSV</button>
+          <button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;color:var(--sys-cyan);border-color:var(--tint-bg);" type="button" onclick="alert('Link copied!')">Copy Shareable Link</button>
         </div>
       </div>
     </div>
@@ -3199,7 +3254,6 @@
           <h2>Analytics</h2>
           <p>Measure downloads, song views, ads, and engagement</p>
         </div>
-        <button class="btn btn-primary" type="button" id="analyticsExportCsv">Export CSV</button>
       </div>
 
       <div class="analytics-filter-bar">
@@ -3326,7 +3380,7 @@
                 <line x1="764" y1="30" x2="764" y2="238"></line>
                 <line x1="875" y1="30" x2="875" y2="238"></line>
               </g>
-              <polyline id="analyticsLine" fill="none" stroke="#0a84ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" points="80,210 194,178 308,192 422,120 536,145 650,82 764,112 875,54"></polyline>
+              <polyline id="analyticsLine" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="80,210 194,178 308,192 422,120 536,145 650,82 764,112 875,54"></polyline>
             </svg>
             <div class="chart-point-layer" id="analyticsPointLayer" aria-label="Chart values"></div>
           </div>
@@ -3403,8 +3457,7 @@
     <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add the public preview file and the WAV download link separately">
       <div class="management-toolbar">
         <div>
-          <h2>Upload New Song</h2>
-          <p>Add the public preview file and the WAV download link separately</p>
+          <!-- NSDatePicker popup: manual inputs + calendar + Cancel/Apply -->
         </div>
       </div>
 
@@ -3883,6 +3936,7 @@
             <p>Add your first genre to organize songs and artists.</p>
             <button class="btn btn-primary" type="button" data-genre-focus>Add Your First Genre</button>
           </div>
+          <button class="btn btn-primary" type="button" id="analyticsExportCsv" onclick="alert('CSV export preview. This will export the analytics report when connected.')">Export CSV</button>
         </div>
         <div class="genre-grid" id="genreGrid">
           <article class="genre-card" style="--genre-color:#00d4ff" data-name="Original Mix" data-slug="original-mix" data-description="Original SG Production mixes and main catalog releases." data-color="#00d4ff" data-songs="12" data-artists="3">
@@ -4074,6 +4128,62 @@
               <p style="font-size:11px;color:var(--label-tertiary);text-align:center;margin-top:var(--sp-2);">9:16 portrait format</p>
             </div>
 
+          </div>
+          <div class="form-actions" style="margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--separator);">
+            <button class="btn btn-primary" type="submit" style="min-height:44px;padding:0 32px;border-radius:var(--radius-md);font-size:15px;">Save Advertising</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- GRID AD PANEL -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Grid Ad (Music Library Card)</span>
+          <span class="status-pill published" id="gridAdStatusPill">Active</span>
+        </div>
+        <p style="font-size:0.82rem;color:var(--label-tertiary,#8e8e93);margin:0 0 16px">Square 1:1 ad card inserted into the track grid on the homepage.</p>
+        <form class="admin-form" id="gridAdForm">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label>Ad Image (1:1 square)</label>
+              <img src="assets/ad-square.jpg" alt="Grid ad preview" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+              <p class="form-help">JPG, PNG or WEBP. Use 1:1 ratio for best results.</p>
+            </div>
+            <label class="form-field">
+              Advertiser Name
+              <input type="text" value="Advertiser Name">
+            </label>
+            <label class="form-field">
+              Subtext
+              <input type="text" value="Subtext">
+            </label>
+            <label class="form-field">
+              Button Text
+              <input type="text" value="Learn more">
+            </label>
+            <label class="form-field">
+              Button Background Color
+              <input type="color" value="#ffffff">
+            </label>
+            <label class="form-field">
+              Button Text Color
+              <input type="color" value="#000000">
+            </label>
+            <label class="form-field full">
+              Click URL
+              <input type="url" placeholder="https://advertiser.com" value="">
+            </label>
+            <label class="form-field">
+              Grid Position (1 = first card)
+              <input type="number" min="1" max="50" value="8">
+            </label>
+            <div class="form-field full">
+              <label class="check-card toggle-card">
+                <span>Show grid ad on homepage</span>
+                <input type="checkbox" checked>
+              </label>
+            </div>
           </div>
           <div class="form-actions" style="margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--separator);">
             <button class="btn btn-primary" type="submit" style="min-height:44px;padding:0 32px;border-radius:var(--radius-md);font-size:15px;">Save Advertising</button>
@@ -4365,7 +4475,7 @@
 
       <div class="notification-feed" id="notificationFeed">
         <article class="notification-item download" data-type="download" data-unread="true">
-          <div class="notification-icon">D</div>
+          <div class="notification-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
           <div>
             <div class="notification-title-row"><span class="notification-title">Hype downloaded 23 times in the last hour</span><span class="unread-dot"></span></div>
             <div class="notification-description">Download activity is higher than usual for this track.</div>
@@ -4374,7 +4484,7 @@
           <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
         </article>
         <article class="notification-item ad" data-type="ad" data-unread="true">
-          <div class="notification-icon">A</div>
+          <div class="notification-icon"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-miterlimit="10"><polygon points="6,19 3,19 3,13 6,13 29,6 29,26"/><path d="M15,21.8l-0.3,1c-0.5,1.7-2.3,2.6-3.9,2.1l0,0c-1.7-0.5-2.6-2.3-2.1-3.9L9,20"/></svg></div>
           <div>
             <div class="notification-title-row"><span class="notification-title">Ad clicked from Neon Pulse page — brand link visited</span><span class="unread-dot"></span></div>
             <div class="notification-description">A visitor opened the advertiser destination from the song page.</div>
@@ -4383,7 +4493,7 @@
           <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
         </article>
         <article class="notification-item warning" data-type="system" data-unread="true">
-          <div class="notification-icon">W</div>
+          <div class="notification-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v2"/><path d="M12 14h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
           <div>
             <div class="notification-title-row"><span class="notification-title">Storage at 80% capacity</span><span class="unread-dot"></span></div>
             <div class="notification-description">Uploaded covers, preview files, and ads are using most of the available storage.</div>
@@ -4392,7 +4502,7 @@
           <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
         </article>
         <article class="notification-item error" data-type="error" data-unread="true">
-          <div class="notification-icon">E</div>
+          <div class="notification-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 16h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
           <div>
             <div class="notification-title-row"><span class="notification-title">WAV download link broken for Night Drive — 404 error</span><span class="unread-dot"></span></div>
             <div class="notification-description">The direct WAV URL returned a not found response during the latest check.</div>
@@ -4401,7 +4511,7 @@
           <button class="btn btn-outline dismiss-notification" type="button">Dismiss</button>
         </article>
         <article class="notification-item system" data-type="system" data-unread="false">
-          <div class="notification-icon">S</div>
+          <div class="notification-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg></div>
           <div>
             <div class="notification-title-row"><span class="notification-title">Purple Rain uploaded successfully</span></div>
             <div class="notification-description">The song is now available in Uploaded Songs and can be published or edited.</div>
@@ -4428,7 +4538,6 @@
     </section>
 
   </div>
-</div>
 <div class="toast" id="settingsToast">Settings saved ✓</div>
 
 <script>
@@ -4969,10 +5078,6 @@
     });
   });
 
-  analyticsExportCsv?.addEventListener('click', () => {
-    alert('CSV export preview. This will export the analytics table from admin.php when connected.');
-  });
-
   /* ── APPLE HIG DATE RANGE PICKER ── */
   (function() {
     const MONTHS = ['January','February','March','April','May','June',
@@ -5141,7 +5246,6 @@
 
     /* ── Cancel / Apply ── */
     window.nsdpCancel = function(){
-      // Reset to last applied values
       fromDate=new Date(2026,4,2);
       toDate  =new Date(2026,4,9);
       syncInputs(); updateSummary();

@@ -213,6 +213,7 @@ const searchOverlay = document.querySelector("#searchOverlay");
 const searchInput = document.querySelector("#siteSearchInput");
 const searchResults = document.querySelector("#searchResults");
 const searchClose = document.querySelector("#searchClose");
+const playerClose = document.querySelector("#playerClose");
 
 let selectedTrack = tracks[0];
 let audioContext = null;
@@ -222,6 +223,7 @@ let activeAudio = null;
 let startedAt = 0;
 let pausedAt = 0;
 let isPlaying = false;
+let playingTrackId = null;
 let animationFrame = 0;
 let waveformResizeFrame = 0;
 let allTracks = [];
@@ -254,7 +256,18 @@ let siteSettings = {
     enabled: false,
     mediaUrl: "",
     mediaType: "",
-    linkUrl: ""
+    linkUrl: "",
+    gridAd: {
+      enabled: false,
+      imageUrl: "",
+      name: "",
+      subtext: "",
+      buttonText: "Learn more",
+      buttonColor: "#ffffff",
+      buttonTextColor: "#000000",
+      linkUrl: "",
+      position: 8
+    }
   }
 };
 
@@ -551,7 +564,7 @@ function durationToSeconds(duration) {
 function formatTimer(seconds) {
   const safeSeconds = Math.max(0, Math.floor(seconds));
   const minutes = String(Math.floor(safeSeconds / 60));
-  const remainingSeconds = String(safeSeconds % 60);
+  const remainingSeconds = String(safeSeconds % 60).padStart(2, "0");
   return `${minutes}:${remainingSeconds}`;
 }
 
@@ -674,6 +687,29 @@ function renderCard(track) {
   return card;
 }
 
+function renderGridAdCard() {
+  const g = (siteSettings.advertising || {}).gridAd || {};
+  if (!g.enabled || !g.imageUrl) return null;
+
+  const card = document.createElement("article");
+  card.className = "track-card grid-ad-card";
+  card.innerHTML = `
+    <div class="cover-link grid-ad-image" style="background-image:url('${escapeHTML(g.imageUrl)}');background-size:cover;background-position:center;"></div>
+    <div class="track-body">
+      <div class="track-copy">
+        <strong class="track-title">${escapeHTML(g.name || "")}</strong>
+        <span class="artist-name">${escapeHTML(g.subtext || "")}</span>
+        <span class="genre-pill grid-ad-badge">Ad</span>
+      </div>
+      <div class="card-actions">
+        <a class="grid-ad-btn" ${g.linkUrl ? `href="${escapeHTML(g.linkUrl)}" target="_blank" rel="noopener noreferrer"` : ""} style="background:${escapeHTML(g.buttonColor || "#fff")};color:${escapeHTML(g.buttonTextColor || "#000")}">${escapeHTML(g.buttonText || "Learn more")}</a>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
 function renderTracks(list, target) {
   target.replaceChildren(...list.map(renderCard));
   syncPlayingCards();
@@ -731,8 +767,16 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   const totalPages = Math.max(1, Math.ceil(allTracks.length / allTracksPerPage));
   allTracksPage = Math.min(Math.max(1, page), totalPages);
   const start = (allTracksPage - 1) * allTracksPerPage;
+  const cards = allTracks.slice(start, start + allTracksPerPage).map(renderCard);
 
-  renderTracks(allTracks.slice(start, start + allTracksPerPage), trackGrid);
+  const adCard = renderGridAdCard();
+  if (adCard) {
+    const pos = Math.min(Math.max(1, Number((siteSettings.advertising.gridAd || {}).position) || 8), cards.length + 1);
+    cards.splice(pos - 1, 0, adCard);
+  }
+
+  trackGrid.replaceChildren(...cards);
+  syncPlayingCards();
   renderPagination(totalPages);
 
   if (shouldScroll) {
@@ -829,6 +873,7 @@ function playTrack(track) {
     });
 
     isPlaying = true;
+    playingTrackId = track.id;
     pausedAt = 0;
     syncPlayer();
     player.classList.add("active");
@@ -855,6 +900,7 @@ function playTrack(track) {
   activeSource = source;
   activeGain = gain;
   isPlaying = true;
+  playingTrackId = track.id;
   startedAt = audioContext.currentTime - resumeOffset;
   pausedAt = 0;
 
@@ -914,6 +960,7 @@ function stopCurrent(resetPause = true) {
   activeSource = null;
   activeGain = null;
   isPlaying = false;
+  playingTrackId = null;
   cancelAnimationFrame(animationFrame);
 
   if (resetPause) {
@@ -970,6 +1017,14 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   progressTime.textContent = `${formatTimer(scaledElapsed)}/${formatTimer(totalSeconds)}`;
   progressShell.setAttribute("aria-valuenow", String(Math.round(percent)));
   progressShell.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
+  if (playingTrackId === selectedTrack.id) {
+    const bars = songWaveform.children;
+    const playedCount = Math.round((percent / 100) * bars.length);
+    for (let i = 0; i < bars.length; i++) {
+      bars[i].style.background = i < playedCount ? "#0a84ff" : "";
+    }
+    songDuration.textContent = `${formatTimer(scaledElapsed)} / ${formatTimer(totalSeconds)}`;
+  }
 }
 
 function progressFractionFromPointer(event, element) {
@@ -1016,6 +1071,7 @@ function setPlayerProgress(fraction) {
 
 function startPlayerSeek(event) {
   event.preventDefault();
+  progressShell.classList.add("is-seeking");
   setPlayerProgress(progressFractionFromPointer(event, progressShell));
 
   const move = (moveEvent) => {
@@ -1023,6 +1079,7 @@ function startPlayerSeek(event) {
   };
 
   const stop = () => {
+    progressShell.classList.remove("is-seeking");
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
   };
@@ -1089,12 +1146,9 @@ function downloadTrack(track) {
   URL.revokeObjectURL(url);
 }
 
-function renderSongWaveform(track) {
+function generatedWaveformBars(track, barCount) {
   const bars = [];
   const seed = track.id.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-  const fallbackWidth = Math.min(window.innerWidth - 92, 620);
-  const availableWidth = songWaveform.clientWidth || fallbackWidth;
-  const barCount = Math.max(42, Math.min(150, Math.floor(availableWidth / 5)));
 
   for (let i = 0; i < barCount; i += 1) {
     const pulse = Math.abs(Math.sin((i + seed) * 0.21));
@@ -1103,7 +1157,54 @@ function renderSongWaveform(track) {
     bars.push(`<span style="height:${Math.min(height, 58)}px"></span>`);
   }
 
-  songWaveform.innerHTML = bars.join("");
+  return bars;
+}
+
+async function renderSongWaveform(track) {
+  const fallbackWidth = Math.min(window.innerWidth - 92, 620);
+  const availableWidth = songWaveform.clientWidth || fallbackWidth;
+  const barCount = Math.max(42, Math.min(150, Math.floor(availableWidth / 5)));
+
+  songWaveform.innerHTML = generatedWaveformBars(track, barCount).join("");
+
+  const audioUrl = getPreviewUrl(track);
+  if (!audioUrl) return;
+
+  try {
+    const response = await fetch(audioUrl, { mode: "cors" });
+    if (!response.ok) return;
+
+    const arrayBuffer = await response.arrayBuffer();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    ctx.close();
+
+    if (!selectedTrack || selectedTrack.id !== track.id) return;
+
+    const channelData = audioBuffer.getChannelData(0);
+    const blockSize = Math.floor(channelData.length / barCount);
+    const peaks = [];
+
+    for (let i = 0; i < barCount; i += 1) {
+      let max = 0;
+      const start = i * blockSize;
+      for (let j = 0; j < blockSize; j += 1) {
+        const abs = Math.abs(channelData[start + j]);
+        if (abs > max) max = abs;
+      }
+      peaks.push(max);
+    }
+
+    const maxPeak = Math.max(...peaks, 0.001);
+    const realBars = peaks.map((peak) => {
+      const height = Math.max(7, Math.round((peak / maxPeak) * 58));
+      return `<span style="height:${height}px"></span>`;
+    });
+
+    songWaveform.innerHTML = realBars.join("");
+  } catch {
+    // keep generated pattern on network or CORS error
+  }
 }
 
 function sendAdEvent(endpoint, track, adUrl = "") {
@@ -1229,6 +1330,12 @@ function queueSongWaveformRender() {
 }
 
 function openSongPage(track, updateUrl = true) {
+  if (playingTrackId !== track.id) {
+    stopCurrent();
+    progressBar.style.width = "0%";
+    progressShell.setAttribute("aria-valuenow", "0");
+  }
+
   selectedTrack = track;
   songPage.hidden = false;
   document.body.classList.add("song-view");
@@ -1236,7 +1343,7 @@ function openSongPage(track, updateUrl = true) {
   songGenre.textContent = track.genre;
   songPageTitle.textContent = track.title;
   songArtist.textContent = track.artist;
-  songDuration.textContent = track.duration;
+  songDuration.textContent = `0:00 / ${track.duration}`;
   revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
   updateShareMeta(`${track.title} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage || track.cover, siteUrl(trackUrl(track)));
@@ -1293,6 +1400,10 @@ function openSongFromLocation() {
     }
 
     openSongPage(track, false);
+
+    if (new URLSearchParams(window.location.search).get("autoplay") === "1") {
+      playTrack(track);
+    }
   }
 }
 
@@ -1394,6 +1505,13 @@ playerDownload.addEventListener("click", () => {
   downloadTrack(selectedTrack);
 });
 
+playerClose.addEventListener("click", () => {
+  stopCurrent(true);
+  player.classList.remove("active");
+  syncPlayer();
+  syncPlayingCards();
+});
+
 progressShell.addEventListener("pointerdown", startPlayerSeek);
 progressShell.addEventListener("keydown", (event) => {
   const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
@@ -1419,6 +1537,24 @@ songBack.addEventListener("click", () => closeSongPage());
 songPlay.addEventListener("click", () => {
   const track = tracks.find((item) => item.id === songPlay.dataset.trackId) || selectedTrack;
   playTrack(track);
+});
+
+songWaveform.addEventListener("pointerdown", (event) => {
+  if (!selectedTrack) return;
+  event.preventDefault();
+  setPlayerProgress(progressFractionFromPointer(event, songWaveform));
+
+  const move = (moveEvent) => {
+    setPlayerProgress(progressFractionFromPointer(moveEvent, songWaveform));
+  };
+
+  const stop = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", stop);
+  };
+
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", stop, { once: true });
 });
 
 songDownload.addEventListener("click", () => {

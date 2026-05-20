@@ -103,6 +103,7 @@ let activeTrackDuration = 0;
 let activeStartedAt = 0;
 let activePausedAt = 0;
 let activeAnimationFrame = 0;
+let activeAudio = null;
 
 function escapeHTML(value) {
   return value.replace(/[&<>"']/g, (character) => {
@@ -317,7 +318,11 @@ async function loadCatalogData() {
 }
 
 function trackUrl(track) {
-  return /^https?:$/.test(window.location.protocol) ? `/${slugClass(track.title || track.id)}` : `index.html#song-${track.id}`;
+  return `index.html#song-${track.id}`;
+}
+
+function trackPlayUrl(track) {
+  return `index.html?autoplay=1#song-${track.id}`;
 }
 
 function renderArtistCard(artist) {
@@ -361,7 +366,7 @@ function durationToSeconds(duration) {
 
 function formatTimer(seconds) {
   const safeSeconds = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(safeSeconds / 60)}:${safeSeconds % 60}`;
+  return `${Math.floor(safeSeconds / 60)}:${String(safeSeconds % 60).padStart(2, "0")}`;
 }
 
 function icon(name) {
@@ -381,28 +386,32 @@ function getArtistTracks(artist) {
 }
 
 function renderTrackRow(track) {
-  const row = document.createElement("article");
-  row.className = "artist-track-row";
-  row.dataset.trackId = track.id;
-  row.innerHTML = `
-    <div class="artist-track-title">
+  const card = document.createElement("article");
+  card.className = "artist-track-row track-card";
+  card.tabIndex = 0;
+  card.dataset.trackId = track.id;
+  card.dataset.genre = track.genre;
+  card.innerHTML = `
+    <button class="cover-link" type="button" data-action="open" aria-label="Open ${escapeHTML(track.title)}">
       <img src="${escapeHTML(track.cover)}" alt="${escapeHTML(track.title)} cover art" loading="lazy">
-      <strong>${escapeHTML(track.title)}</strong>
-    </div>
-    <div class="artist-track-player">
-      <button class="artist-track-play" type="button" data-action="play" aria-label="Play ${escapeHTML(track.title)}">${icon("play")}</button>
-      <div class="artist-track-progress-shell" data-action="seek" role="slider" tabindex="0" aria-label="${escapeHTML(track.title)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <span class="artist-track-progress-bar"></span>
-      </div>
-      <span class="artist-track-time">0:0/${escapeHTML(track.duration)}</span>
-    </div>
-    <button class="artist-track-download" type="button" data-action="download" aria-label="Download ${escapeHTML(track.title)}">
-      ${icon("download")}
-      <span>Download</span>
+      ${track.isNew ? '<span class="badge">New</span>' : ""}
+      <span class="duration">${escapeHTML(track.duration)}</span>
     </button>
+    <div class="track-body">
+      <div class="track-copy">
+        <strong class="track-title">${escapeHTML(track.title)}</strong>
+        <span class="artist-name">${escapeHTML(track.artist)}</span>
+        <span class="genre-pill ${slugClass(track.genre)}">${escapeHTML(track.genre)}</span>
+      </div>
+      <div class="card-actions">
+        <button class="round-button" type="button" data-action="play" aria-label="Play ${escapeHTML(track.title)}" title="Play">
+          ${icon("play")}
+        </button>
+      </div>
+    </div>
   `;
 
-  return row;
+  return card;
 }
 
 function renderRelatedArtists(activeArtist) {
@@ -437,22 +446,10 @@ function showProfile(artist) {
   renderArtistProfile(artist);
 }
 
-function syncProfileRows(elapsed = activePausedAt) {
+function syncProfileRows() {
   artistTrackList.querySelectorAll(".artist-track-row").forEach((row) => {
     const isActive = row.dataset.trackId === activeTrackId && activeTrackDuration > 0;
-    const bar = row.querySelector(".artist-track-progress-bar");
-    const progress = row.querySelector(".artist-track-progress-shell");
-    const time = row.querySelector(".artist-track-time");
-    const track = tracks.find((item) => item.id === row.dataset.trackId);
-    const total = track ? durationToSeconds(track.duration) : 0;
-    const current = isActive ? Math.min(total, elapsed) : 0;
-    const percent = total ? Math.min(100, (current / total) * 100) : 0;
-
-    row.classList.toggle("is-playing", isActive && activeAnimationFrame);
-    bar.style.width = `${percent}%`;
-    progress.setAttribute("aria-valuenow", String(Math.round(percent)));
-    progress.setAttribute("aria-valuetext", `${formatTimer(current)} of ${track ? track.duration : "0:0"}`);
-    time.textContent = `${formatTimer(current)}/${track ? track.duration : "0:0"}`;
+    row.classList.toggle("is-playing", isActive && Boolean(activeAnimationFrame));
   });
 }
 
@@ -479,7 +476,7 @@ function seekProfileTrack(track, fraction, shouldPlay = false) {
     activeAnimationFrame = requestAnimationFrame(tickProfileProgress);
   }
 
-  syncProfileRows(activePausedAt);
+  syncProfileRows();
 }
 
 function startProfileSeek(event, row, track) {
@@ -513,7 +510,7 @@ function tickProfileProgress() {
     return;
   }
 
-  const elapsed = (performance.now() - activeStartedAt) / 1000;
+  const elapsed = activeAudio ? activeAudio.currentTime : (performance.now() - activeStartedAt) / 1000;
 
   if (elapsed >= activeTrackDuration) {
     stopProfilePlayback();
@@ -521,40 +518,66 @@ function tickProfileProgress() {
   }
 
   activePausedAt = elapsed;
-  syncProfileRows(elapsed);
+  syncProfileRows();
   activeAnimationFrame = requestAnimationFrame(tickProfileProgress);
 }
 
 function playProfileTrack(track) {
   const isSameTrack = activeTrackId === track.id;
 
-  if (isSameTrack && activeAnimationFrame) {
-    cancelAnimationFrame(activeAnimationFrame);
-    activeAnimationFrame = 0;
-    syncProfileRows(activePausedAt);
+  if (isSameTrack && activeAudio) {
+    if (activeAudio.paused) {
+      activeAudio.play().catch(() => {});
+      activeAnimationFrame = requestAnimationFrame(tickProfileProgress);
+    } else {
+      activePausedAt = activeAudio.currentTime;
+      activeAudio.pause();
+      cancelAnimationFrame(activeAnimationFrame);
+      activeAnimationFrame = 0;
+    }
+    syncProfileRows();
     return;
   }
 
-  cancelAnimationFrame(activeAnimationFrame);
-
-  if (!isSameTrack) {
-    activePausedAt = 0;
+  if (isSameTrack && activeAnimationFrame) {
+    cancelAnimationFrame(activeAnimationFrame);
+    activeAnimationFrame = 0;
+    syncProfileRows();
+    return;
   }
+
+  stopProfilePlayback();
 
   activeTrackId = track.id;
   activeTrackDuration = durationToSeconds(track.duration);
-  activeStartedAt = performance.now() - activePausedAt * 1000;
+  activePausedAt = 0;
+
+  const audioUrl = track.previewUrl || (isLocalAudioPath(track.downloadUrl || "") ? track.downloadUrl : null);
+
+  if (audioUrl) {
+    activeAudio = new Audio(audioUrl);
+    activeAudio.addEventListener("ended", stopProfilePlayback);
+    activeAudio.play().catch(() => {});
+  }
+
+  activeStartedAt = performance.now();
   activeAnimationFrame = requestAnimationFrame(tickProfileProgress);
-  syncProfileRows(activePausedAt);
+  syncProfileRows();
 }
 
 function stopProfilePlayback() {
   cancelAnimationFrame(activeAnimationFrame);
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio.removeAttribute("src");
+    activeAudio.load();
+    activeAudio = null;
+  }
   activeTrackId = "";
   activeTrackDuration = 0;
   activePausedAt = 0;
   activeAnimationFrame = 0;
-  syncProfileRows(0);
+  syncProfileRows();
 }
 
 function oscillator(type, frequency, t) {
@@ -631,7 +654,25 @@ function writeWav(samples) {
 }
 
 function downloadTrack(track) {
-  window.location.href = trackUrl(track);
+  if (track.downloadUrl) {
+    const link = document.createElement("a");
+    link.href = `api/download.php?id=${encodeURIComponent(track.id)}`;
+    link.rel = "noreferrer";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    return;
+  }
+
+  const blob = writeWav(synthSample(track, 12));
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${track.id}-preview.wav`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function routeArtistPage() {
@@ -701,7 +742,8 @@ artistTrackList.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.closest('[data-action="seek"]')) {
+  if (event.target.closest('[data-action="play"]')) {
+    window.location.href = trackPlayUrl(track);
     return;
   }
 
@@ -710,9 +752,7 @@ artistTrackList.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.closest('[data-action="play"]')) {
-    playProfileTrack(track);
-  }
+  window.location.href = trackUrl(track);
 });
 
 artistTrackList.addEventListener("keydown", (event) => {
