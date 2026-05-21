@@ -564,6 +564,21 @@ function durationToSeconds(duration) {
   return minutes * 60 + seconds;
 }
 
+function playableDuration(track, usePreviewDuration = false) {
+  const previewDuration = Number(track?.previewDuration);
+
+  if (usePreviewDuration && Number.isFinite(previewDuration) && previewDuration > 0) {
+    return previewDuration;
+  }
+
+  return durationToSeconds(track?.duration || "0:0");
+}
+
+function isNearPlayableEnd(track, seconds) {
+  const total = playableDuration(track, true);
+  return total > 0 && seconds >= total - 0.35;
+}
+
 function formatTimer(seconds) {
   const safeSeconds = Math.max(0, Math.floor(seconds));
   const minutes = String(Math.floor(safeSeconds / 60));
@@ -853,7 +868,7 @@ async function playTrack(track) {
   }
 
   const sameTrack = selectedTrack.id === track.id;
-  const resumeOffset = sameTrack ? pausedAt : 0;
+  const resumeOffset = sameTrack && !isNearPlayableEnd(track, pausedAt) ? pausedAt : 0;
 
   stopCurrent(!sameTrack);
   selectedTrack = track;
@@ -882,10 +897,12 @@ async function playTrack(track) {
       if (audioPlayToken !== token || activeAudio !== audio) {
         return;
       }
+      const endedAt = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : playableDuration(track, true);
+      track.previewDuration = endedAt;
       isPlaying = false;
-      pausedAt = 0;
+      pausedAt = endedAt;
       activeAudio = null;
-      updatePlayerTimer(0, true);
+      updatePlayerTimer(endedAt, true);
       playingTrackId = null;
       syncPlayer();
       syncPlayingCards();
@@ -914,7 +931,10 @@ async function playTrack(track) {
       return;
     }
 
-    const total = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : durationToSeconds(track.duration);
+    const total = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : playableDuration(track);
+    if (Number.isFinite(total) && total > 0) {
+      track.previewDuration = total;
+    }
     const targetOffset = Math.min(Math.max(resumeOffset, 0), Math.max(total - 0.1, 0));
     if (targetOffset > 0 && Math.abs(audio.currentTime - targetOffset) > 0.75) {
       audio.currentTime = targetOffset;
@@ -1060,7 +1080,7 @@ function updateProgress() {
   }
 
   if (activeAudio) {
-    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
+    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : playableDuration(selectedTrack, true);
     const elapsed = activeAudio.currentTime;
     progressBar.style.width = `${total ? Math.min(100, (elapsed / total) * 100) : 0}%`;
     updatePlayerTimer(elapsed, true);
@@ -1079,7 +1099,7 @@ function updateProgress() {
 }
 
 function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(selectedTrack))) {
-  const totalSeconds = durationToSeconds(selectedTrack.duration);
+  const totalSeconds = playableDuration(selectedTrack, isActualAudio);
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
   progressBar.style.width = `${percent}%`;
@@ -1108,7 +1128,7 @@ function setPlayerProgress(fraction) {
   progressBar.style.width = `${clamped * 100}%`;
 
   if (activeAudio) {
-    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
+    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : playableDuration(selectedTrack, true);
     activeAudio.currentTime = clamped * total;
     pausedAt = activeAudio.currentTime;
     updatePlayerTimer(pausedAt, true);
@@ -1116,7 +1136,7 @@ function setPlayerProgress(fraction) {
   }
 
   if (getPreviewUrl(selectedTrack)) {
-    pausedAt = clamped * durationToSeconds(selectedTrack.duration);
+    pausedAt = clamped * playableDuration(selectedTrack, true);
     updatePlayerTimer(pausedAt, true);
     return;
   }
