@@ -226,6 +226,9 @@ let isPlaying = false;
 let playingTrackId = null;
 let animationFrame = 0;
 let waveformResizeFrame = 0;
+let audioPlayToken = 0;
+let waveformRenderToken = 0;
+const waveformCache = new Map();
 let allTracks = [];
 let allTracksPage = 1;
 let siteSettings = {
@@ -843,7 +846,7 @@ function createBuffer(track) {
   return buffer;
 }
 
-function playTrack(track) {
+async function playTrack(track) {
   if (selectedTrack.id === track.id && isPlaying) {
     pauseCurrent();
     return;
@@ -858,27 +861,78 @@ function playTrack(track) {
   const previewUrl = getPreviewUrl(track);
 
   if (previewUrl) {
-    activeAudio = new Audio(previewUrl);
-    activeAudio.currentTime = resumeOffset;
-    activeAudio.addEventListener("ended", () => {
+    const token = audioPlayToken + 1;
+    audioPlayToken = token;
+    const audio = new Audio(previewUrl);
+    audio.preload = "auto";
+    audio.loop = false;
+    activeAudio = audio;
+
+    const waitForMetadata = () => new Promise((resolve) => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        resolve();
+        return;
+      }
+
+      audio.addEventListener("loadedmetadata", resolve, { once: true });
+      audio.addEventListener("error", resolve, { once: true });
+    });
+
+    audio.addEventListener("ended", () => {
+      if (audioPlayToken !== token || activeAudio !== audio) {
+        return;
+      }
       isPlaying = false;
       pausedAt = 0;
-      syncPlayer();
-      syncPlayingCards();
-    });
-    activeAudio.play().catch(() => {
-      isPlaying = false;
+      activeAudio = null;
+      updatePlayerTimer(0, true);
+      playingTrackId = null;
       syncPlayer();
       syncPlayingCards();
     });
 
     isPlaying = true;
     playingTrackId = track.id;
-    pausedAt = 0;
     syncPlayer();
     player.classList.add("active");
     syncPlayingCards();
-    updateProgress();
+    updatePlayerTimer(resumeOffset, true);
+
+    let playPromise;
+    try {
+      if (resumeOffset > 0) {
+        audio.currentTime = resumeOffset;
+      }
+      playPromise = audio.play();
+    } catch (error) {
+      playPromise = Promise.reject(error);
+    }
+
+    await waitForMetadata();
+
+    if (audioPlayToken !== token || activeAudio !== audio) {
+      return;
+    }
+
+    const total = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : durationToSeconds(track.duration);
+    const targetOffset = Math.min(Math.max(resumeOffset, 0), Math.max(total - 0.1, 0));
+    if (targetOffset > 0 && Math.abs(audio.currentTime - targetOffset) > 0.75) {
+      audio.currentTime = targetOffset;
+    }
+
+    try {
+      await playPromise;
+      pausedAt = 0;
+      updateProgress();
+    } catch {
+      if (audioPlayToken !== token || activeAudio !== audio) {
+        return;
+      }
+      isPlaying = false;
+      activeAudio = null;
+      syncPlayer();
+      syncPlayingCards();
+    }
     return;
   }
 
@@ -891,7 +945,7 @@ function playTrack(track) {
   const source = audioContext.createBufferSource();
   const gain = audioContext.createGain();
   source.buffer = createBuffer(track);
-  source.loop = true;
+  source.loop = false;
   gain.gain.value = 0.82;
   source.connect(gain);
   gain.connect(audioContext.destination);
@@ -907,6 +961,11 @@ function playTrack(track) {
   source.onended = () => {
     if (activeSource === source) {
       isPlaying = false;
+      pausedAt = 0;
+      updatePlayerTimer(0, false);
+      playingTrackId = null;
+      activeSource = null;
+      activeGain = null;
       syncPlayer();
       syncPlayingCards();
     }
@@ -934,8 +993,12 @@ function pauseCurrent() {
     return;
   }
 
-  pausedAt = (audioContext.currentTime - startedAt) % PREVIEW_SECONDS;
-  activeSource.stop();
+  pausedAt = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
+  try {
+    activeSource.stop();
+  } catch {
+    // source may already be stopped by the browser
+  }
   activeSource = null;
   activeGain = null;
   isPlaying = false;
@@ -945,6 +1008,8 @@ function pauseCurrent() {
 }
 
 function stopCurrent(resetPause = true) {
+  audioPlayToken += 1;
+
   if (activeAudio) {
     activeAudio.pause();
     activeAudio.removeAttribute("src");
@@ -953,7 +1018,11 @@ function stopCurrent(resetPause = true) {
 
   if (activeSource) {
     activeSource.onended = null;
-    activeSource.stop();
+    try {
+      activeSource.stop();
+    } catch {
+      // source may already be stopped by the browser
+    }
   }
 
   activeAudio = null;
@@ -991,9 +1060,9 @@ function updateProgress() {
   }
 
   if (activeAudio) {
-    const total = Number.isFinite(activeAudio.duration) ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
+    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
     const elapsed = activeAudio.currentTime;
-    progressBar.style.width = `${Math.min(100, (elapsed / total) * 100)}%`;
+    progressBar.style.width = `${total ? Math.min(100, (elapsed / total) * 100) : 0}%`;
     updatePlayerTimer(elapsed, true);
     animationFrame = requestAnimationFrame(updateProgress);
     return;
@@ -1003,7 +1072,7 @@ function updateProgress() {
     return;
   }
 
-  const elapsed = (audioContext.currentTime - startedAt) % PREVIEW_SECONDS;
+  const elapsed = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
   progressBar.style.width = `${(elapsed / PREVIEW_SECONDS) * 100}%`;
   updatePlayerTimer(elapsed, false);
   animationFrame = requestAnimationFrame(updateProgress);
@@ -1039,7 +1108,7 @@ function setPlayerProgress(fraction) {
   progressBar.style.width = `${clamped * 100}%`;
 
   if (activeAudio) {
-    const total = Number.isFinite(activeAudio.duration) ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
+    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : durationToSeconds(selectedTrack.duration);
     activeAudio.currentTime = clamped * total;
     pausedAt = activeAudio.currentTime;
     updatePlayerTimer(pausedAt, true);
@@ -1160,36 +1229,68 @@ function generatedWaveformBars(track, barCount) {
   return bars;
 }
 
-async function renderSongWaveform(track) {
-  const fallbackWidth = Math.min(window.innerWidth - 92, 620);
+function getSongWaveformBarCount() {
+  const fallbackWidth = Math.min(window.innerWidth - 92, 820);
   const availableWidth = songWaveform.clientWidth || fallbackWidth;
-  const barCount = Math.max(42, Math.min(150, Math.floor(availableWidth / 5)));
+  return Math.max(42, Math.min(180, Math.floor(availableWidth / 5)));
+}
 
-  songWaveform.innerHTML = generatedWaveformBars(track, barCount).join("");
+function paintSongWaveform(bars) {
+  songWaveform.classList.remove("is-loading");
+  songWaveform.innerHTML = bars.join("");
+  updatePlayerTimer(activeAudio ? activeAudio.currentTime : pausedAt, Boolean(getPreviewUrl(selectedTrack)));
+}
 
+function showSongWaveformLoading(track, barCount) {
+  const loadingBars = generatedWaveformBars(track, barCount);
+  songWaveform.classList.add("is-loading");
+  songWaveform.innerHTML = loadingBars.join("");
+}
+
+async function renderSongWaveform(track) {
+  const token = waveformRenderToken + 1;
+  waveformRenderToken = token;
+  const barCount = getSongWaveformBarCount();
   const audioUrl = getPreviewUrl(track);
-  if (!audioUrl) return;
+  const cacheKey = `${track.id}:${audioUrl || "generated"}:${barCount}`;
+
+  if (waveformCache.has(cacheKey)) {
+    paintSongWaveform(waveformCache.get(cacheKey));
+    return;
+  }
+
+  if (!audioUrl) {
+    const generatedBars = generatedWaveformBars(track, barCount);
+    waveformCache.set(cacheKey, generatedBars);
+    paintSongWaveform(generatedBars);
+    return;
+  }
+
+  showSongWaveformLoading(track, barCount);
 
   try {
     const response = await fetch(audioUrl, { mode: "cors" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      throw new Error("Audio preview could not be loaded.");
+    }
 
     const arrayBuffer = await response.arrayBuffer();
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
     ctx.close();
 
-    if (!selectedTrack || selectedTrack.id !== track.id) return;
+    if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
 
     const channelData = audioBuffer.getChannelData(0);
-    const blockSize = Math.floor(channelData.length / barCount);
+    const blockSize = Math.max(1, Math.floor(channelData.length / barCount));
     const peaks = [];
 
     for (let i = 0; i < barCount; i += 1) {
       let max = 0;
       const start = i * blockSize;
-      for (let j = 0; j < blockSize; j += 1) {
-        const abs = Math.abs(channelData[start + j]);
+      const end = Math.min(start + blockSize, channelData.length);
+      for (let j = start; j < end; j += 1) {
+        const abs = Math.abs(channelData[j]);
         if (abs > max) max = abs;
       }
       peaks.push(max);
@@ -1201,9 +1302,13 @@ async function renderSongWaveform(track) {
       return `<span style="height:${height}px"></span>`;
     });
 
-    songWaveform.innerHTML = realBars.join("");
+    waveformCache.set(cacheKey, realBars);
+    paintSongWaveform(realBars);
   } catch {
-    // keep generated pattern on network or CORS error
+    if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
+    const generatedBars = generatedWaveformBars(track, barCount);
+    waveformCache.set(cacheKey, generatedBars);
+    paintSongWaveform(generatedBars);
   }
 }
 

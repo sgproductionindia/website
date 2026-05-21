@@ -1469,6 +1469,23 @@ body.search-open {
   box-shadow: none;
 }
 
+.song-waveform.is-loading span {
+  opacity: 0.34;
+  animation: waveform-loading 900ms ease-in-out infinite alternate;
+}
+
+@keyframes waveform-loading {
+  from {
+    opacity: 0.24;
+    transform: scaleY(0.72);
+  }
+
+  to {
+    opacity: 0.68;
+    transform: scaleY(1);
+  }
+}
+
 .song-duration {
   grid-column: 2;
   grid-row: 2;
