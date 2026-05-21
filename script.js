@@ -999,8 +999,9 @@ async function playTrack(track) {
 
 function pauseCurrent() {
   if (activeAudio) {
-    pausedAt = activeAudio.currentTime;
-    activeAudio.pause();
+    const audio = activeAudio;
+    pausedAt = audio.currentTime;
+    audio.pause();
     activeAudio = null;
     isPlaying = false;
     cancelAnimationFrame(animationFrame);
@@ -1013,6 +1014,7 @@ function pauseCurrent() {
     return;
   }
 
+  // Synthetic fallback audio is only PREVIEW_SECONDS long; uploaded files are handled above.
   pausedAt = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
   try {
     activeSource.stop();
@@ -1258,7 +1260,10 @@ function getSongWaveformBarCount() {
 function paintSongWaveform(bars) {
   songWaveform.classList.remove("is-loading");
   songWaveform.innerHTML = bars.join("");
-  updatePlayerTimer(activeAudio ? activeAudio.currentTime : pausedAt, Boolean(getPreviewUrl(selectedTrack)));
+
+  if (!activeAudio) {
+    updatePlayerTimer(pausedAt, Boolean(getPreviewUrl(selectedTrack)));
+  }
 }
 
 function showSongWaveformLoading(track, barCount) {
@@ -1273,6 +1278,13 @@ async function renderSongWaveform(track) {
   const barCount = getSongWaveformBarCount();
   const audioUrl = getPreviewUrl(track);
   const cacheKey = `${track.id}:${audioUrl || "generated"}:${barCount}`;
+
+  if (activeAudio && selectedTrack.id === track.id) {
+    const generatedBars = generatedWaveformBars(track, barCount);
+    waveformCache.set(cacheKey, generatedBars);
+    paintSongWaveform(generatedBars);
+    return;
+  }
 
   if (waveformCache.has(cacheKey)) {
     paintSongWaveform(waveformCache.get(cacheKey));
@@ -1444,6 +1456,10 @@ function renderSongAd(track) {
 }
 
 function queueSongWaveformRender() {
+  if (activeAudio && isPlaying) {
+    return;
+  }
+
   if (songPage.hidden || waveformResizeFrame) {
     return;
   }
