@@ -1279,15 +1279,13 @@ async function renderSongWaveform(track) {
   const audioUrl = getPreviewUrl(track);
   const cacheKey = `${track.id}:${audioUrl || "generated"}:${barCount}`;
 
-  if (activeAudio && selectedTrack.id === track.id) {
-    const generatedBars = generatedWaveformBars(track, barCount);
-    waveformCache.set(cacheKey, generatedBars);
-    paintSongWaveform(generatedBars);
+  if (waveformCache.has(cacheKey)) {
+    paintSongWaveform(waveformCache.get(cacheKey));
     return;
   }
 
-  if (waveformCache.has(cacheKey)) {
-    paintSongWaveform(waveformCache.get(cacheKey));
+  if (activeAudio && selectedTrack.id === track.id) {
+    paintSongWaveform(generatedWaveformBars(track, barCount));
     return;
   }
 
