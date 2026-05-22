@@ -1862,8 +1862,20 @@ body.search-open {
 .player-cover {
   width: 48px;
   height: 48px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
   background: center / cover no-repeat url("assets/cover-1.jpg");
+  cursor: pointer;
+  flex: 0 0 auto;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.player-cover:hover,
+.player-cover:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.72);
+  outline-offset: 3px;
 }
 
 .player-meta {

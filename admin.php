@@ -4159,9 +4159,42 @@ $downloadChartData = [
     font-weight: 600;
     color: var(--label);
     background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out), margin 220ms var(--ease-out), padding 220ms var(--ease-out);
   }
   .notice.error { border-color: rgba(255,69,58,0.45); background: var(--sys-red-bg); color: var(--label); }
   .notice.success { border-color: rgba(46,189,107,0.45); background: var(--sys-green-bg); color: var(--label); }
+  .notice.is-hiding {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+  }
+  .notice-close {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border: 1px solid var(--separator);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    color: var(--label-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: background var(--duration) var(--ease-out), color var(--duration) var(--ease-out);
+  }
+  .notice-close:hover,
+  .notice-close:focus-visible {
+    background: rgba(255,255,255,0.12);
+    color: var(--label);
+  }
   .form-field {
     color: var(--label-secondary);
     font-size: 13px;
@@ -4205,7 +4238,7 @@ $downloadChartData = [
             <span class="panel-title">SG Production Admin</span>
             <a class="btn btn-outline" href="/">View Site</a>
           </div>
-          <?php foreach ($errors as $message): ?><div class="notice error"><?= e($message) ?></div><?php endforeach; ?>
+          <?php foreach ($errors as $message): ?><div class="notice error"><span><?= e($message) ?></span><button class="notice-close" type="button" aria-label="Close message" onclick="const n=this.closest('.notice'); n?.classList.add('is-hiding'); setTimeout(() => n?.remove(), 260)">×</button></div><?php endforeach; ?>
           <form class="admin-form" method="post">
             <input type="hidden" name="action" value="login">
             <label class="form-field full">Password<input type="password" name="password" required></label>
@@ -4234,8 +4267,8 @@ $downloadChartData = [
           <div><span class="topbar-title">Dashboard</span><span class="topbar-sub">— <?= e(date('M Y')) ?></span></div>
           <div class="topbar-right"><button class="btn btn-ghost" type="button" onclick="alert('Report export will use real analytics once tracking is available.')">Export Report</button><button class="btn btn-primary" id="topPrimaryAction" data-action-section="upload" type="button">+ Upload Song</button></div>
         </div>
-        <?php foreach ($errors as $message): ?><div class="notice error"><?= e($message) ?></div><?php endforeach; ?>
-        <?php if ($success !== ''): ?><div class="notice success"><?= e($success) ?></div><?php endif; ?>
+        <?php foreach ($errors as $message): ?><div class="notice error" data-dismissible-notice><span><?= e($message) ?></span><button class="notice-close" type="button" aria-label="Close message" onclick="const n=this.closest('.notice'); n?.classList.add('is-hiding'); setTimeout(() => n?.remove(), 260)">×</button></div><?php endforeach; ?>
+        <?php if ($success !== ''): ?><div class="notice success" data-dismissible-notice><span><?= e($success) ?></span><button class="notice-close" type="button" aria-label="Close message" onclick="const n=this.closest('.notice'); n?.classList.add('is-hiding'); setTimeout(() => n?.remove(), 260)">×</button></div><?php endif; ?>
         <div class="content">
           <section class="view-section active" id="dashboard-section" data-title="Dashboard" data-subtitle="<?= e(date('M Y')) ?>">
             <div class="stats-grid">
@@ -4410,6 +4443,16 @@ $downloadChartData = [
     settingsToast.classList.add('show');
     window.setTimeout(() => settingsToast.classList.remove('show'), 2200);
   }
+
+  function dismissNotice(notice) {
+    if (!notice) return;
+    notice.classList.add('is-hiding');
+    window.setTimeout(() => notice.remove(), 260);
+  }
+
+  document.querySelectorAll('.notice.success').forEach((notice) => {
+    window.setTimeout(() => dismissNotice(notice), 4200);
+  });
 
   function normalizeSection(sectionName) {
     if (!sectionName || sectionName === 'top') return 'dashboard';

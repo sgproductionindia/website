@@ -1057,6 +1057,8 @@ function stopCurrent(resetPause = true) {
   if (resetPause) {
     pausedAt = 0;
   }
+
+  syncPlayingCards();
 }
 
 function syncPlayer() {
@@ -1065,6 +1067,7 @@ function syncPlayer() {
   playerTitle.textContent = selectedTrack.title;
   playerGenre.textContent = `${selectedTrack.artist} · ${selectedTrack.genre}`;
   playerCover.style.backgroundImage = `url("${selectedTrack.cover}")`;
+  playerCover.setAttribute("aria-label", `Open ${selectedTrack.title}`);
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   updatePlayerTimer(pausedAt);
@@ -1638,6 +1641,10 @@ updateActiveNav();
 
 playerToggle.addEventListener("click", () => {
   playTrack(selectedTrack);
+});
+
+playerCover.addEventListener("click", () => {
+  openSongPage(selectedTrack);
 });
 
 playerDownload.addEventListener("click", () => {
