@@ -1,0 +1,123 @@
+/* Page load fade-in */
+body {
+  opacity: 0;
+  animation: page-enter 400ms cubic-bezier(0.2, 0, 0, 1) 50ms both;
+}
+
+@keyframes page-enter {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Page navigation fade-out */
+body.navigating {
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Track card stagger entrance */
+.track-card {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: card-enter 300ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.track-card:nth-child(1) { animation-delay: 0ms; }
+.track-card:nth-child(2) { animation-delay: 30ms; }
+.track-card:nth-child(3) { animation-delay: 60ms; }
+.track-card:nth-child(4) { animation-delay: 90ms; }
+.track-card:nth-child(5) { animation-delay: 120ms; }
+.track-card:nth-child(6) { animation-delay: 150ms; }
+.track-card:nth-child(7) { animation-delay: 180ms; }
+.track-card:nth-child(8) { animation-delay: 210ms; }
+.track-card:nth-child(9) { animation-delay: 240ms; }
+.track-card:nth-child(10) { animation-delay: 270ms; }
+.track-card:nth-child(11) { animation-delay: 300ms; }
+.track-card:nth-child(12) { animation-delay: 330ms; }
+
+@keyframes card-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Artist card stagger */
+.artist-card-link {
+  opacity: 0;
+  transform: scale(0.97);
+  animation: artist-card-enter 280ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.artist-card-link:nth-child(1) { animation-delay: 0ms; }
+.artist-card-link:nth-child(2) { animation-delay: 40ms; }
+.artist-card-link:nth-child(3) { animation-delay: 80ms; }
+.artist-card-link:nth-child(4) { animation-delay: 120ms; }
+.artist-card-link:nth-child(5) { animation-delay: 160ms; }
+.artist-card-link:nth-child(6) { animation-delay: 200ms; }
+
+@keyframes artist-card-enter {
+  0% { opacity: 0; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Song detail page */
+.song-page {
+  transition: opacity 250ms cubic-bezier(0.2, 0, 0, 1),
+              transform 250ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.song-page.entering { display: block; opacity: 0; transform: translateY(8px); }
+.song-page.visible { opacity: 1; transform: translateY(0); }
+.song-page.exiting { opacity: 0; transform: translateY(-4px); pointer-events: none; }
+
+/* Player bar slide up */
+.player {
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1),
+              opacity 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.player[hidden],
+.player.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.player.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Section headings */
+.section-heading,
+.hero h1,
+.artist-title-row h1 {
+  opacity: 0;
+  animation: heading-enter 350ms cubic-bezier(0.2, 0, 0, 1) 100ms both;
+}
+
+@keyframes heading-enter {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Accessibility — respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  body {
+    opacity: 1;
+    animation: none;
+  }
+
+  .track-card,
+  .artist-card-link {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

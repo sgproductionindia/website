@@ -22,6 +22,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=20260521-player-fix">
+    <link rel="stylesheet" href="transitions.css">
+    <script src="transitions.js" defer></script>
     <script src="artists.js?v=20260520-live" defer></script>
   </head>
   <body>
@@ -209,5 +211,16 @@
         </footer>
       </main>
     </div>
+    <script>
+      // Track page visit
+      (function() {
+        var page = location.pathname.split('/').pop().replace('.html', '') || 'index';
+        fetch('api/track-visit.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'page=' + encodeURIComponent(page)
+        }).catch(function() {});
+      })();
+    </script>
   </body>
 </html>

@@ -1629,10 +1629,35 @@ $downloadChartData = [
     gap: var(--sp-5);
   }
 
-  .view-section { display: none; flex-direction: column; gap: var(--sp-5); }
+  .view-section {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    opacity: 0;
+  }
   .view-section.active {
     display: flex;
-    animation: hig-fade-up 280ms var(--ease-out) both;
+    animation: apple-fade-in 320ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+  .view-section.fading-out {
+    display: flex;
+    animation: apple-fade-out 180ms cubic-bezier(0.2, 0, 0, 1) both;
+    pointer-events: none;
+  }
+  @keyframes apple-fade-in {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes apple-fade-out {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .view-section.active,
+    .view-section.fading-out {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+    }
   }
 
   /* ════════════════════════
@@ -4276,6 +4301,7 @@ $downloadChartData = [
               <div class="stat-card green"><div class="stat-icon"></div><div class="stat-label">Ad Impressions</div><div class="stat-value green"><?= e($statText($adImpressions, $hasAdData)) ?></div><div class="stat-change up">N/A vs last period</div></div>
               <div class="stat-card orange"><div class="stat-icon"></div><div class="stat-label">Ad Clicks (CTR)</div><div class="stat-value orange"><?= e($statText($adClicks, $hasAdData)) ?> <span style="font-size:16px;color:var(--text-dim)">/ <?= e($statSmallText($ctr, $hasAdData, '%')) ?></span></div><div class="stat-change up">N/A vs last period</div></div>
               <div class="stat-card purple"><div class="stat-icon"></div><div class="stat-label">Song Page Views</div><div class="stat-value purple">N/A</div><div class="stat-change down">N/A vs last period</div></div>
+              <div class="stat-card cyan"><span class="stat-icon">👁</span><div class="stat-label">Website Visits</div><div class="stat-value cyan" id="visitCount">—</div><div class="stat-change up" id="visitChange">Loading...</div></div>
             </div>
             <div class="two-col">
               <div class="panel"><div class="panel-header"><span class="panel-title">Top Songs by Downloads</span><button class="panel-action" data-action-section="songs" type="button">See All →</button></div><table class="song-table"><thead><tr><th>#</th><th>Song</th><th>Downloads</th><th>Ad Clicks</th></tr></thead><tbody>
@@ -4491,9 +4517,9 @@ $downloadChartData = [
     const sectionName = normalizeSection(rawSectionName);
     const target = document.querySelector('#' + sectionName + '-section');
     if (!target) return;
+    const current = document.querySelector('.view-section.active');
+    if (current === target) return;
 
-    sections.forEach(section => section.classList.remove('active'));
-    target.classList.add('active');
     navItems.forEach(item => item.classList.toggle('active', item.dataset.section === sectionName));
     if (titleEl) titleEl.textContent = target.dataset.title || 'Dashboard';
     if (subEl) subEl.textContent = '— ' + (target.dataset.subtitle || 'Admin Studio');
@@ -4505,6 +4531,29 @@ $downloadChartData = [
     }
     if (location.hash.replace('#', '') !== sectionName) history.replaceState(null, '', '#' + sectionName);
     setMobileMenu(false);
+
+    const activateTarget = () => {
+      sections.forEach(section => {
+        section.classList.remove('active', 'fading-out');
+        section.style.display = 'none';
+        section.style.opacity = '0';
+      });
+      target.style.display = '';
+      target.style.opacity = '';
+      target.classList.add('active');
+      document.querySelector('.content')?.scrollTo({ top: 0 });
+    };
+
+    if (current) {
+      current.classList.add('fading-out');
+      current.classList.remove('active');
+      current.addEventListener('animationend', function handler() {
+        current.removeEventListener('animationend', handler);
+        activateTarget();
+      }, { once: true });
+    } else {
+      activateTarget();
+    }
   }
 
   navItems.forEach(item => {

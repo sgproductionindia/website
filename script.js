@@ -214,6 +214,8 @@ const searchInput = document.querySelector("#siteSearchInput");
 const searchResults = document.querySelector("#searchResults");
 const searchClose = document.querySelector("#searchClose");
 const playerClose = document.querySelector("#playerClose");
+const NEW_BADGE_DAYS = 7;
+const NEW_BADGE_MS = NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
 
 let selectedTrack = tracks[0];
 let audioContext = null;
@@ -338,6 +340,7 @@ function normalizeUploadedTrack(track) {
     previewUrl,
     downloadUrl: rawDownloadUrl,
     creditText: track.creditText || "",
+    createdAt: track.createdAt || track.uploadedAt || track.date || "",
     isNew: Boolean(track.isNew),
     isFeatured: Boolean(track.isFeatured || track.isNew),
     artistId: track.artistId || "sg-production",
@@ -345,6 +348,21 @@ function normalizeUploadedTrack(track) {
     tone: Number(track.tone) || 146.83,
     wave: track.wave || "sine"
   };
+}
+
+function shouldShowNewBadge(track) {
+  if (!track?.isNew) {
+    return false;
+  }
+
+  const uploadedAt = Date.parse(track.createdAt || track.uploadedAt || track.date || "");
+
+  if (!Number.isFinite(uploadedAt)) {
+    return false;
+  }
+
+  const age = Date.now() - uploadedAt;
+  return age >= 0 && age < NEW_BADGE_MS;
 }
 
 async function loadUploadedTracks() {
@@ -480,6 +498,86 @@ function updateShareMeta(title, description, image, url) {
   setMetaTag("name", "twitter:title", shareTitle);
   setMetaTag("name", "twitter:description", shareDescription);
   setMetaTag("name", "twitter:image", shareImage);
+}
+
+function mediaArtworkUrl(path) {
+  if (!path) {
+    return "";
+  }
+
+  try {
+    return new URL(path, window.location.href).href;
+  } catch {
+    return absoluteAssetUrl(path);
+  }
+}
+
+function mediaArtworkType(path) {
+  const cleanPath = String(path || "").split("?")[0].toLowerCase();
+
+  if (cleanPath.endsWith(".png")) return "image/png";
+  if (cleanPath.endsWith(".webp")) return "image/webp";
+  if (cleanPath.endsWith(".svg")) return "image/svg+xml";
+  return "image/jpeg";
+}
+
+function updateMediaSession(track) {
+  if (!("mediaSession" in navigator) || !track) {
+    return;
+  }
+
+  navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+
+  if (!("MediaMetadata" in window)) {
+    return;
+  }
+
+  const artworkUrl = mediaArtworkUrl(track.cover || siteSettings.seo.ogImage || "assets/cover-1.jpg");
+  const artworkType = mediaArtworkType(artworkUrl);
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artist || siteSettings.site.title,
+    album: track.genre || siteSettings.site.tagline,
+    artwork: ["96x96", "128x128", "192x192", "256x256", "384x384", "512x512"].map((sizes) => ({
+      src: artworkUrl,
+      sizes,
+      type: artworkType
+    }))
+  });
+}
+
+function currentPlaybackPosition() {
+  if (activeAudio) {
+    return activeAudio.currentTime || 0;
+  }
+
+  if (activeSource && audioContext) {
+    return Math.max(0, audioContext.currentTime - startedAt);
+  }
+
+  return pausedAt || 0;
+}
+
+function setupMediaSessionControls() {
+  if (!("mediaSession" in navigator)) {
+    return;
+  }
+
+  try {
+    navigator.mediaSession.setActionHandler("play", () => playTrack(selectedTrack));
+    navigator.mediaSession.setActionHandler("pause", () => pauseCurrent());
+    navigator.mediaSession.setActionHandler("seekbackward", () => {
+      const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+      setPlayerProgress(total ? (currentPlaybackPosition() - 10) / total : 0);
+    });
+    navigator.mediaSession.setActionHandler("seekforward", () => {
+      const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+      setPlayerProgress(total ? (currentPlaybackPosition() + 10) / total : 0);
+    });
+  } catch {
+    // Media Session action support varies by mobile browser.
+  }
 }
 
 function siteUrl(path = "/") {
@@ -664,7 +762,7 @@ function renderCard(track) {
   card.innerHTML = `
     <button class="cover-link" type="button" aria-label="Open ${track.title}">
       <img src="${track.cover}" alt="${track.title} cover art" loading="lazy">
-      ${track.isNew ? '<span class="badge">New</span>' : ""}
+      ${shouldShowNewBadge(track) ? '<span class="badge">New</span>' : ""}
       <span class="duration">${track.duration}</span>
     </button>
     <div class="track-body">
@@ -1070,6 +1168,7 @@ function syncPlayer() {
   playerCover.setAttribute("aria-label", `Open ${selectedTrack.title}`);
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
+  updateMediaSession(selectedTrack);
   updatePlayerTimer(pausedAt);
 }
 
@@ -1111,6 +1210,17 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   progressTime.textContent = `${formatTimer(scaledElapsed)}/${formatTimer(totalSeconds)}`;
   progressShell.setAttribute("aria-valuenow", String(Math.round(percent)));
   progressShell.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
+  if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession && Number.isFinite(totalSeconds) && totalSeconds > 0) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: totalSeconds,
+        playbackRate: 1,
+        position: Math.min(totalSeconds, Math.max(0, scaledElapsed))
+      });
+    } catch {
+      // Some browsers reject position updates until metadata is ready.
+    }
+  }
   if (playingTrackId === selectedTrack.id) {
     const bars = songWaveform.children;
     const playedCount = Math.round((percent / 100) * bars.length);
@@ -1588,6 +1698,7 @@ async function initializeCatalog() {
 
   renderAllTracksPage(1);
   syncPlayer();
+  setupMediaSessionControls();
   openSongFromLocation();
 }
 
@@ -1648,7 +1759,7 @@ playerCover.addEventListener("click", () => {
 });
 
 playerDownload.addEventListener("click", () => {
-  downloadTrack(selectedTrack);
+  openSongPage(selectedTrack);
 });
 
 playerClose.addEventListener("click", () => {
