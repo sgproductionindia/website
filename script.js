@@ -337,6 +337,7 @@ function normalizeUploadedTrack(track) {
     genre: track.genre || "Soundcheck",
     duration: track.duration || "0:0",
     cover: track.cover || "assets/cover-1.jpg",
+    coverWebp: track.coverWebp || "",
     previewUrl,
     downloadUrl: rawDownloadUrl,
     creditText: track.creditText || "",
@@ -348,6 +349,10 @@ function normalizeUploadedTrack(track) {
     tone: Number(track.tone) || 146.83,
     wave: track.wave || "sine"
   };
+}
+
+function preferredTrackCover(track) {
+  return track?.coverWebp || track?.cover || "assets/cover-1.jpg";
 }
 
 function shouldShowNewBadge(track) {
@@ -532,7 +537,7 @@ function updateMediaSession(track) {
     return;
   }
 
-  const artworkUrl = mediaArtworkUrl(track.cover || siteSettings.seo.ogImage || "assets/cover-1.jpg");
+  const artworkUrl = mediaArtworkUrl(preferredTrackCover(track) || siteSettings.seo.ogImage || "assets/cover-1.jpg");
   const artworkType = mediaArtworkType(artworkUrl);
 
   navigator.mediaSession.metadata = new MediaMetadata({
@@ -718,7 +723,7 @@ function renderSearchResults() {
   searchResults.innerHTML = matches.map((track) => {
     return `
       <button class="search-result" type="button" data-result-target="${escapeHTML(track.id)}">
-        <span class="search-thumb"><img src="${escapeHTML(track.cover)}" alt=""></span>
+        <span class="search-thumb"><img src="${escapeHTML(preferredTrackCover(track))}" alt="" loading="lazy"></span>
         <span class="search-copy">
           <strong>${escapeHTML(track.title)}</strong>
           <span>${escapeHTML(track.artist)} · ${escapeHTML(track.genre)}</span>
@@ -761,7 +766,7 @@ function renderCard(track) {
 
   card.innerHTML = `
     <button class="cover-link" type="button" aria-label="Open ${track.title}">
-      <img src="${track.cover}" alt="${track.title} cover art" loading="lazy">
+      <img src="${escapeHTML(preferredTrackCover(track))}" alt="${escapeHTML(track.title)} cover art" loading="lazy">
       ${shouldShowNewBadge(track) ? '<span class="badge">New</span>' : ""}
       <span class="duration">${track.duration}</span>
     </button>
@@ -1164,7 +1169,7 @@ function syncPlayer() {
   songPlay.classList.toggle("is-playing", isPlaying && selectedTrack.id === songPlay.dataset.trackId);
   playerTitle.textContent = selectedTrack.title;
   playerGenre.textContent = `${selectedTrack.artist} · ${selectedTrack.genre}`;
-  playerCover.style.backgroundImage = `url("${selectedTrack.cover}")`;
+  playerCover.style.backgroundImage = `url("${preferredTrackCover(selectedTrack)}")`;
   playerCover.setAttribute("aria-label", `Open ${selectedTrack.title}`);
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
@@ -1598,7 +1603,7 @@ function openSongPage(track, updateUrl = true) {
   songDuration.textContent = `0:00 / ${track.duration}`;
   revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
-  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage || track.cover, siteUrl(trackUrl(track)));
+  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage || preferredTrackCover(track), siteUrl(trackUrl(track)));
   renderSongWaveform(track);
   renderSongAd(track);
   syncPlayer();

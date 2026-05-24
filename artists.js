@@ -143,6 +143,7 @@ function normalizeTrack(track) {
     genre: track.genre || "Soundcheck",
     duration: track.duration || "0:0",
     cover: track.cover || "assets/cover-1.jpg",
+    coverWebp: track.coverWebp || "",
     previewUrl,
     downloadUrl: rawDownloadUrl,
     bpm: Number(track.bpm) || 124,
@@ -161,10 +162,19 @@ function normalizeArtist(artist) {
     name: artist.name,
     style: artist.style || "Original Mix",
     image: artist.image || "assets/artist-photo-1.svg",
+    imageWebp: artist.imageWebp || "",
     year: artist.year || "2026",
     order: Number(artist.order) || 99,
     trackGenres: Array.isArray(artist.trackGenres) && artist.trackGenres.length > 0 ? artist.trackGenres : [artist.style || "Original Mix"]
   };
+}
+
+function preferredTrackCover(track) {
+  return track?.coverWebp || track?.cover || "assets/cover-1.jpg";
+}
+
+function preferredArtistImage(artist) {
+  return artist?.imageWebp || artist?.image || "assets/artist-photo-1.svg";
 }
 
 async function fetchJson(path, fallback) {
@@ -330,7 +340,7 @@ function renderArtistCard(artist) {
   card.className = "artist-card";
   card.innerHTML = `
     <a class="artist-card-link" href="artists.html?artist=${escapeHTML(artist.id)}" aria-label="Open ${escapeHTML(artist.name)} artist page">
-      <img src="${escapeHTML(artist.image)}" alt="${escapeHTML(artist.name)} artist photo" loading="lazy">
+      <img src="${escapeHTML(preferredArtistImage(artist))}" alt="${escapeHTML(artist.name)} artist photo" loading="lazy">
       <div class="artist-card-copy">
         <h3>${escapeHTML(artist.name)}</h3>
       </div>
@@ -393,7 +403,7 @@ function renderTrackRow(track) {
   card.dataset.genre = track.genre;
   card.innerHTML = `
     <button class="cover-link" type="button" data-action="open" aria-label="Open ${escapeHTML(track.title)}">
-      <img src="${escapeHTML(track.cover)}" alt="${escapeHTML(track.title)} cover art" loading="lazy">
+      <img src="${escapeHTML(preferredTrackCover(track))}" alt="${escapeHTML(track.title)} cover art" loading="lazy">
       ${track.isNew ? '<span class="badge">New</span>' : ""}
       <span class="duration">${escapeHTML(track.duration)}</span>
     </button>
@@ -422,14 +432,14 @@ function renderRelatedArtists(activeArtist) {
 function renderArtistProfile(artist) {
   const artistTracks = getArtistTracks(artist);
 
-  artistProfileImage.src = artist.image;
+  artistProfileImage.src = preferredArtistImage(artist);
   artistProfileImage.alt = `${artist.name} artist photo`;
   artistProfileName.textContent = artist.name;
-  artistProfileBg.style.backgroundImage = `url("${artist.image}")`;
+  artistProfileBg.style.backgroundImage = `url("${preferredArtistImage(artist)}")`;
   artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
   renderRelatedArtists(artist);
   document.title = `${artist.name} | ${siteSettings.site.title}`;
-  updateShareMeta(`${artist.name} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, artist.image || siteSettings.seo.ogImage, window.location.href);
+  updateShareMeta(`${artist.name} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, preferredArtistImage(artist) || siteSettings.seo.ogImage, window.location.href);
 }
 
 function showDirectory() {
