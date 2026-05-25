@@ -300,7 +300,31 @@ function trackSlug(track) {
 }
 
 function trackUrl(track) {
-  return canUseCleanUrls() ? `/${trackSlug(track)}` : `#song-${track.id}`;
+  return canUseCleanUrls() ? `/song/${trackSlug(track)}` : `index.html?song=${encodeURIComponent(trackSlug(track))}`;
+}
+
+function normalizeLocalPreviewLinks() {
+  if (canUseCleanUrls()) {
+    return;
+  }
+
+  document.querySelectorAll('a[href^="/"]').forEach((link) => {
+    const href = link.getAttribute("href") || "/";
+
+    if (href === "/") {
+      link.setAttribute("href", "index.html");
+    } else if (href === "/tracks") {
+      link.setAttribute("href", "index.html?view=tracks");
+    } else if (href === "/licensing") {
+      link.setAttribute("href", "index.html?view=licensing");
+    } else if (href === "/artists") {
+      link.setAttribute("href", "artists.html");
+    } else if (href.startsWith("/song/")) {
+      link.setAttribute("href", `index.html?song=${encodeURIComponent(href.replace(/^\/song\//, ""))}`);
+    } else if (href.startsWith("/artist/")) {
+      link.setAttribute("href", `artists.html?artist=${encodeURIComponent(href.replace(/^\/artist\//, ""))}`);
+    }
+  });
 }
 
 function downloadEndpoint(track) {
@@ -487,6 +511,22 @@ function setIconLink(rel, href) {
   link.href = href;
 }
 
+function setCanonicalLink(href) {
+  if (!href) {
+    return;
+  }
+
+  let link = document.head.querySelector('link[rel="canonical"]');
+
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "canonical";
+    document.head.append(link);
+  }
+
+  link.href = href;
+}
+
 function updateShareMeta(title, description, image, url) {
   const shareTitle = title || siteSettings.site.title;
   const shareDescription = description || siteSettings.seo.metaDescription || siteSettings.site.tagline;
@@ -503,6 +543,45 @@ function updateShareMeta(title, description, image, url) {
   setMetaTag("name", "twitter:title", shareTitle);
   setMetaTag("name", "twitter:description", shareDescription);
   setMetaTag("name", "twitter:image", shareImage);
+  setCanonicalLink(shareUrl);
+}
+
+function songMetaDescription(track) {
+  return `Listen to ${track.title} by ${track.artist}. Preview and download the full WAV of this ${track.genre} release from SG Production.`;
+}
+
+function routeMeta(path = "/") {
+  const cleanPath = path.replace(/\/+$/g, "") || "/";
+  const site = siteSettings.site;
+  const seo = siteSettings.seo;
+
+  if (cleanPath === "/tracks") {
+    return {
+      title: `Music Library | ${site.title}`,
+      description: `Browse latest SG Production tracks, preview songs, and download original releases directly from the music library.`,
+      path: "/tracks"
+    };
+  }
+
+  if (cleanPath === "/licensing") {
+    return {
+      title: `Licensing | ${site.title}`,
+      description: `Read SG Production music usage and licensing information for creators, reels, edits, and commercial projects.`,
+      path: "/licensing"
+    };
+  }
+
+  return {
+    title: `${site.title} | Direct Music Downloads`,
+    description: seo.metaDescription || site.tagline,
+    path: "/"
+  };
+}
+
+function applyRouteMeta(path = "/") {
+  const meta = routeMeta(path);
+  document.title = meta.title;
+  updateShareMeta(meta.title, meta.description, siteSettings.seo.ogImage, siteUrl(meta.path));
 }
 
 function mediaArtworkUrl(path) {
@@ -603,8 +682,7 @@ function applySiteSettings() {
   allTracksPerPage = Math.max(5, Math.min(50, Number(catalog.tracksPerPage) || 15));
   demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
 
-  document.title = `${site.title} | Direct Music Downloads`;
-  updateShareMeta(site.title, seo.metaDescription || site.tagline, seo.ogImage, siteUrl("/"));
+  applyRouteMeta("/");
   applyFavicon();
 
   const siteTitle = document.querySelector("#site-title");
@@ -1137,8 +1215,6 @@ function stopCurrent(resetPause = true) {
 
   if (activeAudio) {
     activeAudio.pause();
-    activeAudio.removeAttribute("src");
-    activeAudio.load();
   }
 
   if (activeSource) {
@@ -1236,11 +1312,30 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   }
 }
 
+function eventClientX(event) {
+  if (event.touches && event.touches.length > 0) {
+    return event.touches[0].clientX;
+  }
+
+  if (event.changedTouches && event.changedTouches.length > 0) {
+    return event.changedTouches[0].clientX;
+  }
+
+  return event.clientX;
+}
+
 function progressFractionFromPointer(event, element) {
   const rect = element.getBoundingClientRect();
-  const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
+  const clientX = eventClientX(event);
 
-  return rect.width > 0 ? x / rect.width : 0;
+  if (!Number.isFinite(clientX) || rect.width <= 0) {
+    return 0;
+  }
+
+  const clickX = clientX - rect.left;
+  const ratio = clickX / rect.width;
+
+  return Math.max(0, Math.min(1, ratio));
 }
 
 function setPlayerProgress(fraction) {
@@ -1248,7 +1343,11 @@ function setPlayerProgress(fraction) {
   progressBar.style.width = `${clamped * 100}%`;
 
   if (activeAudio) {
-    const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : playableDuration(selectedTrack, true);
+    if (!activeAudio.duration || Number.isNaN(activeAudio.duration) || !Number.isFinite(activeAudio.duration)) {
+      return;
+    }
+
+    const total = activeAudio.duration;
     activeAudio.currentTime = clamped * total;
     pausedAt = activeAudio.currentTime;
     updatePlayerTimer(pausedAt, true);
@@ -1284,6 +1383,7 @@ function startPlayerSeek(event) {
   setPlayerProgress(progressFractionFromPointer(event, progressShell));
 
   const move = (moveEvent) => {
+    moveEvent.preventDefault();
     setPlayerProgress(progressFractionFromPointer(moveEvent, progressShell));
   };
 
@@ -1291,10 +1391,19 @@ function startPlayerSeek(event) {
     progressShell.classList.remove("is-seeking");
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
+    window.removeEventListener("touchmove", move);
+    window.removeEventListener("touchend", stop);
+    window.removeEventListener("touchcancel", stop);
   };
 
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", stop, { once: true });
+  if (event.type === "touchstart") {
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", stop, { once: true });
+    window.addEventListener("touchcancel", stop, { once: true });
+  } else {
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop, { once: true });
+  }
 }
 
 function writeWav(samples) {
@@ -1603,7 +1712,7 @@ function openSongPage(track, updateUrl = true) {
   songDuration.textContent = `0:00 / ${track.duration}`;
   revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
-  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage || preferredTrackCover(track), siteUrl(trackUrl(track)));
+  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, songMetaDescription(track), preferredTrackCover(track) || siteSettings.seo.ogImage, siteUrl(trackUrl(track)));
   renderSongWaveform(track);
   renderSongAd(track);
   syncPlayer();
@@ -1611,57 +1720,87 @@ function openSongPage(track, updateUrl = true) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   if (updateUrl) {
-    history.pushState({ songId: track.id }, "", trackUrl(track));
+    history.pushState({ type: "song", slug: trackSlug(track) }, "", trackUrl(track));
   }
 }
 
 function closeSongPage(updateUrl = true) {
   document.body.classList.remove("song-view");
   songPage.hidden = true;
-  document.title = `${siteSettings.site.title} | Direct Music Downloads`;
-  updateShareMeta(siteSettings.site.title, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage, siteUrl("/"));
+  applyRouteMeta("/tracks");
 
   if (updateUrl) {
-    history.pushState(null, "", canUseCleanUrls() ? "/#all-tracks" : "#all-tracks");
+    history.pushState(null, "", canUseCleanUrls() ? "/tracks" : "index.html?view=tracks");
   }
 
-  document.querySelector("#all-tracks").scrollIntoView({ block: "start" });
+  scrollToRouteSection(window.location.pathname, "auto");
   updateActiveNav();
 }
 
 function getTrackFromLocation() {
-  if (window.location.hash.startsWith("#song-")) {
-    const songId = window.location.hash.replace("#song-", "");
-    return allTracks.find((item) => item.id === songId || trackSlug(item) === songId) || tracks.find((item) => item.id === songId || trackSlug(item) === songId) || null;
+  const params = new URLSearchParams(window.location.search);
+  const querySlug = params.get("song");
+
+  if (querySlug) {
+    const cleanSlug = slugClass(querySlug);
+    return allTracks.find((item) => item.id === cleanSlug || trackSlug(item) === cleanSlug) || tracks.find((item) => item.id === cleanSlug || trackSlug(item) === cleanSlug) || null;
   }
 
   if (!canUseCleanUrls()) {
     return null;
   }
 
-  const slug = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, "");
+  const path = decodeURIComponent(window.location.pathname).replace(/\/+$/g, "");
 
-  if (!slug || slug === "index.html") {
+  if (!path.startsWith("/song/")) {
     return null;
   }
 
+  const slug = slugClass(path.replace(/^\/song\//, ""));
+
   return allTracks.find((item) => trackSlug(item) === slug || item.id === slug) || tracks.find((item) => trackSlug(item) === slug || item.id === slug) || null;
+}
+
+function routeSectionFromLocation() {
+  const params = new URLSearchParams(window.location.search);
+  const queryView = params.get("view");
+  const path = canUseCleanUrls() ? window.location.pathname.replace(/\/+$/g, "") || "/" : "";
+
+  if (queryView === "tracks" || path === "/tracks") {
+    applyRouteMeta("/tracks");
+    scrollToRouteSection("/tracks", "auto");
+    return true;
+  }
+
+  if (queryView === "licensing" || path === "/licensing") {
+    applyRouteMeta("/licensing");
+    scrollToRouteSection("/licensing", "auto");
+    return true;
+  }
+
+  if (path === "/" || path === "/index.html" || queryView === "home") {
+    applyRouteMeta("/");
+    scrollToRouteSection("/", "auto");
+    return true;
+  }
+
+  return false;
 }
 
 function openSongFromLocation() {
   const track = getTrackFromLocation();
 
   if (track) {
-    if (canUseCleanUrls() && window.location.hash.startsWith("#song-")) {
-      history.replaceState({ songId: track.id }, "", trackUrl(track));
-    }
-
     openSongPage(track, false);
 
     if (new URLSearchParams(window.location.search).get("autoplay") === "1") {
       playTrack(track);
     }
+
+    return;
   }
+
+  routeSectionFromLocation();
 }
 
 function normalizeInitialUrl() {
@@ -1670,7 +1809,7 @@ function normalizeInitialUrl() {
   }
 
   if (window.location.pathname.endsWith("/index.html")) {
-    history.replaceState(null, "", `/${window.location.hash}`);
+    history.replaceState(null, "", "/");
   }
 }
 
@@ -1707,6 +1846,7 @@ async function initializeCatalog() {
   openSongFromLocation();
 }
 
+normalizeLocalPreviewLinks();
 initializeCatalog();
 
 document.querySelector("#focusSearch").addEventListener("click", () => {
@@ -1717,8 +1857,8 @@ function setActiveNav(sectionId) {
   const targetId = sectionId === "top" ? "latest" : sectionId;
 
   sectionNavLinks.forEach((link) => {
-    const href = link.getAttribute("href");
-    const isActive = href === `#${targetId}`;
+    const href = link.getAttribute("href") || "";
+    const isActive = (targetId === "all-tracks" && href === "/tracks") || (targetId === "licensing" && href === "/licensing");
     link.classList.toggle("active-line", isActive);
     link.setAttribute("aria-current", isActive ? "page" : "false");
   });
@@ -1729,6 +1869,37 @@ function clearActiveNav() {
     link.classList.remove("active-line");
     link.setAttribute("aria-current", "false");
   });
+}
+
+function routePathToSection(path) {
+  const cleanPath = (path || "/").replace(/\/+$/g, "") || "/";
+
+  if (cleanPath === "/tracks") {
+    return "all-tracks";
+  }
+
+  if (cleanPath === "/licensing") {
+    return "licensing";
+  }
+
+  if (cleanPath === "/" || cleanPath === "/index.html") {
+    return "top";
+  }
+
+  return "";
+}
+
+function scrollToRouteSection(path = window.location.pathname, behavior = "smooth") {
+  const sectionId = routePathToSection(path) || "all-tracks";
+  const section = document.getElementById(sectionId);
+
+  if (sectionId === "top") {
+    window.scrollTo({ top: 0, behavior });
+  } else if (section) {
+    section.scrollIntoView({ block: "start", behavior });
+  }
+
+  updateActiveNav();
 }
 
 function updateActiveNav() {
@@ -1775,6 +1946,7 @@ playerClose.addEventListener("click", () => {
 });
 
 progressShell.addEventListener("pointerdown", startPlayerSeek);
+progressShell.addEventListener("touchstart", startPlayerSeek, { passive: false });
 progressShell.addEventListener("keydown", (event) => {
   const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
 
@@ -1801,23 +1973,36 @@ songPlay.addEventListener("click", () => {
   playTrack(track);
 });
 
-songWaveform.addEventListener("pointerdown", (event) => {
+function startSongWaveformSeek(event) {
   if (!selectedTrack) return;
   event.preventDefault();
   setPlayerProgress(progressFractionFromPointer(event, songWaveform));
 
   const move = (moveEvent) => {
+    moveEvent.preventDefault();
     setPlayerProgress(progressFractionFromPointer(moveEvent, songWaveform));
   };
 
   const stop = () => {
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
+    window.removeEventListener("touchmove", move);
+    window.removeEventListener("touchend", stop);
+    window.removeEventListener("touchcancel", stop);
   };
 
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", stop, { once: true });
-});
+  if (event.type === "touchstart") {
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", stop, { once: true });
+    window.addEventListener("touchcancel", stop, { once: true });
+  } else {
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop, { once: true });
+  }
+}
+
+songWaveform.addEventListener("pointerdown", startSongWaveformSeek);
+songWaveform.addEventListener("touchstart", startSongWaveformSeek, { passive: false });
 
 songDownload.addEventListener("click", () => {
   const track = tracks.find((item) => item.id === songPlay.dataset.trackId) || selectedTrack;
@@ -1854,29 +2039,27 @@ trackPagination.addEventListener("click", (event) => {
   renderAllTracksPage(Number(button.dataset.page), true);
 });
 
-document.querySelectorAll('.side-nav a[href^="#"], .mobile-brand[href^="#"]').forEach((link) => {
+document.querySelectorAll('.side-nav a[href^="/"], .mobile-brand[href^="/"]').forEach((link) => {
   link.addEventListener("click", (event) => {
+    const href = link.getAttribute("href") || "/";
+    const sectionId = routePathToSection(href);
+
+    if (!sectionId) {
+      return;
+    }
+
     setMobileMenu(false);
 
     if (document.body.classList.contains("song-view")) {
       document.body.classList.remove("song-view");
       songPage.hidden = true;
-      document.title = `${siteSettings.site.title} | Direct Music Downloads`;
     }
 
     if (canUseCleanUrls()) {
       event.preventDefault();
-      const targetHash = link.getAttribute("href") || "#top";
-      const target = document.querySelector(targetHash);
-      const nextUrl = targetHash === "#top" ? "/" : `/${targetHash}`;
-
-      history.pushState(null, "", nextUrl);
-
-      if (target) {
-        target.scrollIntoView({ block: "start", behavior: "smooth" });
-      }
-
-      updateActiveNav();
+      history.pushState(null, "", href);
+      applyRouteMeta(href);
+      scrollToRouteSection(href, "smooth");
     }
   });
 });
@@ -1912,7 +2095,10 @@ window.addEventListener("popstate", () => {
 
   if (document.body.classList.contains("song-view")) {
     closeSongPage(false);
+    return;
   }
+
+  routeSectionFromLocation();
 });
 
 sideNav.addEventListener("pointerenter", () => {

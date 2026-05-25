@@ -259,6 +259,22 @@ function setIconLink(rel, href) {
   link.href = href;
 }
 
+function setCanonicalLink(href) {
+  if (!href) {
+    return;
+  }
+
+  let link = document.head.querySelector('link[rel="canonical"]');
+
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "canonical";
+    document.head.append(link);
+  }
+
+  link.href = href;
+}
+
 function updateShareMeta(title, description, image, url) {
   const shareImage = absoluteAssetUrl(image || siteSettings.seo.ogImage || "assets/cover-1.jpg");
 
@@ -272,6 +288,7 @@ function updateShareMeta(title, description, image, url) {
   setMetaTag("name", "twitter:title", title);
   setMetaTag("name", "twitter:description", description);
   setMetaTag("name", "twitter:image", shareImage);
+  setCanonicalLink(url || window.location.href.split("#")[0]);
 }
 
 function canUseCleanUrls() {
@@ -280,6 +297,18 @@ function canUseCleanUrls() {
 
 function siteUrl(path = "/artists") {
   return canUseCleanUrls() ? `${window.location.origin}${path}` : window.location.href.split("#")[0];
+}
+
+function artistMetaDescription(artist) {
+  const genres = Array.isArray(artist.trackGenres) && artist.trackGenres.length > 0 ? artist.trackGenres.join(", ") : artist.style || "music";
+  if (artist.name === siteSettings.site.title) {
+    return `Explore ${siteSettings.site.title} music. Listen to ${genres} releases and open each song page for previews and downloads.`;
+  }
+  return `Explore ${artist.name} on SG Production. Listen to ${genres} releases and open each song page for previews and downloads.`;
+}
+
+function artistPageTitle(artist) {
+  return artist.name === siteSettings.site.title ? `${artist.name} | Artist` : `${artist.name} | ${siteSettings.site.title}`;
 }
 
 function applySiteSettings() {
@@ -328,18 +357,46 @@ async function loadCatalogData() {
 }
 
 function trackUrl(track) {
-  return `index.html#song-${track.id}`;
+  return canUseCleanUrls() ? `/song/${slugClass(track.title || track.id)}` : `index.html?song=${encodeURIComponent(slugClass(track.title || track.id))}`;
 }
 
 function trackPlayUrl(track) {
-  return `index.html?autoplay=1#song-${track.id}`;
+  return canUseCleanUrls() ? `/song/${slugClass(track.title || track.id)}?autoplay=1` : `index.html?song=${encodeURIComponent(slugClass(track.title || track.id))}&autoplay=1`;
+}
+
+function artistUrl(artist) {
+  return canUseCleanUrls() ? `/artist/${artist.id}` : `artists.html?artist=${encodeURIComponent(artist.id)}`;
+}
+
+function normalizeLocalPreviewLinks() {
+  if (canUseCleanUrls()) {
+    return;
+  }
+
+  document.querySelectorAll('a[href^="/"]').forEach((link) => {
+    const href = link.getAttribute("href") || "/";
+
+    if (href === "/") {
+      link.setAttribute("href", "index.html");
+    } else if (href === "/tracks") {
+      link.setAttribute("href", "index.html?view=tracks");
+    } else if (href === "/licensing") {
+      link.setAttribute("href", "index.html?view=licensing");
+    } else if (href === "/artists") {
+      link.setAttribute("href", "artists.html");
+    } else if (href.startsWith("/song/")) {
+      link.setAttribute("href", `index.html?song=${encodeURIComponent(href.replace(/^\/song\//, ""))}`);
+    } else if (href.startsWith("/artist/")) {
+      link.setAttribute("href", `artists.html?artist=${encodeURIComponent(href.replace(/^\/artist\//, ""))}`);
+    }
+  });
 }
 
 function renderArtistCard(artist) {
   const card = document.createElement("article");
   card.className = "artist-card";
   card.innerHTML = `
-    <a class="artist-card-link" href="artists.html?artist=${escapeHTML(artist.id)}" aria-label="Open ${escapeHTML(artist.name)} artist page">
+    <a class="artist-card-link" href="${escapeHTML(artistUrl(artist))}" aria-label="Open ${escapeHTML(artist.name)} artist page">
       <img src="${escapeHTML(preferredArtistImage(artist))}" alt="${escapeHTML(artist.name)} artist photo" loading="lazy">
       <div class="artist-card-copy">
         <h3>${escapeHTML(artist.name)}</h3>
@@ -438,11 +495,15 @@ function renderArtistProfile(artist) {
   artistProfileBg.style.backgroundImage = `url("${preferredArtistImage(artist)}")`;
   artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
   renderRelatedArtists(artist);
-  document.title = `${artist.name} | ${siteSettings.site.title}`;
-  updateShareMeta(`${artist.name} | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, preferredArtistImage(artist) || siteSettings.seo.ogImage, window.location.href);
+  document.title = artistPageTitle(artist);
+  updateShareMeta(artistPageTitle(artist), artistMetaDescription(artist), preferredArtistImage(artist) || siteSettings.seo.ogImage, siteUrl(`/artist/${artist.id}`));
 }
 
-function showDirectory() {
+function showDirectory(updateUrl = true) {
+  if (updateUrl && canUseCleanUrls()) {
+    history.pushState({ type: "artists" }, "", "/artists");
+  }
+
   stopProfilePlayback();
   artistDirectory.hidden = false;
   artistProfilePage.hidden = true;
@@ -450,7 +511,11 @@ function showDirectory() {
   updateShareMeta(`Artists | ${siteSettings.site.title}`, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage, siteUrl("/artists"));
 }
 
-function showProfile(artist) {
+function showProfile(artist, updateUrl = true) {
+  if (updateUrl && canUseCleanUrls()) {
+    history.pushState({ type: "artist", slug: artist.id }, "", artistUrl(artist));
+  }
+
   artistDirectory.hidden = true;
   artistProfilePage.hidden = false;
   renderArtistProfile(artist);
@@ -686,16 +751,34 @@ function downloadTrack(track) {
 }
 
 function routeArtistPage() {
+  if (canUseCleanUrls() && window.location.pathname.endsWith("/artists.html")) {
+    history.replaceState({ type: "artists" }, "", "/artists");
+  }
+
+  if (canUseCleanUrls()) {
+    const path = decodeURIComponent(window.location.pathname).replace(/\/+$/g, "");
+
+    if (path.startsWith("/artist/")) {
+      const artistId = slugClass(path.replace(/^\/artist\//, ""));
+      const artist = artists.find((item) => item.id === artistId);
+
+      if (artist) {
+        showProfile(artist, false);
+        return;
+      }
+    }
+  }
+
   const params = new URLSearchParams(window.location.search);
   const artistId = params.get("artist");
   const artist = artists.find((item) => item.id === artistId);
 
   if (artist) {
-    showProfile(artist);
+    showProfile(artist, false);
     return;
   }
 
-  showDirectory();
+  showDirectory(false);
 }
 
 function openMobileMenu() {
@@ -713,9 +796,29 @@ function closeMobileMenu() {
 }
 
 artistSearchInput.addEventListener("input", renderArtists);
+artistGrid.addEventListener("click", (event) => {
+  const link = event.target.closest(".artist-card-link");
+
+  if (!link || !canUseCleanUrls() || event.metaKey || event.ctrlKey || event.shiftKey) {
+    return;
+  }
+
+  const path = new URL(link.href, window.location.href).pathname;
+  const artistId = slugClass(path.replace(/^\/artist\//, ""));
+  const artist = artists.find((item) => item.id === artistId);
+
+  if (!artist) {
+    return;
+  }
+
+  event.preventDefault();
+  showProfile(artist);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 focusArtistSearch.addEventListener("click", () => {
   if (!artistDirectory || artistDirectory.hidden) {
-    window.location.href = "artists.html";
+    showDirectory();
     return;
   }
 
@@ -807,6 +910,16 @@ mobileMenuToggle.addEventListener("click", () => {
 
 mobileBrand.addEventListener("click", closeMobileMenu);
 
+document.querySelector(".artist-profile-back")?.addEventListener("click", (event) => {
+  if (!canUseCleanUrls()) {
+    return;
+  }
+
+  event.preventDefault();
+  showDirectory();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 sideNav.addEventListener("click", (event) => {
   if (event.target.closest("a.nav-link")) {
     closeMobileMenu();
@@ -819,6 +932,11 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
+window.addEventListener("popstate", () => {
+  routeArtistPage();
+});
+
+normalizeLocalPreviewLinks();
 loadCatalogData().then(() => {
   renderArtists();
   routeArtistPage();
