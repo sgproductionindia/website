@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XLSFX2N5MS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XLSFX2N5MS');
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
@@ -29,10 +37,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.min.css?v=20260524-prod">
+    <link rel="stylesheet" href="styles.min.css?v=20260528-logo-size">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260524-prod" defer></script>
-    <script src="artists.min.js?v=20260524-seo" defer></script>
+    <script>
+      // Keep clean live URLs, but make local file:// previews navigable.
+      if (window.location.protocol === 'file:' || /^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname)) {
+        function localPreviewHref(href) {
+          if (!href) return '';
+          if (href === '/') return 'index.html';
+          if (href === '/tracks') return 'index.html?view=tracks';
+          if (href === '/licensing') return 'index.html?view=licensing';
+          if (href === '/about') return 'about-preview.html';
+          if (href === '/contact') return 'contact-preview.html';
+          if (href === '/artists') return 'artists.html';
+          if (href === 'usage-policy.php') return 'usage-policy-preview.html';
+          if (href.startsWith('/song/')) return 'index.html?song=' + encodeURIComponent(href.replace(/^\/song\//, ''));
+          if (href.startsWith('/artist/')) return 'artists.html?artist=' + encodeURIComponent(href.replace(/^\/artist\//, ''));
+          return '';
+        }
+
+        document.addEventListener('click', function(event) {
+          var link = event.target.closest && event.target.closest('a[href]');
+          if (!link) return;
+          var nextHref = localPreviewHref(link.getAttribute('href'));
+          if (!nextHref) return;
+          event.preventDefault();
+          window.location.href = nextHref;
+        }, true);
+
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('a[href]').forEach(function(link) {
+            var nextHref = localPreviewHref(link.getAttribute('href'));
+            if (nextHref) link.setAttribute('href', nextHref);
+          });
+        });
+      }
+    </script>
+    <script src="artists.min.js?v=20260525-nav-fix" defer></script>
   </head>
   <body>
     <header class="mobile-topbar" aria-label="Mobile navigation">
@@ -98,7 +140,7 @@
         <div class="nav-spacer" aria-hidden="true"></div>
 
         <div class="nav-section nav-utility">
-          <a class="nav-link" href="/licensing" aria-label="Usage policy" title="Usage Policy">
+          <a class="nav-link" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -110,7 +152,7 @@
             </span>
             <span class="nav-label">Usage Policy</span>
           </a>
-          <a class="nav-link" href="/licensing" aria-label="About SG Production" title="About">
+          <a class="nav-link" href="/about" aria-label="About SG Production" title="About">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -120,7 +162,7 @@
             </span>
             <span class="nav-label">About</span>
           </a>
-          <a class="nav-link" href="mailto:bookings@sgproduction.example" aria-label="Contact SG Production" title="Contact">
+          <a class="nav-link" href="/contact" aria-label="Contact SG Production" title="Contact">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.91.33 1.8.63 2.65a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.43-1.2a2 2 0 0 1 2.11-.45c.85.3 1.74.51 2.65.63A2 2 0 0 1 22 16.92z"></path>

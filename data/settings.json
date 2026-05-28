@@ -4,7 +4,7 @@
     "tagline": "Original music • direct download • no barriers",
     "youtubeHeading": "Subscribe on YouTube",
     "youtubeText": "Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.",
-    "contactEmail": "bookings@sgproduction.example"
+    "contactEmail": ""
   },
   "links": {
     "instagram": "https://www.instagram.com/sgproduction.music",
@@ -14,7 +14,7 @@
   },
   "seo": {
     "metaDescription": "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
-    "ogImage": "assets/cover-1.jpg",
+    "ogImage": "assets/sg-logo.svg",
     "favicon": "assets/sg-logo.svg"
   },
   "catalog": {
@@ -28,10 +28,10 @@
     "mediaType": "",
     "linkUrl": "",
     "gridAd": {
-      "enabled": true,
-      "imageUrl": "assets/ad-square.jpg",
-      "name": "Featured Sponsor",
-      "subtext": "Advertisement",
+      "enabled": false,
+      "imageUrl": "",
+      "name": "",
+      "subtext": "",
       "buttonText": "Learn more",
       "buttonColor": "#ffffff",
       "buttonTextColor": "#000000",

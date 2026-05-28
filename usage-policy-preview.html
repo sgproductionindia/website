@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#000000">
-    <title>SG Production | Direct Music Downloads</title>
+    <title>Usage Policy &amp; Legal Disclaimer | SG Production</title>
     <script>
       (function() {
         var base = document.createElement("base");
@@ -23,18 +23,18 @@
     </script>
     <meta
       name="description"
-      content="SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks."
+      content="Usage Policy and legal disclaimer for downloading and using music from SG Production."
     >
-    <meta property="og:title" content="SG Production">
-    <meta property="og:description" content="Original music • direct download • no barriers">
+    <meta property="og:title" content="Usage Policy &amp; Legal Disclaimer | SG Production">
+    <meta property="og:description" content="Read before downloading or using any music from SG Production.">
     <meta property="og:image" content="https://sgproduction.music/assets/cover-1.jpg">
-    <meta property="og:url" content="https://sgproduction.music/">
+    <meta property="og:url" content="https://sgproduction.music/usage-policy.php">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SG Production">
-    <meta name="twitter:description" content="Original music • direct download • no barriers">
+    <meta name="twitter:title" content="Usage Policy &amp; Legal Disclaimer | SG Production">
+    <meta name="twitter:description" content="Read before downloading or using any music from SG Production.">
     <meta name="twitter:image" content="https://sgproduction.music/assets/cover-1.jpg">
-    <link rel="canonical" href="https://sgproduction.music/">
+    <link rel="canonical" href="https://sgproduction.music/usage-policy.php">
     <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/sg-logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,6 +43,7 @@
     <link rel="stylesheet" href="styles.min.css?v=20260528-logo-size">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260524-prod" defer></script>
+    <script src="page-search.js?v=20260528-page-search" defer></script>
     <script>
       // Keep clean live URLs, but make local file:// previews navigable.
       if (window.location.protocol === 'file:' || /^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname)) {
@@ -116,7 +117,7 @@
             </span>
             <span class="nav-label">Search</span>
           </button>
-          <a class="nav-link active-line" href="/tracks" data-section-nav aria-label="Music library" title="Music Library">
+          <a class="nav-link" href="/tracks" data-section-nav aria-label="Music library" title="Music Library">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M9 18V5l12-2v13"></path>
@@ -142,7 +143,7 @@
         <div class="nav-spacer" aria-hidden="true"></div>
 
         <div class="nav-section nav-utility">
-          <a class="nav-link" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
+          <a class="nav-link active-line" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -219,159 +220,167 @@
       </nav>
 
       <main class="page" id="top">
-        <header class="hero" aria-labelledby="site-title">
-          <div class="hero-inner">
-            <div class="brand-block">
-              <h1 id="site-title">SG Production</h1>
-              <p class="tagline" id="siteTagline">Original music <span></span> direct download <span></span> no barriers</p>
+        <section class="policy-page" id="usage-policy" aria-labelledby="policy-title">
+          <div class="policy-hero">
+            <h1 id="policy-title">Usage Policy &amp; Legal Disclaimer</h1>
+            <p>Read before downloading or using any music from SG Production.</p>
+            <div class="meta-row">
+              <div class="meta-chip">Last updated: <strong>May 25, 2026</strong></div>
+              <div class="meta-chip">Jurisdiction: <strong>India</strong></div>
+              <div class="meta-chip">Effective: <strong>Immediately</strong></div>
             </div>
           </div>
-        </header>
 
-        <section class="section" id="latest" aria-labelledby="latest-title">
-          <div class="section-heading">
-            <h2 id="latest-title">Latest Releases</h2>
-          </div>
-          <div class="track-grid latest-grid" id="latestGrid"></div>
-        </section>
+          <div class="policy-body">
+            <div class="policy-sections">
+              <div class="policy-section" id="s1">
+                <div class="section-label">01</div>
+                <div class="section-title">Overview</div>
+                <div class="section-body">
+                  <p>This Usage Policy governs the use of all audio content, including original compositions and remix works, available on sgproduction.music ("the Website"). By accessing or downloading any content from this Website, you agree to be bound by the terms set forth in this policy.</p>
+                  <p>Our catalog includes both original music produced by SG Production and remix works derived from existing third-party compositions. Different rules apply to each category — please read carefully before use.</p>
+                  <div class="notice-box"><strong>Important:</strong> Unauthorized use of any content from this Website may constitute copyright infringement and could result in legal action.</div>
+                </div>
+              </div>
 
-        <section class="section catalog-section" id="all-tracks" aria-labelledby="tracks-title">
-          <div class="section-heading catalog-heading">
-            <h2 id="tracks-title">All Tracks</h2>
-          </div>
-          <div class="track-grid" id="trackGrid"></div>
-          <nav class="track-pagination" id="trackPagination" aria-label="All tracks pages"></nav>
-        </section>
+              <div class="policy-section" id="s2">
+                <div class="section-label">02</div>
+                <div class="section-title">Ownership &amp; Intellectual Property</div>
+                <div class="section-body">
+                  <div class="subsection">
+                    <div class="subsection-label">2.1 — Original Works</div>
+                    <p>All original music compositions, beats, and productions created by SG Production and published on this Website are the exclusive intellectual property of SG Production. All rights reserved © 2026 SG Production.</p>
+                  </div>
+                  <div class="subsection">
+                    <div class="subsection-label">2.2 — Remix Works</div>
+                    <p>Certain audio content on this Website consists of remix works derived from third-party copyrighted material. SG Production does not claim ownership of the underlying original compositions, sound recordings, or any other intellectual property belonging to the respective original artists, songwriters, publishers, or record labels.</p>
+                    <p>All rights in the original works remain with their respective copyright holders. Remixes are published in good faith for creative and non-commercial purposes only.</p>
+                  </div>
+                </div>
+              </div>
 
-        <section class="info-band" id="licensing" aria-labelledby="license-title">
-          <div>
-            <h2 id="license-title">Subscribe on YouTube</h2>
-            <p id="youtubeText">
-              Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.
-            </p>
+              <div class="policy-section" id="s3">
+                <div class="section-label">03</div>
+                <div class="section-title">Permitted Use — Original Tracks</div>
+                <div class="section-body">
+                  <div class="subsection">
+                    <div class="subsection-label">3.1 — Personal Non-Commercial Use</div>
+                    <p>You are permitted to use SG Production original tracks for personal, non-commercial purposes provided that appropriate credit is given as follows:</p>
+                    <div class="credit-box">"Music by SG Production – sgproduction.music"</div>
+                  </div>
+                  <div class="subsection">
+                    <div class="subsection-label">3.2 — Commercial Licensing</div>
+                    <p>Any use of SG Production original tracks for commercial purposes — including but not limited to monetized YouTube videos, advertisements, films, television, podcasts, social media promotions, or any revenue-generating activity — requires a valid license obtained through our Licensing page prior to use.</p>
+                    <div class="notice-box"><strong>Warning:</strong> Unauthorized commercial use constitutes copyright infringement and may result in content removal, claims, or legal proceedings.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s4">
+                <div class="section-label">04</div>
+                <div class="section-title">Permitted Use — Remix Tracks</div>
+                <div class="section-body">
+                  <p>Remix tracks available on this Website are strictly for <strong>personal listening and enjoyment only</strong>.</p>
+                  <p>Remix tracks may NOT be used for any commercial purpose, monetized content, public performance, broadcast, synchronization, or redistribution in any form whatsoever.</p>
+                  <div class="notice-box">Remix tracks are not available for licensing under any circumstances. Only original SG Production tracks are eligible for commercial licensing.</div>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s5">
+                <div class="section-label">05</div>
+                <div class="section-title">Prohibited Uses</div>
+                <div class="section-body">
+                  <p>The following are strictly prohibited without prior written consent from SG Production:</p>
+                  <ul class="prohibited-list">
+                    <li>Claiming ownership of any track, original or remix, published on this Website</li>
+                    <li>Selling, sublicensing, or redistributing any audio content from this Website</li>
+                    <li>Using any content from this Website for AI model training, fine-tuning, or dataset creation</li>
+                    <li>Using remix tracks for any commercial or revenue-generating purpose</li>
+                    <li>Re-uploading, republishing, or distributing content on any third-party platform without authorization</li>
+                    <li>Removing or altering any copyright notices or attribution associated with any content</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s6">
+                <div class="section-label">06</div>
+                <div class="section-title">DMCA &amp; Copyright Takedown Policy</div>
+                <div class="section-body">
+                  <p>SG Production respects the intellectual property rights of all artists, labels, and rights holders. If you are a copyright owner and believe that any content on this Website infringes upon your copyright, you may submit a takedown request by contacting us through the Website.</p>
+                  <p>Your request must include:</p>
+                  <ul class="dmca-list">
+                    <li>Identification of the copyrighted work claimed to be infringed</li>
+                    <li>Identification of the infringing material and its location on this Website</li>
+                    <li>Your full contact information (name, address, email, phone)</li>
+                    <li>A statement of good faith belief that the use is not authorized by the copyright owner</li>
+                    <li>A statement that the information is accurate and, under penalty of perjury, that you are authorized to act on behalf of the copyright owner</li>
+                  </ul>
+                  <div class="notice-box" style="margin-top:16px"><strong>Response Time:</strong> We will respond to all valid DMCA takedown notices promptly and remove infringing content where applicable.</div>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s7">
+                <div class="section-label">07</div>
+                <div class="section-title">Disclaimer of Warranties</div>
+                <div class="section-body">
+                  <p>All content on this Website is provided <strong>"as is"</strong> without warranty of any kind, express or implied. SG Production makes no representations or warranties regarding the accuracy, completeness, or fitness for a particular purpose of any content published on this Website.</p>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s8">
+                <div class="section-label">08</div>
+                <div class="section-title">Limitation of Liability</div>
+                <div class="section-body">
+                  <p>To the fullest extent permitted by applicable law, SG Production shall not be liable for any direct, indirect, incidental, special, or consequential damages arising out of or in connection with your use of this Website or its content.</p>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s9">
+                <div class="section-label">09</div>
+                <div class="section-title">Changes to This Policy</div>
+                <div class="section-body">
+                  <p>SG Production reserves the right to modify this Usage Policy at any time without prior notice. Continued use of this Website following any changes constitutes your acceptance of the revised policy.</p>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s10">
+                <div class="section-label">10</div>
+                <div class="section-title">Governing Law</div>
+                <div class="section-body">
+                  <p>This Usage Policy shall be governed by and construed in accordance with the laws of <strong>India</strong>. Any disputes arising under this policy shall be subject to the exclusive jurisdiction of the courts of India.</p>
+                </div>
+              </div>
+
+              <div class="policy-section" id="s11">
+                <div class="section-label">11</div>
+                <div class="section-title">Contact</div>
+                <div class="section-body">
+                  <p>For licensing inquiries, DMCA takedown requests, or any questions regarding this policy, please contact us through the Website contact page.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer">Subscribe</a>
         </section>
 
         <footer class="footer" id="contact">
           <p>© 2026 SG Production. All rights reserved.</p>
         </footer>
-
-        <section class="song-page" id="songPage" aria-labelledby="songPageTitle" hidden>
-          <div class="song-detail">
-            <button class="song-back" id="songBack" type="button" aria-label="Back to music library">
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M19 12H5"></path>
-                <path d="m12 19-7-7 7-7"></path>
-              </svg>
-              Music Library
-            </button>
-
-            <div class="song-main">
-              <p class="song-kicker" id="songGenre">Original Track</p>
-              <h2 id="songPageTitle">Track Title</h2>
-              <p class="song-artist" id="songArtist">SG Production</p>
-
-              <div class="song-wave-row">
-                <button class="song-play" id="songPlay" type="button" aria-label="Play track">
-                  <svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="m8 5 11 7-11 7z"></path>
-                  </svg>
-                  <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="M8 5v14"></path>
-                    <path d="M16 5v14"></path>
-                  </svg>
-                </button>
-                <div class="song-waveform" id="songWaveform" aria-hidden="true"></div>
-                <span class="song-duration" id="songDuration">0:00</span>
-              </div>
-
-              <button class="song-download" id="songDownload" type="button">
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <path d="M7 10l5 5 5-5"></path>
-                  <path d="M12 15V3"></path>
-                </svg>
-                Download Track
-              </button>
-
-              <p id="creditText" hidden></p>
-            </div>
-          </div>
-
-          <aside class="song-ad" id="songAd" aria-label="Advertising space"></aside>
-        </section>
       </main>
     </div>
 
-    <section class="search-overlay" id="searchOverlay" aria-labelledby="searchTitle" aria-hidden="true">
-      <div class="search-panel" role="dialog" aria-modal="true">
-        <div class="search-head">
-          <div>
-            <h2 id="searchTitle">Search</h2>
-          </div>
-          <button class="search-close" id="searchClose" type="button" aria-label="Close search">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M18 6 6 18"></path>
-              <path d="m6 6 12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <label class="search-field" for="siteSearchInput">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
-          <input id="siteSearchInput" type="search" autocomplete="off" placeholder="Search SG Production">
-        </label>
-        <div class="search-results" id="searchResults" role="list"></div>
-      </div>
-    </section>
-
-    <aside class="player" id="player" aria-live="polite">
-      <div class="player-track">
-        <button class="player-cover" id="playerCover" type="button" aria-label="Open selected song"></button>
-        <div class="player-meta">
-          <strong id="playerTitle">Select a track</strong>
-          <span id="playerGenre">Ready</span>
-        </div>
-      </div>
-      <div class="player-center">
-        <button class="player-control" id="playerToggle" type="button" aria-label="Play selected track">
-          <svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24">
-            <path d="m8 5 11 7-11 7z"></path>
-          </svg>
-          <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M8 5v14"></path>
-            <path d="M16 5v14"></path>
-          </svg>
-        </button>
-        <div class="progress-shell" id="progressShell" role="slider" tabindex="0" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
-        <span class="progress-time" id="progressTime">0:0/0:0</span>
-      </div>
-      <button class="download-now" id="playerDownload" type="button">
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <path d="M7 10l5 5 5-5"></path>
-          <path d="M12 15V3"></path>
-        </svg>
-        Download
-      </button>
-      <button class="player-close" id="playerClose" type="button" aria-label="Close player">
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M18 6 6 18"></path>
-          <path d="m6 6 12 12"></path>
-        </svg>
-      </button>
-    </aside>
-
-    <script src="script.min.js?v=20260525-nav-fix-2"></script>
     <script>
-      // Track page visit
       (function() {
-        var page = location.pathname.split('/').pop().replace('.html', '') || 'index';
+        var toggle = document.getElementById('mobileMenuToggle');
+        if (toggle) {
+          toggle.addEventListener('click', function() {
+            var open = !document.body.classList.contains('menu-open');
+            document.body.classList.toggle('menu-open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+            toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+          });
+        }
+
+        var page = location.pathname.split('/').pop().replace('.php', '').replace('.html', '') || 'usage-policy';
         fetch('api/track-visit.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

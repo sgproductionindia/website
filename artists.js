@@ -1,68 +1,6 @@
-const defaultArtists = [
-  {
-    id: "sg-production",
-    name: "SG Production",
-    style: "Original Mix",
-    image: "assets/artist-photo-1.svg",
-    year: "2026",
-    order: 1,
-    trackGenres: ["Original Mix", "Marathi", "Soundcheck", "Hindi"]
-  },
-  {
-    id: "sg-soundcheck",
-    name: "SG Soundcheck",
-    style: "Soundcheck",
-    image: "assets/artist-photo-2.svg",
-    year: "2026",
-    order: 2,
-    trackGenres: ["Soundcheck"]
-  },
-  {
-    id: "marathi-pulse",
-    name: "Marathi Pulse",
-    style: "Marathi",
-    image: "assets/artist-photo-3.svg",
-    year: "2025",
-    order: 3,
-    trackGenres: ["Marathi"]
-  },
-  {
-    id: "hindi-wave",
-    name: "Hindi Wave",
-    style: "Hindi",
-    image: "assets/artist-photo-4.svg",
-    year: "2025",
-    order: 4,
-    trackGenres: ["Hindi"]
-  },
-  {
-    id: "night-circuit",
-    name: "Night Circuit",
-    style: "Original Mix",
-    image: "assets/artist-photo-5.svg",
-    year: "2024",
-    order: 5,
-    trackGenres: ["Original Mix"]
-  }
-];
+const defaultArtists = [];
 
-const defaultTracks = [
-  { id: "midnight-echo", title: "Midnight Echo", genre: "Marathi", duration: "3:42", cover: "assets/cover-1.jpg", bpm: 142, tone: 110, wave: "triangle" },
-  { id: "neon-pulse", title: "Neon Pulse", genre: "Soundcheck", duration: "2:55", cover: "assets/cover-2.jpg", bpm: 128, tone: 146.83, wave: "sine" },
-  { id: "dark-frequency", title: "Dark Frequency", genre: "Hindi", duration: "4:10", cover: "assets/cover-3.jpg", bpm: 92, tone: 82.41, wave: "sawtooth" },
-  { id: "electric-dream", title: "Electric Dream", genre: "Original Mix", duration: "5:20", cover: "assets/cover-4.jpg", bpm: 104, tone: 196, wave: "sine" },
-  { id: "shadow-wave", title: "Shadow Wave", genre: "Marathi", duration: "3:15", cover: "assets/cover-5.jpg", bpm: 136, tone: 123.47, wave: "triangle" },
-  { id: "lost-signal", title: "Lost Signal", genre: "Soundcheck", duration: "4:05", cover: "assets/cover-6.jpg", bpm: 124, tone: 174.61, wave: "sawtooth" },
-  { id: "void-rhythm", title: "Void Rhythm", genre: "Hindi", duration: "2:48", cover: "assets/cover-7.jpg", bpm: 88, tone: 98, wave: "triangle" },
-  { id: "raw-energy", title: "Raw Energy", genre: "Marathi", duration: "3:30", cover: "assets/cover-1.jpg", bpm: 150, tone: 130.81, wave: "square" },
-  { id: "deep-current", title: "Deep Current", genre: "Original Mix", duration: "4:55", cover: "assets/cover-2.jpg", bpm: 96, tone: 155.56, wave: "sine" },
-  { id: "pressure-drop", title: "Pressure Drop", genre: "Soundcheck", duration: "3:22", cover: "assets/cover-3.jpg", bpm: 132, tone: 185, wave: "sawtooth" },
-  { id: "static-rush", title: "Static Rush", genre: "Marathi", duration: "2:59", cover: "assets/cover-4.jpg", bpm: 145, tone: 116.54, wave: "square" },
-  { id: "night-circuit", title: "Night Circuit", genre: "Hindi", duration: "3:47", cover: "assets/cover-5.jpg", bpm: 94, tone: 87.31, wave: "triangle" },
-  { id: "stellar-drift", title: "Stellar Drift", genre: "Original Mix", duration: "5:10", cover: "assets/cover-6.jpg", bpm: 100, tone: 207.65, wave: "sine" },
-  { id: "hyper-drive", title: "Hyper Drive", genre: "Soundcheck", duration: "3:01", cover: "assets/cover-7.jpg", bpm: 134, tone: 164.81, wave: "sawtooth" },
-  { id: "phantom-bass", title: "Phantom Bass", genre: "Marathi", duration: "3:38", cover: "assets/cover-1.jpg", bpm: 140, tone: 103.83, wave: "triangle" }
-];
+const defaultTracks = [];
 
 const artistGrid = document.querySelector("#artistGrid");
 const artistSearchInput = document.querySelector("#artistSearchInput");
@@ -84,7 +22,7 @@ let siteSettings = {
   site: {
     title: "SG Production",
     tagline: "Original music • direct download • no barriers",
-    contactEmail: "bookings@sgproduction.example"
+    contactEmail: ""
   },
   links: {
     instagram: "https://www.instagram.com/sgproduction.music",
@@ -94,7 +32,7 @@ let siteSettings = {
   },
   seo: {
     metaDescription: "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
-    ogImage: "assets/cover-1.jpg",
+    ogImage: "assets/sg-logo.svg",
     favicon: "assets/sg-logo.svg"
   }
 };
@@ -292,7 +230,7 @@ function updateShareMeta(title, description, image, url) {
 }
 
 function canUseCleanUrls() {
-  return /^https?:$/.test(window.location.protocol);
+  return /^https?:$/.test(window.location.protocol) && !/^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname);
 }
 
 function siteUrl(path = "/artists") {
@@ -335,8 +273,8 @@ async function loadCatalogData() {
   const normalizedTracks = Array.isArray(uploadedTracks) ? uploadedTracks.map(normalizeTrack).filter(Boolean) : [];
   const normalizedArtists = Array.isArray(uploadedArtists) ? uploadedArtists.map(normalizeArtist).filter(Boolean) : [];
 
-  tracks = mergeById(normalizedTracks, defaultTracks.map(normalizeTrack).filter(Boolean));
-  artists = mergeById(normalizedArtists, defaultArtists.map(normalizeArtist).filter(Boolean));
+  tracks = normalizedTracks;
+  artists = normalizedArtists;
   siteSettings = {
     ...siteSettings,
     ...loadedSettings,
@@ -419,7 +357,7 @@ function renderArtists() {
   const filtered = getFilteredArtists();
 
   if (filtered.length === 0) {
-    artistGrid.innerHTML = '<p class="artist-empty">No artists found.</p>';
+    artistGrid.innerHTML = '<p class="artist-empty">No artists available yet.</p>';
     return;
   }
 
@@ -493,7 +431,11 @@ function renderArtistProfile(artist) {
   artistProfileImage.alt = `${artist.name} artist photo`;
   artistProfileName.textContent = artist.name;
   artistProfileBg.style.backgroundImage = `url("${preferredArtistImage(artist)}")`;
-  artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
+  if (artistTracks.length) {
+    artistTrackList.replaceChildren(...artistTracks.map(renderTrackRow));
+  } else {
+    artistTrackList.innerHTML = '<p class="artist-empty">No tracks available yet. Check back soon.</p>';
+  }
   renderRelatedArtists(artist);
   document.title = artistPageTitle(artist);
   updateShareMeta(artistPageTitle(artist), artistMetaDescription(artist), preferredArtistImage(artist) || siteSettings.seo.ogImage, siteUrl(`/artist/${artist.id}`));

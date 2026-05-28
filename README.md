@@ -4,10 +4,10 @@ This is a music catalog based on your screenshot, with an optional PHP admin pan
 
 Open `index.html` in a browser to preview the website. Open `admin-preview.html` to preview the admin panel UI locally without deploying. In production, this site is deployed through Coolify on an Ubuntu VPS using Docker and Apache/PHP. Uploaded tracks are saved to `data/tracks.json`, website/ad settings are saved to `data/settings.json`, artist profiles are saved to `data/artists.json`, covers go to `uploads/covers/`, preview audio files go to `uploads/audio/`, advertising media goes to `uploads/ads/`, and artist images go to `uploads/artists/`.
 
-Before publishing, change the password at the top of `admin.php`:
+Before publishing, set the admin password in the server environment:
 
-```php
-const ADMIN_PASSWORD = 'hyqhyp-viKfa3-timfaw';
+```text
+ADMIN_PASSWORD=your-secure-admin-password
 ```
 
 Deployment:

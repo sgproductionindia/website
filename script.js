@@ -1,185 +1,4 @@
-const tracks = [
-  {
-    id: "midnight-echo",
-    title: "Midnight Echo",
-    artist: "SG Production",
-    genre: "Marathi",
-    duration: "3:42",
-    cover: "assets/cover-1.jpg",
-    isNew: true,
-    bpm: 142,
-    tone: 110,
-    wave: "triangle"
-  },
-  {
-    id: "neon-pulse",
-    title: "Neon Pulse",
-    artist: "SG Production",
-    genre: "Soundcheck",
-    duration: "2:55",
-    cover: "assets/cover-2.jpg",
-    isNew: true,
-    bpm: 128,
-    tone: 146.83,
-    wave: "sine"
-  },
-  {
-    id: "dark-frequency",
-    title: "Dark Frequency",
-    artist: "SG Production",
-    genre: "Hindi",
-    duration: "4:10",
-    cover: "assets/cover-3.jpg",
-    isNew: false,
-    bpm: 92,
-    tone: 82.41,
-    wave: "sawtooth"
-  },
-  {
-    id: "electric-dream",
-    title: "Electric Dream",
-    artist: "SG Production",
-    genre: "Original Mix",
-    duration: "5:20",
-    cover: "assets/cover-4.jpg",
-    isNew: false,
-    bpm: 104,
-    tone: 196,
-    wave: "sine"
-  },
-  {
-    id: "shadow-wave",
-    title: "Shadow Wave",
-    artist: "SG Production",
-    genre: "Marathi",
-    duration: "3:15",
-    cover: "assets/cover-5.jpg",
-    isNew: false,
-    bpm: 136,
-    tone: 123.47,
-    wave: "triangle"
-  },
-  {
-    id: "lost-signal",
-    title: "Lost Signal",
-    artist: "SG Production",
-    genre: "Soundcheck",
-    duration: "4:05",
-    cover: "assets/cover-6.jpg",
-    isNew: false,
-    bpm: 124,
-    tone: 174.61,
-    wave: "sawtooth"
-  },
-  {
-    id: "void-rhythm",
-    title: "Void Rhythm",
-    artist: "SG Production",
-    genre: "Hindi",
-    duration: "2:48",
-    cover: "assets/cover-7.jpg",
-    isNew: false,
-    bpm: 88,
-    tone: 98,
-    wave: "triangle"
-  },
-  {
-    id: "raw-energy",
-    title: "Raw Energy",
-    artist: "SG Production",
-    genre: "Marathi",
-    duration: "3:30",
-    cover: "assets/cover-1.jpg",
-    isNew: false,
-    bpm: 150,
-    tone: 130.81,
-    wave: "square"
-  },
-  {
-    id: "deep-current",
-    title: "Deep Current",
-    artist: "SG Production",
-    genre: "Original Mix",
-    duration: "4:55",
-    cover: "assets/cover-2.jpg",
-    isNew: false,
-    bpm: 96,
-    tone: 155.56,
-    wave: "sine"
-  },
-  {
-    id: "pressure-drop",
-    title: "Pressure Drop",
-    artist: "SG Production",
-    genre: "Soundcheck",
-    duration: "3:22",
-    cover: "assets/cover-3.jpg",
-    isNew: false,
-    bpm: 132,
-    tone: 185,
-    wave: "sawtooth"
-  },
-  {
-    id: "static-rush",
-    title: "Static Rush",
-    artist: "SG Production",
-    genre: "Marathi",
-    duration: "2:59",
-    cover: "assets/cover-4.jpg",
-    isNew: false,
-    bpm: 145,
-    tone: 116.54,
-    wave: "square"
-  },
-  {
-    id: "night-circuit",
-    title: "Night Circuit",
-    artist: "SG Production",
-    genre: "Hindi",
-    duration: "3:47",
-    cover: "assets/cover-5.jpg",
-    isNew: false,
-    bpm: 94,
-    tone: 87.31,
-    wave: "triangle"
-  },
-  {
-    id: "stellar-drift",
-    title: "Stellar Drift",
-    artist: "SG Production",
-    genre: "Original Mix",
-    duration: "5:10",
-    cover: "assets/cover-6.jpg",
-    isNew: false,
-    bpm: 100,
-    tone: 207.65,
-    wave: "sine"
-  },
-  {
-    id: "hyper-drive",
-    title: "Hyper Drive",
-    artist: "SG Production",
-    genre: "Soundcheck",
-    duration: "3:01",
-    cover: "assets/cover-7.jpg",
-    isNew: false,
-    bpm: 134,
-    tone: 164.81,
-    wave: "sawtooth"
-  },
-  {
-    id: "phantom-bass",
-    title: "Phantom Bass",
-    artist: "SG Production",
-    genre: "Marathi",
-    duration: "3:38",
-    cover: "assets/cover-1.jpg",
-    isNew: false,
-    bpm: 140,
-    tone: 103.83,
-    wave: "triangle"
-  }
-];
+const tracks = [];
 
 const latestGrid = document.querySelector("#latestGrid");
 const latestSection = document.querySelector("#latest");
@@ -217,7 +36,7 @@ const playerClose = document.querySelector("#playerClose");
 const NEW_BADGE_DAYS = 7;
 const NEW_BADGE_MS = NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
 
-let selectedTrack = tracks[0];
+let selectedTrack = null;
 let audioContext = null;
 let activeSource = null;
 let activeGain = null;
@@ -239,7 +58,7 @@ let siteSettings = {
     tagline: "Original music • direct download • no barriers",
     youtubeHeading: "Subscribe on YouTube",
     youtubeText: "Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.",
-    contactEmail: "bookings@sgproduction.example"
+    contactEmail: ""
   },
   links: {
     instagram: "https://www.instagram.com/sgproduction.music",
@@ -249,7 +68,7 @@ let siteSettings = {
   },
   seo: {
     metaDescription: "SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks.",
-    ogImage: "assets/cover-1.jpg",
+    ogImage: "assets/sg-logo.svg",
     favicon: "assets/sg-logo.svg"
   },
   catalog: {
@@ -292,7 +111,7 @@ function slugClass(value) {
 }
 
 function canUseCleanUrls() {
-  return /^https?:$/.test(window.location.protocol);
+  return /^https?:$/.test(window.location.protocol) && !/^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname);
 }
 
 function trackSlug(track) {
@@ -768,7 +587,7 @@ function formatTimer(seconds) {
 }
 
 function buildCreditText(track) {
-  return `Song: ${track.artist} - ${track.title}\nGenre: ${track.genre}\nFree Download / Stream: sgproduction.example/${track.id}\nCredit: Music provided by SG Production`;
+  return `Song: ${track.artist} - ${track.title}\nGenre: ${track.genre}\nFree Download / Stream: https://sgproduction.music/song/${trackSlug(track)}\nCredit: Music provided by SG Production`;
 }
 
 function getPreviewUrl(track) {
@@ -910,11 +729,21 @@ function renderGridAdCard() {
 }
 
 function renderTracks(list, target) {
+  if (!list.length) {
+    target.innerHTML = '<p class="artist-empty">No tracks available yet. Check back soon.</p>';
+    syncPlayingCards();
+    return;
+  }
+
   target.replaceChildren(...list.map(renderCard));
   syncPlayingCards();
 }
 
 function buildDemoTrackPages(sourceTracks) {
+  if (!sourceTracks.length) {
+    return [];
+  }
+
   const targetCount = allTracksPerPage * demoTrackPageCount;
 
   return Array.from({ length: targetCount }, (_, index) => {
@@ -963,6 +792,14 @@ function renderPagination(totalPages) {
 }
 
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
+  if (!allTracks.length) {
+    allTracksPage = 1;
+    trackGrid.innerHTML = '<p class="artist-empty">No tracks available yet. Check back soon.</p>';
+    trackPagination.replaceChildren();
+    syncPlayingCards();
+    return;
+  }
+
   const totalPages = Math.max(1, Math.ceil(allTracks.length / allTracksPerPage));
   allTracksPage = Math.min(Math.max(1, page), totalPages);
   const start = (allTracksPage - 1) * allTracksPerPage;
@@ -1043,12 +880,16 @@ function createBuffer(track) {
 }
 
 async function playTrack(track) {
-  if (selectedTrack.id === track.id && isPlaying) {
+  if (!track) {
+    return;
+  }
+
+  if (selectedTrack?.id === track.id && isPlaying) {
     pauseCurrent();
     return;
   }
 
-  const sameTrack = selectedTrack.id === track.id;
+  const sameTrack = selectedTrack?.id === track.id;
   const resumeOffset = sameTrack && !isNearPlayableEnd(track, pausedAt) ? pausedAt : 0;
 
   stopCurrent(!sameTrack);
@@ -1241,6 +1082,13 @@ function stopCurrent(resetPause = true) {
 }
 
 function syncPlayer() {
+  if (!selectedTrack) {
+    player.classList.remove("active", "is-playing");
+    songPlay.classList.remove("is-playing");
+    updateMediaSession(null);
+    return;
+  }
+
   player.classList.toggle("is-playing", isPlaying);
   songPlay.classList.toggle("is-playing", isPlaying && selectedTrack.id === songPlay.dataset.trackId);
   playerTitle.textContent = selectedTrack.title;
@@ -1828,7 +1676,7 @@ async function initializeCatalog() {
   }
 
   selectedTrack = tracks[0];
-  allTracks = buildDemoTrackPages(tracks);
+  allTracks = tracks;
   normalizeInitialUrl();
   const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
 
@@ -1858,7 +1706,9 @@ function setActiveNav(sectionId) {
 
   sectionNavLinks.forEach((link) => {
     const href = link.getAttribute("href") || "";
-    const isActive = (targetId === "all-tracks" && href === "/tracks") || (targetId === "licensing" && href === "/licensing");
+    const isTracksLink = href === "/tracks" || href === "index.html?view=tracks";
+    const isLicensingLink = href === "/licensing" || href === "index.html?view=licensing";
+    const isActive = (targetId === "all-tracks" && isTracksLink) || (targetId === "licensing" && isLicensingLink);
     link.classList.toggle("active-line", isActive);
     link.setAttribute("aria-current", isActive ? "page" : "false");
   });
@@ -1927,14 +1777,17 @@ window.addEventListener("resize", updateActiveNav);
 updateActiveNav();
 
 playerToggle.addEventListener("click", () => {
+  if (!selectedTrack) return;
   playTrack(selectedTrack);
 });
 
 playerCover.addEventListener("click", () => {
+  if (!selectedTrack) return;
   openSongPage(selectedTrack);
 });
 
 playerDownload.addEventListener("click", () => {
+  if (!selectedTrack) return;
   openSongPage(selectedTrack);
 });
 

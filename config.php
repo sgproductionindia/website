@@ -1,7 +1,19 @@
 <?php
 // Central config and optional DB connection
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+$appEnv = getenv('APP_ENV') ?: 'production';
+if (!defined('APP_ENV')) {
+    define('APP_ENV', $appEnv);
+}
+
+if (APP_ENV === 'production') {
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+} else {
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+}
 
 // Root directory (document root) — used for server-safe paths
 $__root = rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/');
