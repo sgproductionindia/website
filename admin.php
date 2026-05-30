@@ -799,8 +799,8 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         $advertising = is_array($settings['advertising'] ?? null) ? $settings['advertising'] : [];
         $uploadedAd = uploadOptionalFile(
             'adMedia',
-            ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'webm', 'mov'],
-            ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'],
+            ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'webm', 'mov', 'm4v'],
+            ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'],
             MAX_AD_BYTES,
             AD_DIR,
             'advertisement-' . date('YmdHis')
@@ -809,7 +809,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
         if ($uploadedAd !== null) {
             $extension = strtolower(pathinfo($uploadedAd, PATHINFO_EXTENSION));
             $advertising['mediaUrl'] = $uploadedAd;
-            $advertising['mediaType'] = in_array($extension, ['mp4', 'webm', 'mov'], true) ? 'video' : 'image';
+            $advertising['mediaType'] = in_array($extension, ['mp4', 'webm', 'mov', 'm4v'], true) ? 'video' : 'image';
         }
 
         $advertising['enabled'] = isset($_POST['adEnabled']);

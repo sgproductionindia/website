@@ -651,8 +651,8 @@ function preloadAdMedia(advertising) {
 
   const preload = document.createElement("link");
   preload.rel = "preload";
-  preload.href = advertising.mediaUrl;
-  preload.as = advertising.mediaType === "video" ? "video" : "image";
+  preload.href = normalizeMediaPath(advertising.mediaUrl);
+  preload.as = adMediaKind(advertising) === "video" ? "video" : "image";
   document.head.append(preload);
 }
 
@@ -832,6 +832,46 @@ function renderGridAdCard() {
   `;
 
   return card;
+}
+
+function adMediaKind(advertising) {
+  const mediaType = String(advertising?.mediaType || "").toLowerCase();
+  const mediaUrl = String(advertising?.mediaUrl || "").toLowerCase().split("?")[0];
+
+  if (mediaType.includes("video") || /\.(mp4|webm|mov|m4v)$/i.test(mediaUrl)) {
+    return "video";
+  }
+
+  return "image";
+}
+
+function videoMimeType(url) {
+  const cleanUrl = String(url || "").toLowerCase().split("?")[0];
+
+  if (cleanUrl.endsWith(".webm")) {
+    return "video/webm";
+  }
+
+  if (cleanUrl.endsWith(".mov")) {
+    return "video/quicktime";
+  }
+
+  return "video/mp4";
+}
+
+function startMutedVideo(media) {
+  if (!media || media.tagName !== "VIDEO") {
+    return;
+  }
+
+  media.load();
+  const playPromise = media.play();
+
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      // Muted autoplay can still be deferred by some browsers; the first frame remains visible.
+    });
+  }
 }
 
 function renderTracks(list, target) {
@@ -1553,7 +1593,9 @@ function revealCreditText(track) {
 
 function renderSongAd(track) {
   const advertising = siteSettings.advertising || {};
-  const enabled = Boolean(advertising.enabled && advertising.mediaUrl);
+  const mediaUrl = normalizeMediaPath(advertising.mediaUrl);
+  const mediaKind = adMediaKind({ ...advertising, mediaUrl });
+  const enabled = Boolean(advertising.enabled && mediaUrl);
   let impressionSent = false;
 
   songPage.classList.toggle("no-ad", !enabled);
@@ -1564,7 +1606,7 @@ function renderSongAd(track) {
     return;
   }
 
-  const media = document.createElement(advertising.mediaType === "video" ? "video" : "img");
+  const media = document.createElement(mediaKind === "video" ? "video" : "img");
   media.className = "song-ad-media";
 
   const markLoaded = () => {
@@ -1583,22 +1625,31 @@ function renderSongAd(track) {
     songAd.replaceChildren();
   };
 
-  if (advertising.mediaType === "video") {
-    media.src = advertising.mediaUrl;
+  if (mediaKind === "video") {
     media.muted = true;
+    media.defaultMuted = true;
+    media.volume = 0;
     media.loop = true;
     media.autoplay = true;
     media.playsInline = true;
     media.preload = "auto";
     media.setAttribute("muted", "");
+    media.setAttribute("autoplay", "");
+    media.setAttribute("loop", "");
     media.setAttribute("playsinline", "");
+    media.setAttribute("webkit-playsinline", "");
     media.setAttribute("disablepictureinpicture", "");
+    media.removeAttribute("controls");
+    media.addEventListener("loadedmetadata", markLoaded, { once: true });
     media.addEventListener("loadeddata", markLoaded, { once: true });
     media.addEventListener("canplay", markLoaded, { once: true });
     media.addEventListener("error", markFailed, { once: true });
-    media.addEventListener("stalled", () => songAd.classList.remove("is-loaded"), { once: true });
+    const source = document.createElement("source");
+    source.src = mediaUrl;
+    source.type = videoMimeType(mediaUrl);
+    media.append(source);
   } else {
-    media.src = advertising.mediaUrl;
+    media.src = mediaUrl;
     media.alt = "Advertisement";
     media.loading = "eager";
     media.decoding = "async";
@@ -1628,10 +1679,12 @@ function renderSongAd(track) {
     });
     link.append(media);
     songAd.append(link);
+    startMutedVideo(media);
     return;
   }
 
   songAd.append(media);
+  startMutedVideo(media);
 }
 
 function queueSongWaveformRender() {

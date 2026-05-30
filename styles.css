@@ -1599,6 +1599,7 @@ body.search-open {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  object-fit: cover;
   opacity: 0;
   transition: opacity 220ms ease;
 }
