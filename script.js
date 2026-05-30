@@ -42,8 +42,9 @@ if (player) {
 }
 
 if (playerCover) {
+  playerCover.textContent = "";
   playerCover.style.backgroundImage = "";
-  playerCover.style.background = "#111";
+  playerCover.style.backgroundColor = "#111";
 }
 
 let selectedTrack = null;
@@ -110,7 +111,7 @@ function showPlayer() {
     return;
   }
 
-  player.style.display = "flex";
+  player.style.display = "grid";
   player.classList.add("is-visible", "active");
 }
 
@@ -192,6 +193,24 @@ function escapeHTML(value) {
   })[char]);
 }
 
+function normalizeMediaPath(value) {
+  const path = String(value || "").trim();
+
+  if (!path) {
+    return "";
+  }
+
+  if (/^(https?:|data:|blob:)/i.test(path)) {
+    return path;
+  }
+
+  if (window.location.protocol === "file:" && path.startsWith("/")) {
+    return path.replace(/^\/+/, "");
+  }
+
+  return path;
+}
+
 function normalizeUploadedTrack(track) {
   if (!track || !track.title) {
     return null;
@@ -200,6 +219,7 @@ function normalizeUploadedTrack(track) {
   const id = track.id || slugClass(track.title);
   const rawDownloadUrl = track.downloadUrl || "";
   const previewUrl = track.previewUrl || track.audioUrl || (isLocalAudioPath(rawDownloadUrl) ? rawDownloadUrl : "");
+  const cover = track.cover || track.coverUrl || track.coverPath || track.image || track.imageUrl || track.artwork || track.thumbnail || "";
 
   return {
     id,
@@ -207,8 +227,8 @@ function normalizeUploadedTrack(track) {
     artist: track.artist || "SG Production",
     genre: track.genre || "Soundcheck",
     duration: track.duration || "0:0",
-    cover: track.cover || "assets/cover-1.jpg",
-    coverWebp: track.coverWebp || "",
+    cover: cover || "assets/cover-1.jpg",
+    coverWebp: track.coverWebp || track.cover_webp || track.webp || "",
     previewUrl,
     downloadUrl: rawDownloadUrl,
     creditText: track.creditText || "",
@@ -223,7 +243,65 @@ function normalizeUploadedTrack(track) {
 }
 
 function preferredTrackCover(track) {
-  return track?.coverWebp || track?.cover || "assets/cover-1.jpg";
+  return normalizeMediaPath(track?.coverWebp || track?.cover || "assets/cover-1.jpg");
+}
+
+function playerCoverCandidates(track) {
+  const candidates = [
+    track?.coverWebp,
+    track?.cover,
+    track?.coverUrl,
+    track?.coverPath,
+    track?.image,
+    track?.imageUrl,
+    track?.artwork,
+    track?.thumbnail,
+    "assets/cover-1.jpg"
+  ].map(normalizeMediaPath).filter(Boolean);
+
+  return [...new Set(candidates)];
+}
+
+function setPlayerCover(track) {
+  if (!playerCover) {
+    return;
+  }
+
+  const covers = playerCoverCandidates(track);
+  let image = playerCover.querySelector("img");
+
+  if (!image) {
+    image = document.createElement("img");
+    image.loading = "lazy";
+    image.decoding = "async";
+    playerCover.appendChild(image);
+  }
+
+  image.alt = track?.title ? `${track.title} cover art` : "";
+  image.style.opacity = covers.length ? "1" : "0";
+
+  const applyCover = (index) => {
+    const coverUrl = covers[index] || "";
+
+    if (!coverUrl) {
+      image.removeAttribute("src");
+      image.style.opacity = "0";
+      playerCover.style.backgroundImage = "";
+      return;
+    }
+
+    image.onerror = () => applyCover(index + 1);
+    image.onload = () => {
+      image.style.opacity = "1";
+      playerCover.style.backgroundImage = `url("${coverUrl}")`;
+    };
+
+    image.src = coverUrl;
+    playerCover.style.backgroundImage = `url("${coverUrl}")`;
+  };
+
+  playerCover.style.backgroundColor = "#111";
+  applyCover(0);
 }
 
 function shouldShowNewBadge(track) {
@@ -1121,7 +1199,7 @@ function syncPlayer() {
   songPlay.classList.toggle("is-playing", isPlaying && selectedTrack.id === songPlay.dataset.trackId);
   playerTitle.textContent = selectedTrack.title;
   playerGenre.textContent = `${selectedTrack.artist} · ${selectedTrack.genre}`;
-  playerCover.style.backgroundImage = `url("${preferredTrackCover(selectedTrack)}")`;
+  setPlayerCover(selectedTrack);
   playerCover.setAttribute("aria-label", `Open ${selectedTrack.title}`);
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
