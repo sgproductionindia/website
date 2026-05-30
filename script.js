@@ -9,7 +9,11 @@ const playerCover = document.querySelector("#playerCover");
 const playerTitle = document.querySelector("#playerTitle");
 const playerGenre = document.querySelector("#playerGenre");
 const playerToggle = document.querySelector("#playerToggle");
-const playerDownload = document.querySelector("#playerDownload");
+const playerPrev = document.querySelector("#playerPrev");
+const playerNext = document.querySelector("#playerNext");
+const playerLike = document.querySelector("#playerLike");
+const playerMute = document.querySelector("#playerMute");
+const volumeSlider = document.querySelector("#volumeSlider");
 const progressShell = document.querySelector("#progressShell");
 const progressBar = document.querySelector("#progressBar");
 const progressTime = document.querySelector("#progressTime");
@@ -35,6 +39,26 @@ const searchClose = document.querySelector("#searchClose");
 const playerClose = document.querySelector("#playerClose");
 const NEW_BADGE_DAYS = 7;
 const NEW_BADGE_MS = NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+const LOCAL_PREVIEW_TRACKS = [
+  {
+    id: "banger",
+    title: "Banger",
+    artist: "SG Production",
+    artistId: "sg-production",
+    genre: "Original Mix",
+    duration: "2:07",
+    cover: "assets/cover-1.jpg",
+    previewUrl: "",
+    downloadUrl: "",
+    creditText: "Demo preview track for layout testing.",
+    createdAt: "2026-05-30",
+    isNew: true,
+    isFeatured: true,
+    bpm: 128,
+    tone: 110,
+    wave: "sine"
+  }
+];
 
 if (player) {
   player.style.display = "none";
@@ -60,6 +84,8 @@ let animationFrame = 0;
 let waveformResizeFrame = 0;
 let audioPlayToken = 0;
 let waveformRenderToken = 0;
+let currentVolume = 0.8;
+let isMuted = false;
 const waveformCache = new Map();
 let allTracks = [];
 let allTracksPage = 1;
@@ -111,8 +137,9 @@ function showPlayer() {
     return;
   }
 
-  player.style.display = "grid";
+  player.style.display = "";
   player.classList.add("is-visible", "active");
+  document.body.classList.add("player-visible");
 }
 
 function hidePlayer() {
@@ -122,6 +149,7 @@ function hidePlayer() {
 
   player.style.display = "none";
   player.classList.remove("is-visible", "active", "is-playing");
+  document.body.classList.remove("player-visible");
 }
 
 const PREVIEW_SECONDS = 12;
@@ -304,6 +332,68 @@ function setPlayerCover(track) {
   applyCover(0);
 }
 
+function updatePlayerTitle(title) {
+  if (!playerTitle) {
+    return;
+  }
+
+  const text = String(title || "Select a track");
+  playerTitle.textContent = text;
+  playerTitle.classList.remove("is-scrolling");
+
+  window.setTimeout(() => {
+    const wrapper = playerTitle.parentElement;
+
+    if (!wrapper) {
+      return;
+    }
+
+    if (playerTitle.scrollWidth > wrapper.clientWidth) {
+      playerTitle.textContent = `${text}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0${text}`;
+      playerTitle.classList.add("is-scrolling");
+    }
+  }, 100);
+}
+
+function applyPlayerVolume() {
+  const volume = isMuted ? 0 : currentVolume;
+
+  if (activeAudio) {
+    activeAudio.volume = volume;
+    activeAudio.muted = isMuted;
+    window.currentAudio = activeAudio;
+  }
+
+  if (activeGain) {
+    activeGain.gain.value = 0.82 * volume;
+  }
+
+  playerMute?.classList.toggle("is-muted", isMuted);
+  playerMute?.setAttribute("aria-label", isMuted ? "Unmute" : "Mute");
+}
+
+function updatePlayerLike(track) {
+  if (!playerLike) {
+    return;
+  }
+
+  const liked = Boolean(track?.id && localStorage.getItem(`liked_${track.id}`) === "true");
+  playerLike.classList.toggle("is-liked", liked);
+  playerLike.setAttribute("aria-pressed", String(liked));
+}
+
+function playTrackByOffset(offset) {
+  if (!tracks.length) {
+    return;
+  }
+
+  const currentIndex = selectedTrack ? tracks.findIndex((track) => track.id === selectedTrack.id) : -1;
+  const nextIndex = currentIndex >= 0
+    ? (currentIndex + offset + tracks.length) % tracks.length
+    : offset > 0 ? 0 : tracks.length - 1;
+  playTrack(tracks[nextIndex]);
+}
+
 function shouldShowNewBadge(track) {
   if (!track?.isNew) {
     return false;
@@ -324,7 +414,7 @@ async function loadUploadedTracks() {
     const response = await fetch("data/tracks.json", { cache: "no-store" });
 
     if (!response.ok) {
-      return [];
+      return window.location.protocol === "file:" ? LOCAL_PREVIEW_TRACKS.map(normalizeUploadedTrack).filter(Boolean) : [];
     }
 
     const data = await response.json();
@@ -336,7 +426,7 @@ async function loadUploadedTracks() {
 
     return uploadedTracks.map(normalizeUploadedTrack).filter(Boolean);
   } catch {
-    return [];
+    return window.location.protocol === "file:" ? LOCAL_PREVIEW_TRACKS.map(normalizeUploadedTrack).filter(Boolean) : [];
   }
 }
 
@@ -1049,7 +1139,10 @@ async function playTrack(track) {
     const audio = new Audio(previewUrl);
     audio.preload = "auto";
     audio.loop = false;
+    audio.volume = isMuted ? 0 : currentVolume;
+    audio.muted = isMuted;
     activeAudio = audio;
+    window.currentAudio = audio;
 
     const waitForMetadata = () => new Promise((resolve) => {
       if (Number.isFinite(audio.duration) && audio.duration > 0) {
@@ -1070,6 +1163,7 @@ async function playTrack(track) {
       isPlaying = false;
       pausedAt = endedAt;
       activeAudio = null;
+      window.currentAudio = null;
       updatePlayerTimer(endedAt, true);
       playingTrackId = null;
       syncPlayer();
@@ -1118,6 +1212,7 @@ async function playTrack(track) {
       }
       isPlaying = false;
       activeAudio = null;
+      window.currentAudio = null;
       syncPlayer();
       syncPlayingCards();
     }
@@ -1134,7 +1229,7 @@ async function playTrack(track) {
   const gain = audioContext.createGain();
   source.buffer = createBuffer(track);
   source.loop = false;
-  gain.gain.value = 0.82;
+  gain.gain.value = 0.82 * (isMuted ? 0 : currentVolume);
   source.connect(gain);
   gain.connect(audioContext.destination);
   source.start(0, resumeOffset);
@@ -1171,6 +1266,7 @@ function pauseCurrent() {
     pausedAt = audio.currentTime;
     audio.pause();
     activeAudio = null;
+    window.currentAudio = null;
     isPlaying = false;
     cancelAnimationFrame(animationFrame);
     syncPlayer();
@@ -1218,6 +1314,7 @@ function stopCurrent(resetPause = true) {
   activeGain = null;
   isPlaying = false;
   playingTrackId = null;
+  window.currentAudio = null;
   cancelAnimationFrame(animationFrame);
 
   if (resetPause) {
@@ -1236,13 +1333,16 @@ function syncPlayer() {
   }
 
   player.classList.toggle("is-playing", isPlaying);
+  playerToggle.classList.toggle("is-playing", isPlaying);
   songPlay.classList.toggle("is-playing", isPlaying && selectedTrack.id === songPlay.dataset.trackId);
-  playerTitle.textContent = selectedTrack.title;
+  updatePlayerTitle(selectedTrack.title);
   playerGenre.textContent = `${selectedTrack.artist} · ${selectedTrack.genre}`;
   setPlayerCover(selectedTrack);
   playerCover.setAttribute("aria-label", `Open ${selectedTrack.title}`);
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
+  updatePlayerLike(selectedTrack);
+  applyPlayerVolume();
   updateMediaSession(selectedTrack);
   updatePlayerTimer(pausedAt);
 }
@@ -1282,7 +1382,7 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
   progressBar.style.width = `${percent}%`;
-  progressTime.textContent = `${formatTimer(scaledElapsed)}/${formatTimer(totalSeconds)}`;
+  progressTime.textContent = `${formatTimer(scaledElapsed)} / ${formatTimer(totalSeconds)}`;
   progressShell.setAttribute("aria-valuenow", String(Math.round(percent)));
   progressShell.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
   if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession && Number.isFinite(totalSeconds) && totalSeconds > 0) {
@@ -1847,6 +1947,12 @@ async function initializeCatalog() {
   }
 
   renderAllTracksPage(1);
+
+  if (window.location.protocol === "file:" && tracks.length === 1 && tracks[0]?.id === "banger") {
+    selectedTrack = tracks[0];
+    showPlayer();
+  }
+
   syncPlayer();
   setupMediaSessionControls();
   openSongFromLocation();
@@ -1934,31 +2040,59 @@ window.addEventListener("scroll", updateActiveNav, { passive: true });
 window.addEventListener("resize", updateActiveNav);
 updateActiveNav();
 
-playerToggle.addEventListener("click", () => {
+playerToggle?.addEventListener("click", () => {
   if (!selectedTrack) return;
   playTrack(selectedTrack);
 });
 
-playerCover.addEventListener("click", () => {
+playerPrev?.addEventListener("click", () => {
+  playTrackByOffset(-1);
+});
+
+playerNext?.addEventListener("click", () => {
+  playTrackByOffset(1);
+});
+
+playerLike?.addEventListener("click", () => {
+  if (!selectedTrack?.id) return;
+
+  const key = `liked_${selectedTrack.id}`;
+
+  if (localStorage.getItem(key) === "true") {
+    localStorage.removeItem(key);
+  } else {
+    localStorage.setItem(key, "true");
+  }
+
+  updatePlayerLike(selectedTrack);
+});
+
+volumeSlider?.addEventListener("input", () => {
+  currentVolume = Math.max(0, Math.min(1, Number(volumeSlider.value) / 100));
+  isMuted = currentVolume === 0;
+  applyPlayerVolume();
+});
+
+playerMute?.addEventListener("click", () => {
+  isMuted = !isMuted;
+  applyPlayerVolume();
+});
+
+playerCover?.addEventListener("click", () => {
   if (!selectedTrack) return;
   openSongPage(selectedTrack);
 });
 
-playerDownload.addEventListener("click", () => {
-  if (!selectedTrack) return;
-  openSongPage(selectedTrack);
-});
-
-playerClose.addEventListener("click", () => {
+playerClose?.addEventListener("click", () => {
   stopCurrent(true);
   hidePlayer();
   syncPlayer();
   syncPlayingCards();
 });
 
-progressShell.addEventListener("pointerdown", startPlayerSeek);
-progressShell.addEventListener("touchstart", startPlayerSeek, { passive: false });
-progressShell.addEventListener("keydown", (event) => {
+progressShell?.addEventListener("pointerdown", startPlayerSeek);
+progressShell?.addEventListener("touchstart", startPlayerSeek, { passive: false });
+progressShell?.addEventListener("keydown", (event) => {
   const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
 
   if (!keys.includes(event.key)) {

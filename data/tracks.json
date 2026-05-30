@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "banger",
+    "title": "Banger",
+    "artist": "SG Production",
+    "artistId": "sg-production",
+    "genre": "Original Mix",
+    "duration": "2:07",
+    "cover": "assets/cover-1.jpg",
+    "previewUrl": "",
+    "downloadUrl": "",
+    "creditText": "Demo preview track for layout testing.",
+    "createdAt": "2026-05-30",
+    "isNew": true,
+    "isFeatured": true,
+    "bpm": 128,
+    "tone": 110,
+    "wave": "sine"
+  }
+]
