@@ -1,6 +1,60 @@
 (function() {
   "use strict";
 
+  function isExternalHttpLink(link) {
+    var href = link.getAttribute("href");
+    if (!href || href.startsWith("#")) return false;
+    if (href.startsWith("mailto:") || href.startsWith("tel:") || href.startsWith("javascript:")) return false;
+    if (link.hasAttribute("download")) return false;
+
+    try {
+      var url = new URL(href, window.location.href);
+      return (url.protocol === "http:" || url.protocol === "https:") && url.origin !== window.location.origin;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function prepareExternalLink(link) {
+    if (!isExternalHttpLink(link)) return;
+    link.target = "_blank";
+
+    var rel = (link.getAttribute("rel") || "").split(/\s+/).filter(Boolean);
+    ["noopener", "noreferrer"].forEach(function(value) {
+      if (rel.indexOf(value) === -1) rel.push(value);
+    });
+    link.setAttribute("rel", rel.join(" "));
+  }
+
+  function prepareExternalLinks(root) {
+    (root || document).querySelectorAll("a[href]").forEach(prepareExternalLink);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() {
+      prepareExternalLinks(document);
+    });
+  } else {
+    prepareExternalLinks(document);
+  }
+
+  if ("MutationObserver" in window) {
+    new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType !== 1) return;
+          if (node.matches && node.matches("a[href]")) prepareExternalLink(node);
+          if (node.querySelectorAll) prepareExternalLinks(node);
+        });
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  document.addEventListener("click", function(event) {
+    var link = event.target.closest("a[href]");
+    if (link) prepareExternalLink(link);
+  }, true);
+
   document.addEventListener("click", function(event) {
     if (event.defaultPrevented) return;
 

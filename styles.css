@@ -1838,7 +1838,7 @@ body.search-open {
   bottom: 18px;
   z-index: 30;
   min-height: 70px;
-  display: grid;
+  display: none !important;
   grid-template-columns: minmax(200px, 0.8fr) minmax(280px, 1.5fr) auto auto;
   align-items: center;
   gap: 22px;
@@ -1850,6 +1850,10 @@ body.search-open {
   backdrop-filter: blur(14px);
   transform: translateY(calc(100% + 28px));
   transition: transform 220ms ease;
+}
+
+.player.is-visible {
+  display: grid !important;
 }
 
 .player.active {
@@ -1870,7 +1874,7 @@ body.search-open {
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: center / cover no-repeat url("assets/cover-1.jpg");
+  background: #111 center / cover no-repeat;
   cursor: pointer;
   flex: 0 0 auto;
   appearance: none;
@@ -3157,6 +3161,14 @@ body.search-open {
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   box-shadow: none;
+}
+
+.player {
+  display: none !important;
+}
+
+.player.is-visible {
+  display: grid !important;
 }
 
 .progress-shell,

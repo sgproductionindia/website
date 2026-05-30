@@ -1,11 +1,84 @@
-<?php
-$pageTitle = 'About SG Production | Bass Music, Halgi Beats & DJ Remixes from India';
-$pageDescription = 'SG Production is an independent music project from India specializing in DJ soundcheck music, heavy bass drops, Marathi Halgi beats, subwoofer test tracks, and high-energy DJ remixes. Direct downloads for DJs, bassheads, car audio lovers, and music enthusiasts.';
-$pageKeywords = 'SG Production, DJ soundcheck, bass music, Halgi beats, Marathi DJ remix, Hindi DJ remix, subwoofer test, bass test, car speaker test, DJ remix India, Halgi bass mix, soundcheck 2026, bass drops, DJ music India';
-include 'header.php';
-?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XLSFX2N5MS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XLSFX2N5MS');
+    </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#000000">
+    <title>About SG Production | Bass Music, Halgi Beats & DJ Remixes from India</title>
+    <script>
+      (function() {
+        var base = document.createElement("base");
+        base.href = /^https?:$/.test(window.location.protocol) ? "/" : window.location.href.replace(/[^/]*$/, "");
+        document.head.appendChild(base);
+      })();
+    </script>
+    <meta
+      name="description"
+      content="SG Production is an independent music project from India specializing in DJ soundcheck music, heavy bass drops, Marathi Halgi beats, subwoofer test tracks, and high-energy DJ remixes. Direct downloads for DJs, bassheads, car audio lovers, and music enthusiasts."
+    >
+    <meta property="og:title" content="About SG Production | Bass Music, Halgi Beats & DJ Remixes from India">
+    <meta property="og:description" content="Your ultimate destination for powerful soundcheck music, heavy bass drops, Halgi energy, and DJ remixes from India.">
+    <meta property="og:image" content="https://sgproduction.music/assets/cover-1.jpg">
+    <meta property="og:url" content="https://sgproduction.music/about">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About SG Production | Bass Music, Halgi Beats & DJ Remixes from India">
+    <meta name="twitter:description" content="Your ultimate destination for powerful soundcheck music, heavy bass drops, Halgi energy, and DJ remixes from India.">
+    <meta name="twitter:image" content="https://sgproduction.music/assets/cover-1.jpg">
+    <link rel="canonical" href="https://sgproduction.music/about">
+    <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/sg-logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.min.css?v=20260528-logo-size">
+    <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
+    <script src="transitions.min.js?v=20260530-external-links" defer></script>
+    <script src="page-search.js?v=20260528-page-search" defer></script>
+    <script>
+      // Keep clean live URLs, but make local file:// previews navigable.
+      if (window.location.protocol === 'file:' || /^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname)) {
+        function localPreviewHref(href) {
+          if (!href) return '';
+          if (href === '/') return 'index.html';
+          if (href === '/tracks') return 'index.html?view=tracks';
+          if (href === '/licensing') return 'index.html?view=licensing';
+          if (href === '/about') return 'about-preview.html';
+          if (href === '/contact') return 'contact-preview.html';
+          if (href === '/artists') return 'artists.html';
+          if (href === 'usage-policy.php') return 'usage-policy-preview.html';
+          if (href.startsWith('/song/')) return 'index.html?song=' + encodeURIComponent(href.replace(/^\/song\//, ''));
+          if (href.startsWith('/artist/')) return 'artists.html?artist=' + encodeURIComponent(href.replace(/^\/artist\//, ''));
+          return '';
+        }
 
-<style>
+        document.addEventListener('click', function(event) {
+          var link = event.target.closest && event.target.closest('a[href]');
+          if (!link) return;
+          var nextHref = localPreviewHref(link.getAttribute('href'));
+          if (!nextHref) return;
+          event.preventDefault();
+          window.location.href = nextHref;
+        }, true);
+
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('a[href]').forEach(function(link) {
+            var nextHref = localPreviewHref(link.getAttribute('href'));
+            if (nextHref) link.setAttribute('href', nextHref);
+          });
+        });
+      }
+    </script>
+  <style>
 .about-hero{padding:56px 48px 48px;border-bottom:1px solid #222}
 .hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 .hero-tag{font-size:11px;color:#666;background:#111;border:1px solid #2a2a2a;padding:4px 12px;font-weight:500}
@@ -38,124 +111,290 @@ include 'header.php';
 @media(max-width:900px){.cards-grid{grid-template-columns:1fr}.expect-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.about-hero{padding:32px 20px}.about-section{padding:32px 20px}.tagline-band{padding:40px 20px}.tagline-band p{font-size:18px}}
 </style>
+</head>
+  <body>
+    <header class="mobile-topbar" aria-label="Mobile navigation">
+      <a class="mobile-brand" href="/" aria-label="SG Production home">
+        <span class="nav-logo" aria-hidden="true">
+          <svg class="sg-logo" viewBox="0 0 924.99 924.99" aria-hidden="true">
+            <path d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"></path>
+          </svg>
+        </span>
+        <span>SG Production</span>
+      </a>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </header>
 
-<main class="about-page">
-  <section class="about-hero">
-    <h1>About SG Production</h1>
-    <p>Your ultimate destination for powerful soundcheck music, heavy bass drops, Halgi energy, and DJ remixes from India.</p>
-    <div class="hero-tags" aria-label="Music categories">
-      <span class="hero-tag">DJ Soundcheck</span>
-      <span class="hero-tag">Bass Music</span>
-      <span class="hero-tag">Halgi Beats</span>
-      <span class="hero-tag">Marathi Remix</span>
-      <span class="hero-tag">Hindi DJ Remix</span>
-      <span class="hero-tag">Subwoofer Test</span>
-      <span class="hero-tag">India</span>
-    </div>
-  </section>
+    <div class="app-shell">
+      <nav class="side-nav" aria-label="Primary">
+        <div class="nav-section nav-main">
+          <a class="nav-brand" href="/" aria-label="SG Production home" title="Home">
+            <span class="nav-logo" aria-hidden="true">
+              <svg class="sg-logo" viewBox="0 0 924.99 924.99" aria-hidden="true">
+                <path d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"></path>
+              </svg>
+            </span>
+            <span class="nav-label brand-label">SG Production</span>
+          </a>
 
-  <section class="about-section">
-    <div class="section-eyebrow">Who We Are</div>
-    <p>SG Production is an independent music production project from India specializing in high-energy DJ music, bass-heavy soundcheck tracks, Marathi Halgi beats, and premium DJ remixes.</p>
-    <p>We create music for DJs, car audio lovers, bassheads, and music enthusiasts — tracks designed to shake your system and elevate your vibe. No barriers. No paywalls. Just direct downloads.</p>
-  </section>
-
-  <section class="about-section">
-    <div class="section-eyebrow">What We Make</div>
-    <div class="cards-grid">
-      <article class="card">
-        <div class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+          <button class="nav-link" id="focusSearch" type="button" aria-label="Search tracks" title="Search">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Search</span>
+          </button>
+          <a class="nav-link" href="/tracks" data-section-nav aria-label="Music library" title="Music Library">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </span>
+            <span class="nav-label">Music Library</span>
+          </a>
+          <a class="nav-link" href="/artists" aria-label="Artists" title="Artists">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9.5" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Artists</span>
+          </a>
         </div>
-        <div class="card-title">Soundcheck &amp; Bass Music</div>
-        <div class="card-desc">Premium bass mixes, DJ soundcheck tracks, car speaker bass tests, subwoofer test tones, and low-frequency test tracks. Perfect for tuning DJ setups, home theaters, car subwoofers, and studio monitors.</div>
-      </article>
 
-      <article class="card">
-        <div class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+        <div class="nav-spacer" aria-hidden="true"></div>
+
+        <div class="nav-section nav-utility">
+          <a class="nav-link" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 2v6h6"></path>
+                <path d="M16 13H8"></path>
+                <path d="M16 17H8"></path>
+                <path d="M10 9H8"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Usage Policy</span>
+          </a>
+          <a class="nav-link active-line" href="/about" aria-label="About SG Production" title="About">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+            </span>
+            <span class="nav-label">About</span>
+          </a>
+          <a class="nav-link" href="/contact" aria-label="Contact SG Production" title="Contact">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.91.33 1.8.63 2.65a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.43-1.2a2 2 0 0 1 2.11-.45c.85.3 1.74.51 2.65.63A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Contact</span>
+          </a>
         </div>
-        <div class="card-title">Halgi &amp; DJ Remixes</div>
-        <div class="card-desc">Festival Halgi beats, Marathi Halgi bass mix, Hindi DJ remixes, mashups, clean DJ edits, and club-ready remixes across multiple styles.</div>
-      </article>
 
-      <article class="card">
-        <div class="card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        <div class="nav-section nav-social">
+          <a class="nav-link" href="https://www.youtube.com/@sgproductionindia" aria-label="YouTube" title="YouTube">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M22.54 6.42a2.8 2.8 0 0 0-1.97-1.98C18.83 4 12 4 12 4s-6.83 0-8.57.44a2.8 2.8 0 0 0-1.97 1.98A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.8 2.8 0 0 0 1.97 1.98C5.17 20 12 20 12 20s6.83 0 8.57-.44a2.8 2.8 0 0 0 1.97-1.98A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"></path>
+                <path d="m10 15 5-3-5-3z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">YouTube</span>
+          </a>
+          <a class="nav-link" href="https://music.apple.com/in/artist/sg-production/1580814477" aria-label="Apple Music" title="Apple Music">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </span>
+            <span class="nav-label">Apple Music</span>
+          </a>
+          <a class="nav-link" href="https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb?autoplay=true" aria-label="Spotify" title="Spotify">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M7.5 10.5c3-1 6.2-.7 9.3.8"></path>
+                <path d="M8.2 13.2c2.4-.7 5-.5 7.5.7"></path>
+                <path d="M9 15.7c1.8-.5 3.8-.3 5.5.5"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Spotify</span>
+          </a>
+          <a class="nav-link" href="https://www.instagram.com/sgproduction.music" aria-label="Instagram" title="Instagram">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M17.5 6.5h.01"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Instagram</span>
+          </a>
         </div>
-        <div class="card-title">Direct Downloads</div>
-        <div class="card-desc">Every track available for direct download. High-quality audio for DJs, car audio setups, home theaters, and music lovers who want to own what they love.</div>
-      </article>
+      </nav>
+
+      <main class="page" id="top">
+        <section class="about-page">
+          <section class="about-hero">
+            <h1>About SG Production</h1>
+            <p>Your ultimate destination for powerful soundcheck music, heavy bass drops, Halgi energy, and DJ remixes from India.</p>
+            <div class="hero-tags" aria-label="Music categories">
+              <span class="hero-tag">DJ Soundcheck</span>
+              <span class="hero-tag">Bass Music</span>
+              <span class="hero-tag">Halgi Beats</span>
+              <span class="hero-tag">Marathi Remix</span>
+              <span class="hero-tag">Hindi DJ Remix</span>
+              <span class="hero-tag">Subwoofer Test</span>
+              <span class="hero-tag">India</span>
+            </div>
+          </section>
+        
+          <section class="about-section">
+            <div class="section-eyebrow">Who We Are</div>
+            <p>SG Production is an independent music production project from India specializing in high-energy DJ music, bass-heavy soundcheck tracks, Marathi Halgi beats, and premium DJ remixes.</p>
+            <p>We create music for DJs, car audio lovers, bassheads, and music enthusiasts — tracks designed to shake your system and elevate your vibe. No barriers. No paywalls. Just direct downloads.</p>
+          </section>
+        
+          <section class="about-section">
+            <div class="section-eyebrow">What We Make</div>
+            <div class="cards-grid">
+              <article class="card">
+                <div class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                </div>
+                <div class="card-title">Soundcheck &amp; Bass Music</div>
+                <div class="card-desc">Premium bass mixes, DJ soundcheck tracks, car speaker bass tests, subwoofer test tones, and low-frequency test tracks. Perfect for tuning DJ setups, home theaters, car subwoofers, and studio monitors.</div>
+              </article>
+        
+              <article class="card">
+                <div class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                </div>
+                <div class="card-title">Halgi &amp; DJ Remixes</div>
+                <div class="card-desc">Festival Halgi beats, Marathi Halgi bass mix, Hindi DJ remixes, mashups, clean DJ edits, and club-ready remixes across multiple styles.</div>
+              </article>
+        
+              <article class="card">
+                <div class="card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+                </div>
+                <div class="card-title">Direct Downloads</div>
+                <div class="card-desc">Every track available for direct download. High-quality audio for DJs, car audio setups, home theaters, and music lovers who want to own what they love.</div>
+              </article>
+            </div>
+          </section>
+        
+          <section class="about-section">
+            <div class="section-eyebrow">What You Can Expect</div>
+            <div class="expect-grid">
+              <div class="expect-item">Halgi Bass Mix sessions</div>
+              <div class="expect-item">Soundcheck 2025 &amp; 2026 tracks</div>
+              <div class="expect-item">Marathi Halgi beats</div>
+              <div class="expect-item">Low-frequency subwoofer test tracks</div>
+              <div class="expect-item">Clean DJ edits and mashups</div>
+              <div class="expect-item">Club-ready remixes</div>
+              <div class="expect-item">Heavy drops and hard kicks</div>
+              <div class="expect-item">Weekly new uploads</div>
+            </div>
+          </section>
+        
+          <section class="about-section">
+            <div class="section-eyebrow">Made For</div>
+            <div class="chips-row">
+              <span class="chip">DJs &amp; Performers</span>
+              <span class="chip">Car Audio &amp; Bassheads</span>
+              <span class="chip">Home Theater Enthusiasts</span>
+              <span class="chip">Music Lovers &amp; Fans</span>
+            </div>
+          </section>
+        
+          <section class="about-section">
+            <div class="section-eyebrow">Find Us On</div>
+            <div class="platforms-list">
+              <a class="platform-row" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noopener">
+                <span class="platform-left">
+                  <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-2C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 2A29.94 29.94 0 0 0 1 12a29.94 29.94 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 2C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-2A29.94 29.94 0 0 0 23 12a29.94 29.94 0 0 0-.46-5.58z"></path><path d="m10 15 5-3-5-3z"></path></svg></span>
+                  <span><span class="platform-name">YouTube</span><span class="platform-label">Subscribe for weekly uploads</span></span>
+                </span>
+                <span class="platform-arrow">↗</span>
+              </a>
+        
+              <a class="platform-row" href="https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb" target="_blank" rel="noopener">
+                <span class="platform-left">
+                  <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 11.2c2.6-.7 5.8-.4 8 1"></path><path d="M8.5 14c2.1-.5 4.7-.3 6.5.8"></path><path d="M9 16.5c1.6-.3 3.3-.2 4.7.5"></path></svg></span>
+                  <span><span class="platform-name">Spotify</span><span class="platform-label">Stream on Spotify</span></span>
+                </span>
+                <span class="platform-arrow">↗</span>
+              </a>
+        
+              <a class="platform-row" href="https://music.apple.com/in/artist/sg-production/1580814477" target="_blank" rel="noopener">
+                <span class="platform-left">
+                  <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>
+                  <span><span class="platform-name">Apple Music</span><span class="platform-label">Listen on Apple Music</span></span>
+                </span>
+                <span class="platform-arrow">↗</span>
+              </a>
+        
+              <a class="platform-row" href="https://www.instagram.com/sgproduction.music" target="_blank" rel="noopener">
+                <span class="platform-left">
+                  <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><path d="M17.5 6.5h.01"></path></svg></span>
+                  <span><span class="platform-name">Instagram</span><span class="platform-label">Follow for updates</span></span>
+                </span>
+                <span class="platform-arrow">↗</span>
+              </a>
+            </div>
+          </section>
+        
+          <section class="tagline-band">
+            <p>"Feel the bass. Test the power. Turn up with SG Production. 🎧🔥"</p>
+            <div class="sub">Built for loud systems, clean downloads, and independent music lovers.</div>
+          </section>
+        </section>
+
+        <footer class="footer" id="contact">
+          <p>© 2026 SG Production. All rights reserved.</p>
+        </footer>
+      </main>
     </div>
-  </section>
 
-  <section class="about-section">
-    <div class="section-eyebrow">What You Can Expect</div>
-    <div class="expect-grid">
-      <div class="expect-item">Halgi Bass Mix sessions</div>
-      <div class="expect-item">Soundcheck 2025 &amp; 2026 tracks</div>
-      <div class="expect-item">Marathi Halgi beats</div>
-      <div class="expect-item">Low-frequency subwoofer test tracks</div>
-      <div class="expect-item">Clean DJ edits and mashups</div>
-      <div class="expect-item">Club-ready remixes</div>
-      <div class="expect-item">Heavy drops and hard kicks</div>
-      <div class="expect-item">Weekly new uploads</div>
-    </div>
-  </section>
+    <script>
+      (function() {
+        var toggle = document.getElementById('mobileMenuToggle');
+        if (toggle) {
+          toggle.addEventListener('click', function() {
+            var open = !document.body.classList.contains('menu-open');
+            document.body.classList.toggle('menu-open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+            toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+          });
+        }
 
-  <section class="about-section">
-    <div class="section-eyebrow">Made For</div>
-    <div class="chips-row">
-      <span class="chip">DJs &amp; Performers</span>
-      <span class="chip">Car Audio &amp; Bassheads</span>
-      <span class="chip">Home Theater Enthusiasts</span>
-      <span class="chip">Music Lovers &amp; Fans</span>
-    </div>
-  </section>
-
-  <section class="about-section">
-    <div class="section-eyebrow">Find Us On</div>
-    <div class="platforms-list">
-      <a class="platform-row" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noopener">
-        <span class="platform-left">
-          <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-2C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 2A29.94 29.94 0 0 0 1 12a29.94 29.94 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 2C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-2A29.94 29.94 0 0 0 23 12a29.94 29.94 0 0 0-.46-5.58z"></path><path d="m10 15 5-3-5-3z"></path></svg></span>
-          <span><span class="platform-name">YouTube</span><span class="platform-label">Subscribe for weekly uploads</span></span>
-        </span>
-        <span class="platform-arrow">↗</span>
-      </a>
-
-      <a class="platform-row" href="https://open.spotify.com/artist/2FeM1GdzeY1ZnT8rJLYKHb" target="_blank" rel="noopener">
-        <span class="platform-left">
-          <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 11.2c2.6-.7 5.8-.4 8 1"></path><path d="M8.5 14c2.1-.5 4.7-.3 6.5.8"></path><path d="M9 16.5c1.6-.3 3.3-.2 4.7.5"></path></svg></span>
-          <span><span class="platform-name">Spotify</span><span class="platform-label">Stream on Spotify</span></span>
-        </span>
-        <span class="platform-arrow">↗</span>
-      </a>
-
-      <a class="platform-row" href="https://music.apple.com/in/artist/sg-production/1580814477" target="_blank" rel="noopener">
-        <span class="platform-left">
-          <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>
-          <span><span class="platform-name">Apple Music</span><span class="platform-label">Listen on Apple Music</span></span>
-        </span>
-        <span class="platform-arrow">↗</span>
-      </a>
-
-      <a class="platform-row" href="https://www.instagram.com/sgproduction.music" target="_blank" rel="noopener">
-        <span class="platform-left">
-          <span class="platform-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><path d="M17.5 6.5h.01"></path></svg></span>
-          <span><span class="platform-name">Instagram</span><span class="platform-label">Follow for updates</span></span>
-        </span>
-        <span class="platform-arrow">↗</span>
-      </a>
-    </div>
-  </section>
-
-  <section class="tagline-band">
-    <p>"Feel the bass. Test the power. Turn up with SG Production. 🎧🔥"</p>
-    <div class="sub">Built for loud systems, clean downloads, and independent music lovers.</div>
-  </section>
-</main>
-
-<script src="page-search.js?v=20260528-page-search" defer></script>
-
-<?php include 'footer.php'; ?>
+        var page = location.pathname.split('/').pop().replace('.php', '').replace('.html', '') || 'about';
+        fetch('api/track-visit.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'page=' + encodeURIComponent(page)
+        }).catch(function() {});
+      })();
+    </script>
+  </body>
+</html>

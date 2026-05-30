@@ -42,7 +42,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.min.css?v=20260528-logo-size">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
-    <script src="transitions.min.js?v=20260524-prod" defer></script>
+    <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="page-search.js?v=20260528-page-search" defer></script>
     <script>
       // Keep clean live URLs, but make local file:// previews navigable.

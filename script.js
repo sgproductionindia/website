@@ -36,6 +36,16 @@ const playerClose = document.querySelector("#playerClose");
 const NEW_BADGE_DAYS = 7;
 const NEW_BADGE_MS = NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
 
+if (player) {
+  player.style.display = "none";
+  player.classList.remove("is-visible");
+}
+
+if (playerCover) {
+  playerCover.style.backgroundImage = "";
+  playerCover.style.background = "#111";
+}
+
 let selectedTrack = null;
 let audioContext = null;
 let activeSource = null;
@@ -94,6 +104,24 @@ let siteSettings = {
     }
   }
 };
+
+function showPlayer() {
+  if (!player || tracks.length === 0) {
+    return;
+  }
+
+  player.style.display = "flex";
+  player.classList.add("is-visible", "active");
+}
+
+function hidePlayer() {
+  if (!player) {
+    return;
+  }
+
+  player.style.display = "none";
+  player.classList.remove("is-visible", "active", "is-playing");
+}
 
 const PREVIEW_SECONDS = 12;
 let allTracksPerPage = 15;
@@ -932,8 +960,8 @@ async function playTrack(track) {
 
     isPlaying = true;
     playingTrackId = track.id;
+    showPlayer();
     syncPlayer();
-    player.classList.add("active");
     syncPlayingCards();
     updatePlayerTimer(resumeOffset, true);
 
@@ -1014,7 +1042,7 @@ async function playTrack(track) {
   };
 
   syncPlayer();
-  player.classList.add("active");
+  showPlayer();
   syncPlayingCards();
   updateProgress();
 }
@@ -1083,7 +1111,7 @@ function stopCurrent(resetPause = true) {
 
 function syncPlayer() {
   if (!selectedTrack) {
-    player.classList.remove("active", "is-playing");
+    hidePlayer();
     songPlay.classList.remove("is-playing");
     updateMediaSession(null);
     return;
@@ -1675,7 +1703,6 @@ async function initializeCatalog() {
     tracks.unshift(...uploadedTracks);
   }
 
-  selectedTrack = tracks[0];
   allTracks = tracks;
   normalizeInitialUrl();
   const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
@@ -1793,7 +1820,7 @@ playerDownload.addEventListener("click", () => {
 
 playerClose.addEventListener("click", () => {
   stopCurrent(true);
-  player.classList.remove("active");
+  hidePlayer();
   syncPlayer();
   syncPlayingCards();
 });
