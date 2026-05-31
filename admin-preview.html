@@ -3499,9 +3499,9 @@
               </label>
               <div class="form-field full">
                 <label for="uploadPreviewFile">Preview Song File</label>
-                <input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" style="display:none">
+                <input id="uploadPreviewFile" type="file" name="audio" accept=".mp3,audio/mpeg" style="display:none">
                 <button type="button" class="file-trigger" onclick="document.getElementById('uploadPreviewFile').click(); event.stopPropagation();" id="uploadPreviewFileBtn">↑ Choose Audio File</button>
-                <span class="form-help">Accepts MP3/WAV. Duration will be detected from this file.</span>
+                <span class="form-help">Accepts MP3 only. Duration will be detected from this file.</span>
                 <div class="file-meta" id="previewFileMeta">
                   <span id="previewFileName">No file selected</span>
                   <span id="previewFileSize">0 MB</span>
@@ -3742,7 +3742,7 @@
               <label class="form-field"><span>BPM</span><input type="number" value="124"></label>
               <label class="form-field"><span>Wave Style</span><select><option>Sine</option><option>Triangle</option><option>Sawtooth</option><option>Square</option></select></label>
               <div class="form-field"><label>Cover Image</label><input id="drawerCoverInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display:none"><button type="button" class="file-trigger" onclick="document.getElementById('drawerCoverInput').click(); event.stopPropagation();">↑ Choose Cover</button></div>
-              <div class="form-field"><label>Preview MP3/WAV</label><input id="drawerAudioInput" type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" style="display:none"><button type="button" class="file-trigger" onclick="document.getElementById('drawerAudioInput').click(); event.stopPropagation();">↑ Choose Audio</button></div>
+              <div class="form-field"><label>Preview MP3</label><input id="drawerAudioInput" type="file" accept=".mp3,audio/mpeg" style="display:none"><button type="button" class="file-trigger" onclick="document.getElementById('drawerAudioInput').click(); event.stopPropagation();">↑ Choose Audio</button></div>
               <label class="form-field full"><span>WAV Download URL</span><input type="url" placeholder="Direct WAV download URL"></label>
               <label class="form-field full"><span>SEO Song URL</span><input id="editSongSlug" type="text"></label>
             </div>
@@ -4667,6 +4667,14 @@
   uploadPreviewFile?.addEventListener('change', () => {
     const file = uploadPreviewFile.files && uploadPreviewFile.files[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.mp3')) {
+      uploadPreviewFile.value = '';
+      previewFileMeta?.classList.add('is-visible');
+      if (previewFileName) previewFileName.textContent = 'Please choose an MP3 file';
+      if (previewFileSize) previewFileSize.textContent = 'WAV is not accepted';
+      showToast('Preview song must be an MP3 file');
+      return;
+    }
     previewFileMeta?.classList.add('is-visible');
     if (previewFileName) previewFileName.textContent = file.name;
     if (previewFileSize) previewFileSize.textContent = formatFileSize(file.size);

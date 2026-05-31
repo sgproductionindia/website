@@ -40,7 +40,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.min.css?v=20260531-player-seek-capture">
+    <link rel="stylesheet" href="styles.min.css?v=20260531-beta-popup">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script>
@@ -63,6 +63,10 @@
         document.addEventListener('click', function(event) {
           var link = event.target.closest && event.target.closest('a[href]');
           if (!link) return;
+          if (window.sgShellNavigate && window.sgShellNavigate(link.getAttribute('href'))) {
+            event.preventDefault();
+            return;
+          }
           var nextHref = localPreviewHref(link.getAttribute('href'));
           if (!nextHref) return;
           event.preventDefault();
@@ -397,7 +401,7 @@
       </div>
     </aside>
 
-    <script src="script.min.js?v=20260531-player-seek-capture"></script>
+    <script src="script.min.js?v=20260531-beta-popup"></script>
     <script>
       // Track page visit
       (function() {
@@ -409,5 +413,192 @@
         }).catch(function() {});
       })();
     </script>
+
+<div class="beta-backdrop" id="betaBackdrop">
+  <div class="beta-popup" id="betaPopup">
+
+    <!-- CLOSE -->
+    <button class="beta-close" id="betaClose" aria-label="Close">
+      <svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+
+    <!-- DEFAULT STATE -->
+    <div id="betaDefault">
+
+      <!-- ICON + BADGE -->
+      <div class="beta-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 924.99 924.99" width="32" height="32">
+          <rect width="924.99" height="924.99" rx="160" fill="#020608"/>
+          <path fill="#fff" d="M462.5,29.1C223.14,29.1,29.09,223.13,29.09,462.49s194.04,433.4,433.41,433.4,433.4-194.04,433.4-433.4S701.85,29.1,462.5,29.1ZM396.31,77.91c119.98-18.73,242.41,17.48,330.88,97.19.61.97.89,2.6.3,3.59-.52.86-14.82,8.69-17.55,10.64-66.73,47.6-86.98,143.28-38.26,210.05,26.92,36.89,76.07,63.03,87.3,109.49,21.68,89.7-79.17,162.38-161.71,116.2-65.77-36.81-62.88-113.82-98.69-170.64-39.1-62.05-128.89-110.83-202.42-120.84-65.04-8.85-136.38,4.88-193.7,35.32-8.94,4.75-17.67,11.81-25.96,16.12-1.17.61-1.84,1.27-3.41.91C101.31,228.39,233.34,103.34,396.31,77.91ZM766.38,712.49c-42.6,51.02-103.4,92.93-166.99,115.77-72.56,26.07-151.51,30.37-227.09,14.04l.54-3.69c12.76-23.05,29.02-45.59,41.26-68.76,11.02-20.85,10.09-42.73-11.49-56.68-40.28-26.01-88.01-46.32-128.88-72.06-45.54-19.86-81.75,39.73-39.25,67.97,26.92,17.89,60.26,31.49,87.8,49.03l2.55,4.15-30.94,52.47c-33.41-14.67-65.65-35.41-93-59.08-63.91-55.34-115.64-141.93-126.7-225.04-.44-3.32-1.67-9.89-.86-12.77.97-3.48,14.34-18.69,17.66-22.26,80.64-86.45,217.11-90.89,308.89-17.77,49.8,39.68,52.57,78.1,73.37,132.34,42.89,111.84,163.49,157.84,274.78,105.21l28.06-16.41c.81.8-8.46,12.07-9.71,13.56ZM843.9,520.41c-10.05-65.88-41.93-89.65-82.83-137.27-30.99-36.08-51.56-79.23-12.11-119.52,6.64-6.78,26.39-19.85,35.79-20.66,1.72-.15,2.46,1.48,3.36,2.5,3.17,3.58,7.69,11.7,10.42,16.15,47.35,77.21,63.52,171.78,47.27,260.2-1.53,1.42-1.71-.13-1.9-1.41Z"/>
+        </svg>
+      </div>
+      <div class="beta-tag">
+        <span class="beta-tag-dot"></span>
+        Beta Version
+      </div>
+
+      <!-- TITLE -->
+      <div class="beta-title">Welcome to SG Production</div>
+
+      <!-- DESC -->
+      <p class="beta-desc">
+        You're one of the first to experience our new music download platform. We're still ironing out the details and you may encounter <strong>glitches or incomplete features</strong> along the way.
+      </p>
+
+      <!-- WHAT TO EXPECT -->
+      <ul class="beta-list">
+        <li>
+          <span class="li-icon">⚡</span>
+          Some pages or features may not work perfectly yet
+        </li>
+        <li>
+          <span class="li-icon">🎵</span>
+          Music library is being uploaded — more tracks coming soon
+        </li>
+        <li>
+          <span class="li-icon">📱</span>
+          Mobile experience is being continuously improved
+        </li>
+      </ul>
+
+      <div class="beta-divider"></div>
+
+      <!-- SUGGESTION FORM -->
+      <div class="beta-form">
+        <div class="beta-form-label">Share your feedback</div>
+        <input type="hidden" name="_subject" value="SG Production Beta Feedback">
+        <textarea class="beta-textarea" id="betaFeedback" placeholder="Found a bug? Have a suggestion? Tell us anything..."></textarea>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="beta-actions">
+        <button class="btn-primary" id="betaSubmit">
+          Send Feedback
+        </button>
+        <button class="btn-secondary" id="betaDismiss">
+          Got it
+        </button>
+      </div>
+
+      <div class="beta-divider"></div>
+
+      <div class="beta-footer">
+        This popup will only show once. You can always reach us via the Contact page.
+      </div>
+
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="beta-success" id="betaSuccess">
+      <div class="beta-success-icon">🙏</div>
+      <h3>Thank you for your feedback!</h3>
+      <p>Your suggestion helps us improve SG Production.<br>We'll take a look and get back to you soon.</p>
+      <button class="btn-primary" id="betaSuccessClose" style="margin-top:8px;max-width:160px">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function initBetaFeedbackPopup() {
+    if (window.sgBetaPopupInit) return;
+    window.sgBetaPopupInit = true;
+
+    const backdrop = document.getElementById('betaBackdrop');
+    const closeBtn = document.getElementById('betaClose');
+    const dismissBtn = document.getElementById('betaDismiss');
+    const submitBtn = document.getElementById('betaSubmit');
+    const successClose = document.getElementById('betaSuccessClose');
+    const defaultState = document.getElementById('betaDefault');
+    const successState = document.getElementById('betaSuccess');
+
+    if (!backdrop || !closeBtn || !dismissBtn || !submitBtn || !successClose || !defaultState || !successState) return;
+
+    if (localStorage.getItem('sg_beta_dismissed') === '1') {
+      backdrop.style.display = 'none';
+      return;
+    }
+
+    function closePopup() {
+      backdrop.style.opacity = '0';
+      backdrop.style.transition = 'opacity .2s ease';
+      setTimeout(() => backdrop.style.display = 'none', 200);
+      localStorage.setItem('sg_beta_dismissed', '1');
+    }
+
+    closeBtn.addEventListener('click', closePopup);
+    dismissBtn.addEventListener('click', closePopup);
+
+    submitBtn.addEventListener('click', async function() {
+      const text = document.getElementById('betaFeedback')
+        .value.trim();
+
+      if (!text) {
+        const ta = document.getElementById('betaFeedback');
+        ta.focus();
+        ta.style.borderColor = 'rgba(255,69,58,0.5)';
+        setTimeout(() => {
+          ta.style.borderColor = 'rgba(255,255,255,0.1)';
+        }, 2000);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      submitBtn.style.opacity = '0.7';
+
+      try {
+        const response = await fetch(
+          'https://formspree.io/f/xkoealzj', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            message: text,
+            _subject: 'SG Production Beta Feedback'
+          })
+        });
+
+        if (response.ok) {
+          defaultState.style.display = 'none';
+          successState.style.display = 'flex';
+          successState.style.animation =
+            'pop-in .3s cubic-bezier(0.34,1.56,0.64,1) both';
+        } else {
+          throw new Error('Failed');
+        }
+      } catch (error) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Feedback';
+        submitBtn.style.opacity = '1';
+        alert('Something went wrong. Please try again.');
+      }
+    });
+
+    successClose.addEventListener('click', closePopup);
+
+    backdrop.addEventListener('click', function(e) {
+      if (e.target === backdrop) closePopup();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && backdrop.style.display !== 'none') closePopup();
+    });
+
+    setTimeout(function() {
+      const dismissed = localStorage.getItem(
+        'sg_beta_dismissed'
+      );
+      if (!dismissed) {
+        backdrop.style.display = 'flex';
+      }
+    }, 1500);
+  })();
+</script>
+
   </body>
 </html>

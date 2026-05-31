@@ -43,6 +43,11 @@ const searchClose = document.querySelector("#searchClose");
 const playerClose = document.querySelector("#playerClose");
 const NEW_BADGE_DAYS = 7;
 const NEW_BADGE_MS = NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+const shellView = document.createElement("section");
+shellView.className = "shell-page-view";
+shellView.id = "shellPageView";
+shellView.hidden = true;
+songPage.insertAdjacentElement("afterend", shellView);
 const LOCAL_PREVIEW_TRACKS = [
   {
     id: "banger",
@@ -97,6 +102,8 @@ const waveformCache = new Map();
 const waveformInflight = new Map(); // `${track.id}:${barCount}` → Promise<string[]|null>
 let allTracks = [];
 let allTracksPage = 1;
+let shellArtists = [];
+let shellPolicyObserver = null;
 let siteSettings = {
   site: {
     title: "SG Production",
@@ -607,6 +614,156 @@ function applyRouteMeta(path = "/") {
   updateShareMeta(meta.title, meta.description, siteSettings.seo.ogImage, siteUrl(meta.path));
 }
 
+function publicRoutePath(href) {
+  const raw = String(href || "").trim();
+  if (!raw || raw.startsWith("#") || raw.startsWith("mailto:") || raw.startsWith("tel:")) return "";
+
+  let path = raw;
+  try {
+    const url = new URL(raw, window.location.href);
+    if (/^https?:$/.test(url.protocol) && url.origin !== window.location.origin) return "";
+    path = `${url.pathname}${url.search}`;
+  } catch {
+    path = raw.replace(/^\.\//, "");
+  }
+
+  const clean = path.split("?")[0].replace(/\/+$/g, "") || "/";
+  const leaf = clean.split("/").pop() || clean;
+  const params = new URLSearchParams(path.split("?")[1] || "");
+
+  if (clean === "/" || clean === "/index.html" || leaf === "index.html") return "/";
+  if (clean === "/tracks" || params.get("view") === "tracks") return "/tracks";
+  if (clean === "/licensing" || params.get("view") === "licensing") return "/licensing";
+  if (clean === "/about" || clean === "/about.php" || leaf === "about.php" || leaf === "about-preview.html") return "/about";
+  if (clean === "/contact" || clean === "/contact.php" || leaf === "contact.php" || leaf === "contact-preview.html") return "/contact";
+  if (clean === "/usage-policy" || clean === "/usage-policy.php" || leaf === "usage-policy.php" || leaf === "usage-policy-preview.html") return "/usage-policy";
+  if (clean === "/artists" || clean === "/artists.html" || leaf === "artists.html") return "/artists";
+  if (clean.startsWith("/artist/")) return clean;
+
+  return "";
+}
+
+function publicRouteUrl(path) {
+  if (!path) return "";
+  if (!canUseCleanUrls()) {
+    if (path === "/") return "index.html";
+    if (path === "/tracks") return "index.html?view=tracks";
+    if (path === "/licensing") return "index.html?view=licensing";
+    if (path === "/about") return "about-preview.html";
+    if (path === "/contact") return "contact-preview.html";
+    if (path === "/usage-policy") return "usage-policy-preview.html";
+    if (path === "/artists") return "artists.html";
+    if (path.startsWith("/artist/")) return `artists.html?artist=${encodeURIComponent(path.replace(/^\/artist\//, ""))}`;
+  }
+  return path;
+}
+
+function shellFetchUrl(path) {
+  if (!canUseCleanUrls()) {
+    if (path === "/about") return "about-preview.html";
+    if (path === "/contact") return "contact-preview.html";
+    if (path === "/usage-policy") return "usage-policy-preview.html";
+  }
+  if (path === "/about") return "/about";
+  if (path === "/contact") return "/contact";
+  if (path === "/usage-policy") return "/usage-policy";
+  return "";
+}
+
+function setShellNavActive(path) {
+  const normalized = path.replace(/\/+$/g, "") || "/";
+  document.querySelectorAll(".side-nav .nav-link[href], .mobile-brand[href]").forEach((link) => {
+    const linkPath = publicRoutePath(link.getAttribute("href"));
+    const active = Boolean(linkPath) && (linkPath === normalized || (normalized.startsWith("/artist/") && linkPath === "/artists"));
+    link.classList.toggle("active-line", active);
+    link.setAttribute("aria-current", active ? "page" : "false");
+  });
+}
+
+function setHomeContentVisible(visible) {
+  [document.querySelector(".hero"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
+    if (element) element.hidden = !visible;
+  });
+  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0;
+}
+
+function hideSongPageForShell() {
+  songPage.hidden = true;
+  document.body.classList.remove("song-view");
+}
+
+function showShellView(path, title = "") {
+  hideSongPageForShell();
+  setHomeContentVisible(false);
+  shellView.hidden = false;
+  document.body.classList.add("shell-view");
+  setShellNavActive(path);
+  if (title) document.title = title;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeShellView() {
+  shellView.hidden = true;
+  shellView.replaceChildren();
+  shellView.className = "shell-page-view";
+  document.body.classList.remove("shell-view");
+  if (shellPolicyObserver) {
+    shellPolicyObserver.disconnect();
+    shellPolicyObserver = null;
+  }
+  setHomeContentVisible(true);
+}
+
+function normalizeShellLinks(root) {
+  root.querySelectorAll("a[href]").forEach((link) => {
+    const path = publicRoutePath(link.getAttribute("href"));
+    if (path) link.setAttribute("href", publicRouteUrl(path));
+  });
+}
+
+function initShellPolicyToc() {
+  if (shellPolicyObserver) shellPolicyObserver.disconnect();
+  const sections = shellView.querySelectorAll(".policy-section");
+  const tocLinks = shellView.querySelectorAll(".toc-list a");
+  if (!sections.length || !tocLinks.length) return;
+
+  shellPolicyObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach((link) => link.classList.remove("active"));
+      shellView.querySelector(`.toc-list a[href="#${entry.target.id}"]`)?.classList.add("active");
+    });
+  }, { rootMargin: "-20% 0px -70% 0px" });
+
+  sections.forEach((section) => shellPolicyObserver.observe(section));
+}
+
+async function loadStaticShellPage(path, updateUrl = true) {
+  const url = shellFetchUrl(path);
+  if (!url) return false;
+
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return false;
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const sourceMain = doc.querySelector("main.page");
+    if (!sourceMain) return false;
+
+    const pageStyles = Array.from(doc.querySelectorAll("style")).map((style) => `<style data-shell-style>${style.textContent}</style>`).join("");
+    shellView.className = `shell-page-view ${sourceMain.className.replace(/\bpage\b/g, "").trim()}`;
+    shellView.innerHTML = `${pageStyles}${sourceMain.innerHTML}`;
+    normalizeShellLinks(shellView);
+    showShellView(path, doc.title || siteSettings.site.title);
+    updateShareMeta(doc.title || siteSettings.site.title, doc.querySelector('meta[name="description"]')?.content || siteSettings.seo.metaDescription, doc.querySelector('meta[property="og:image"]')?.content || siteSettings.seo.ogImage, siteUrl(path));
+    if (path === "/usage-policy") initShellPolicyToc();
+    if (updateUrl) history.pushState({ type: "shell", path }, "", publicRouteUrl(path));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function mediaArtworkUrl(path) {
   if (!path) {
     return "";
@@ -1062,6 +1219,125 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   if (shouldScroll) {
     document.querySelector("#all-tracks").scrollIntoView({ block: "start", behavior: "smooth" });
   }
+}
+
+function normalizeShellArtist(artist) {
+  if (!artist || !artist.name) return null;
+  return {
+    id: artist.id || slugClass(artist.name),
+    name: artist.name,
+    image: artist.imageWebp || artist.image || "assets/artist-photo-1.svg",
+    style: artist.style || "Original Mix"
+  };
+}
+
+async function loadShellArtists() {
+  try {
+    const response = await fetch("data/artists.json", { cache: "no-store" });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data.map(normalizeShellArtist).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function artistRouteUrl(artist) {
+  return publicRouteUrl(`/artist/${artist.id}`);
+}
+
+function artistTracks(artist) {
+  return allTracks.filter((track) => (track.artistId && track.artistId === artist.id) || slugClass(track.artist || "") === artist.id || track.artist === artist.name);
+}
+
+function shellArtistCard(artist) {
+  return `
+    <article class="artist-card">
+      <a class="artist-card-link" href="${escapeHTML(artistRouteUrl(artist))}" aria-label="Open ${escapeHTML(artist.name)} artist page">
+        <img src="${escapeHTML(normalizeMediaPath(artist.image))}" alt="${escapeHTML(artist.name)} artist photo" loading="lazy">
+        <div class="artist-card-copy">
+          <h3>${escapeHTML(artist.name)}</h3>
+        </div>
+      </a>
+    </article>
+  `;
+}
+
+async function renderShellArtists(path = "/artists", updateUrl = true) {
+  if (!shellArtists.length) {
+    shellArtists = await loadShellArtists();
+  }
+
+  const slug = path.startsWith("/artist/") ? slugClass(decodeURIComponent(path.replace(/^\/artist\//, ""))) : "";
+  const artist = slug ? shellArtists.find((item) => item.id === slug) : null;
+  shellView.className = "shell-page-view artists-page";
+
+  if (artist) {
+    const releases = artistTracks(artist);
+    shellView.innerHTML = `
+      <section class="artist-profile-page" id="artistProfilePage" aria-labelledby="artistProfileName">
+        <header class="artist-profile-hero">
+          <div class="artist-profile-hero-bg" style="background-image:url('${escapeHTML(normalizeMediaPath(artist.image))}')" aria-hidden="true"></div>
+          <a class="artist-profile-back" href="${escapeHTML(publicRouteUrl("/artists"))}">Artists</a>
+          <div class="artist-profile-portrait">
+            <img loading="lazy" src="${escapeHTML(normalizeMediaPath(artist.image))}" alt="${escapeHTML(artist.name)}">
+          </div>
+          <div class="artist-profile-heading">
+            <h1 id="artistProfileName">${escapeHTML(artist.name)}</h1>
+          </div>
+        </header>
+        <section class="artist-profile-tracks" aria-labelledby="popularTracksTitle">
+          <h2 id="popularTracksTitle">Releases</h2>
+          <div class="artist-track-list track-grid" id="shellArtistTrackList"></div>
+        </section>
+      </section>
+      <footer class="footer" id="contact"><p>© 2026 SG Production. All rights reserved.</p></footer>
+    `;
+    const list = shellView.querySelector("#shellArtistTrackList");
+    if (releases.length) {
+      list.replaceChildren(...releases.map(renderCard));
+    } else {
+      list.innerHTML = '<p class="artist-empty">No tracks available yet. Check back soon.</p>';
+    }
+    syncPlayingCards();
+    document.title = `${artist.name} | ${siteSettings.site.title}`;
+    updateShareMeta(document.title, `Explore ${artist.name} releases on SG Production.`, artist.image, siteUrl(`/artist/${artist.id}`));
+  } else {
+    shellView.innerHTML = `
+      <section class="section artist-section artist-directory" id="artistDirectory" aria-labelledby="artists-title">
+        <div class="artist-title-row">
+          <h1 id="artists-title">Artists</h1>
+        </div>
+        <div class="artist-toolbar">
+          <label class="artist-search" for="shellArtistSearchInput">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input id="shellArtistSearchInput" type="search" autocomplete="off" placeholder="Search Artists">
+          </label>
+        </div>
+        <div class="artist-grid" id="shellArtistGrid"></div>
+      </section>
+      <footer class="footer" id="contact"><p>© 2026 SG Production. All rights reserved.</p></footer>
+    `;
+    const input = shellView.querySelector("#shellArtistSearchInput");
+    const grid = shellView.querySelector("#shellArtistGrid");
+    const paint = () => {
+      const query = input.value.trim().toLowerCase();
+      const filtered = shellArtists.filter((item) => `${item.name} ${item.style}`.toLowerCase().includes(query));
+      grid.innerHTML = filtered.length ? filtered.map(shellArtistCard).join("") : '<p class="artist-empty">No artists available yet.</p>';
+    };
+    input.addEventListener("input", paint);
+    paint();
+    document.title = `Artists | ${siteSettings.site.title}`;
+    updateShareMeta(document.title, siteSettings.seo.metaDescription || siteSettings.site.tagline, siteSettings.seo.ogImage, siteUrl("/artists"));
+  }
+
+  normalizeShellLinks(shellView);
+  showShellView(path, document.title);
+  if (updateUrl) history.pushState({ type: "shell", path }, "", publicRouteUrl(path));
+  return true;
 }
 
 function setupAudio() {
@@ -1905,6 +2181,7 @@ function openSongPage(track, updateUrl = true) {
   }
 
   selectedTrack = track;
+  closeShellView();
   songPage.hidden = false;
   document.body.classList.add("song-view");
   songPlay.dataset.trackId = track.id;
@@ -1969,20 +2246,37 @@ function routeSectionFromLocation() {
   const path = canUseCleanUrls() ? window.location.pathname.replace(/\/+$/g, "") || "/" : "";
 
   if (queryView === "tracks" || path === "/tracks") {
+    closeShellView();
+    hideSongPageForShell();
     applyRouteMeta("/tracks");
     scrollToRouteSection("/tracks", "auto");
     return true;
   }
 
   if (queryView === "licensing" || path === "/licensing") {
+    closeShellView();
+    hideSongPageForShell();
     applyRouteMeta("/licensing");
     scrollToRouteSection("/licensing", "auto");
     return true;
   }
 
   if (path === "/" || path === "/index.html" || queryView === "home") {
+    closeShellView();
+    hideSongPageForShell();
     applyRouteMeta("/");
     scrollToRouteSection("/", "auto");
+    return true;
+  }
+
+  const publicPath = publicRoutePath(path);
+  if (publicPath && publicPath !== path && publicPath !== "/") {
+    openShellRoute(publicPath, false);
+    return true;
+  }
+
+  if (["/about", "/contact", "/usage-policy", "/artists"].includes(path) || path.startsWith("/artist/")) {
+    openShellRoute(path, false);
     return true;
   }
 
@@ -2111,9 +2405,48 @@ function scrollToRouteSection(path = window.location.pathname, behavior = "smoot
   updateActiveNav();
 }
 
+async function openShellRoute(path, updateUrl = true) {
+  const normalized = publicRoutePath(path) || path;
+
+  if (!normalized) return false;
+
+  if (normalized === "/" || normalized === "/tracks" || normalized === "/licensing") {
+    closeShellView();
+    hideSongPageForShell();
+    applyRouteMeta(normalized);
+    if (updateUrl) history.pushState(null, "", publicRouteUrl(normalized));
+    scrollToRouteSection(normalized, "smooth");
+    return true;
+  }
+
+  if (normalized === "/artists" || normalized.startsWith("/artist/")) {
+    return renderShellArtists(normalized, updateUrl);
+  }
+
+  if (["/about", "/contact", "/usage-policy"].includes(normalized)) {
+    return loadStaticShellPage(normalized, updateUrl);
+  }
+
+  return false;
+}
+
+window.sgShellNavigate = function sgShellNavigate(href) {
+  const path = publicRoutePath(href);
+  if (!path || path.startsWith("/song/")) return false;
+
+  openShellRoute(path, true).then((handled) => {
+    if (!handled) window.location.href = href;
+  });
+  return true;
+};
+
 function updateActiveNav() {
   if (document.body.classList.contains("song-view")) {
     clearActiveNav();
+    return;
+  }
+
+  if (document.body.classList.contains("shell-view")) {
     return;
   }
 
@@ -2315,28 +2648,43 @@ trackPagination.addEventListener("click", (event) => {
   renderAllTracksPage(Number(button.dataset.page), true);
 });
 
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("a[href]");
+  if (!link || link.target === "_blank" || link.hasAttribute("download") || event.metaKey || event.ctrlKey || event.shiftKey) {
+    return;
+  }
+
+  const path = publicRoutePath(link.getAttribute("href"));
+  if (!path || path.startsWith("/song/")) {
+    return;
+  }
+
+  event.preventDefault();
+  setMobileMenu(false);
+  openShellRoute(path, true).then((handled) => {
+    if (!handled) window.location.href = link.href;
+  });
+}, true);
+
 document.querySelectorAll('.side-nav a[href^="/"], .mobile-brand[href^="/"]').forEach((link) => {
   link.addEventListener("click", (event) => {
-    const href = link.getAttribute("href") || "/";
-    const sectionId = routePathToSection(href);
+    if (event.defaultPrevented) {
+      return;
+    }
 
-    if (!sectionId) {
+    const href = link.getAttribute("href") || "/";
+    const path = publicRoutePath(href);
+
+    if (!path || path.startsWith("/song/")) {
       return;
     }
 
     setMobileMenu(false);
 
-    if (document.body.classList.contains("song-view")) {
-      document.body.classList.remove("song-view");
-      songPage.hidden = true;
-    }
-
-    if (canUseCleanUrls()) {
-      event.preventDefault();
-      history.pushState(null, "", href);
-      applyRouteMeta(href);
-      scrollToRouteSection(href, "smooth");
-    }
+    event.preventDefault();
+    openShellRoute(path, true).then((handled) => {
+      if (!handled) window.location.href = href;
+    });
   });
 });
 
@@ -2396,3 +2744,100 @@ sideNav.addEventListener("focusout", () => {
     }
   });
 });
+
+(function initBetaFeedbackPopup() {
+  if (window.sgBetaPopupInit) return;
+
+  const backdrop = document.getElementById('betaBackdrop');
+  const closeBtn = document.getElementById('betaClose');
+  const dismissBtn = document.getElementById('betaDismiss');
+  const submitBtn = document.getElementById('betaSubmit');
+  const successClose = document.getElementById('betaSuccessClose');
+  const defaultState = document.getElementById('betaDefault');
+  const successState = document.getElementById('betaSuccess');
+
+  if (!backdrop || !closeBtn || !dismissBtn || !submitBtn || !successClose || !defaultState || !successState) return;
+  window.sgBetaPopupInit = true;
+
+  if (localStorage.getItem('sg_beta_dismissed') === '1') {
+    backdrop.style.display = 'none';
+    return;
+  }
+
+  function closePopup() {
+    backdrop.style.opacity = '0';
+    backdrop.style.transition = 'opacity .2s ease';
+    setTimeout(() => backdrop.style.display = 'none', 200);
+    localStorage.setItem('sg_beta_dismissed', '1');
+  }
+
+  closeBtn.addEventListener('click', closePopup);
+  dismissBtn.addEventListener('click', closePopup);
+
+  submitBtn.addEventListener('click', async function() {
+    const text = document.getElementById('betaFeedback')
+      .value.trim();
+
+    if (!text) {
+      const ta = document.getElementById('betaFeedback');
+      ta.focus();
+      ta.style.borderColor = 'rgba(255,69,58,0.5)';
+      setTimeout(() => {
+        ta.style.borderColor = 'rgba(255,255,255,0.1)';
+      }, 2000);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.style.opacity = '0.7';
+
+    try {
+      const response = await fetch(
+        'https://formspree.io/f/xkoealzj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          message: text,
+          _subject: 'SG Production Beta Feedback'
+        })
+      });
+
+      if (response.ok) {
+        defaultState.style.display = 'none';
+        successState.style.display = 'flex';
+        successState.style.animation =
+          'pop-in .3s cubic-bezier(0.34,1.56,0.64,1) both';
+      } else {
+        throw new Error('Failed');
+      }
+    } catch (error) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Feedback';
+      submitBtn.style.opacity = '1';
+      alert('Something went wrong. Please try again.');
+    }
+  });
+
+  successClose.addEventListener('click', closePopup);
+
+  backdrop.addEventListener('click', function(e) {
+    if (e.target === backdrop) closePopup();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && backdrop.style.display !== 'none') closePopup();
+  });
+
+  setTimeout(function() {
+    const dismissed = localStorage.getItem(
+      'sg_beta_dismissed'
+    );
+    if (!dismissed) {
+      backdrop.style.display = 'flex';
+    }
+  }, 1500);
+})();
