@@ -18,6 +18,7 @@ const playerVolBtn = document.querySelector(".player-volume");
 const playerVolPopup = document.querySelector("#volumePopup");
 const progressShell = document.querySelector("#progressShell");
 const progressBar = document.querySelector("#progressBar");
+const progressSlider = document.querySelector("#progressSlider");
 const progressTime = document.querySelector("#progressTime");
 const progressElapsed = document.querySelector("#progressElapsed");
 const progressTotal = document.querySelector("#progressTotal");
@@ -1389,6 +1390,11 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
   progressBar.style.width = `${percent}%`;
+  if (progressSlider) {
+    progressSlider.value = String(Math.round(percent * 10));
+    progressSlider.setAttribute("aria-valuenow", String(Math.round(percent)));
+    progressSlider.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
+  }
   const elapsedText = formatTimer(scaledElapsed);
   const totalText = formatTimer(totalSeconds);
   if (progressTime) progressTime.textContent = `${elapsedText} / ${totalText}`;
@@ -1483,6 +1489,10 @@ function setPlayerProgress(fraction) {
 }
 
 function startPlayerSeek(event) {
+  if (event.target === progressSlider) {
+    return;
+  }
+
   event.preventDefault();
   progressShell.classList.add("is-seeking");
   setPlayerProgress(progressFractionFromPointer(event, progressShell));
@@ -1818,6 +1828,9 @@ function openSongPage(track, updateUrl = true) {
     stopCurrent();
     progressBar.style.width = "0%";
     progressShell.setAttribute("aria-valuenow", "0");
+    if (progressSlider) {
+      progressSlider.value = "0";
+    }
   }
 
   selectedTrack = track;
@@ -2154,6 +2167,44 @@ progressShell?.addEventListener("keydown", (event) => {
   }[event.key];
 
   setPlayerProgress(next / 100);
+});
+
+function seekWithNativeSlider(commit = false) {
+  if (!progressSlider) {
+    return;
+  }
+
+  const fraction = Number(progressSlider.value) / 1000;
+
+  if (activeAudio || getPreviewUrl(selectedTrack) || commit) {
+    setPlayerProgress(fraction);
+    return;
+  }
+
+  const clamped = Math.min(1, Math.max(0, fraction));
+  pausedAt = Math.min(PREVIEW_SECONDS - 0.01, clamped * PREVIEW_SECONDS);
+  progressBar.style.width = `${clamped * 100}%`;
+  updatePlayerTimer(pausedAt, false);
+}
+
+progressSlider?.addEventListener("input", () => {
+  progressShell?.classList.add("is-seeking");
+  seekWithNativeSlider(false);
+});
+
+progressSlider?.addEventListener("change", () => {
+  seekWithNativeSlider(true);
+  progressShell?.classList.remove("is-seeking");
+});
+
+progressSlider?.addEventListener("pointerup", () => {
+  seekWithNativeSlider(true);
+  progressShell?.classList.remove("is-seeking");
+});
+
+progressSlider?.addEventListener("touchend", () => {
+  seekWithNativeSlider(true);
+  progressShell?.classList.remove("is-seeking");
 });
 
 songBack.addEventListener("click", () => closeSongPage());

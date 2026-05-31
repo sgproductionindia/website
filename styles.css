@@ -3536,6 +3536,7 @@ body.search-open {
   border-radius: 100px;
   background: linear-gradient(90deg, var(--player-accent), #a0ccff);
   transition: width 0.1s linear;
+  pointer-events: none;
 }
 
 .progress-bar::after {
@@ -3548,7 +3549,7 @@ body.search-open {
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  transform: translateY(-50%) scale(0);
+  transform: translateY(-50%) scale(1);
   transition: transform 0.15s;
 }
 
@@ -3558,6 +3559,51 @@ body.search-open {
 
 .progress-shell:hover .progress-bar {
   background: linear-gradient(90deg, var(--player-accent-hover), #c0d8ff);
+}
+
+.progress-slider {
+  position: absolute;
+  inset: -8px 0;
+  width: 100%;
+  height: 19px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.progress-slider::-webkit-slider-runnable-track {
+  height: 19px;
+  background: transparent;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.progress-slider::-moz-range-track {
+  height: 19px;
+  background: transparent;
+}
+
+.progress-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
 }
 
 .player-right {
