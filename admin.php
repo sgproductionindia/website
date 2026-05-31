@@ -4896,7 +4896,7 @@ $downloadChartData = [
     // Limit to first 60 s for performance
     const samples = raw.length > sr * 60 ? raw.slice(0, sr * 60) : raw;
 
-    // 10 ms energy windows
+    // 10 ms energy windows (100 windows per second)
     const winLen = Math.round(sr / 100);
     const energies = [];
     for (let i = 0; i + winLen < samples.length; i += winLen) {
@@ -4906,33 +4906,48 @@ $downloadChartData = [
     }
 
     // Beat detection via local-energy ratio (Fontana & Avanzini)
-    const histLen = 43; // ~430 ms history
+    // Refractory period of 25 windows (250 ms) prevents a single
+    // kick drum — which elevates energy for 50-100 ms — from
+    // registering as multiple consecutive beats and inflating BPM.
+    const histLen = 43;    // ~430 ms local history window
+    const refractory = 25; // min 250 ms between beats → max ~240 BPM
     const beats = [];
+    let lastBeat = -refractory;
     for (let i = histLen; i < energies.length; i++) {
+      if (i - lastBeat < refractory) continue;
       const win = energies.slice(i - histLen, i);
       const mean = win.reduce((a, b) => a + b, 0) / histLen;
+      if (mean <= 0) continue;
       const variance = win.reduce((a, b) => a + (b - mean) ** 2, 0) / histLen;
-      const threshold = -0.0025714 * variance + 1.5142857;
-      if (energies[i] > threshold * mean) beats.push(i);
+      // Clamp threshold to at least 1.1 so it never falls below 1
+      const threshold = Math.max(1.1, -0.0025714 * variance + 1.5142857);
+      if (energies[i] > threshold * mean) {
+        beats.push(i);
+        lastBeat = i;
+      }
     }
 
     if (beats.length < 4) return 120;
 
     // Inter-beat intervals → histogram → dominant period
+    // Bin width of 4 windows (40 ms) absorbs small timing jitter
     const hist = new Map();
     for (let i = 1; i < beats.length; i++) {
       const d = beats[i] - beats[i - 1];
-      if (d < 1) continue;
-      const key = Math.round(d / 2) * 2;
+      if (d < refractory) continue; // skip implausibly short intervals
+      const key = Math.round(d / 4) * 4;
       hist.set(key, (hist.get(key) || 0) + 1);
     }
-    let bestKey = 43, bestCount = 0;
+
+    if (hist.size === 0) return 120;
+
+    let bestKey = 48, bestCount = 0; // 48 windows = 480 ms ≈ 125 BPM default
     for (const [key, count] of hist) {
       if (count > bestCount) { bestCount = count; bestKey = key; }
     }
 
-    // IBI → BPM, normalise to 60–200
-    let bpm = 60 / (bestKey / 100);
+    // bestKey windows × 10 ms/window = IBI; BPM = 60 / (bestKey/100) = 6000/bestKey
+    let bpm = 6000 / bestKey;
     while (bpm < 60) bpm *= 2;
     while (bpm > 200) bpm /= 2;
     return Math.round(bpm);

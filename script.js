@@ -92,6 +92,7 @@ let currentVolume = 0.8;
 let isMuted = false;
 let playerVolTimer = 0;
 const waveformCache = new Map();
+const waveformInflight = new Map(); // `${track.id}:${barCount}` → Promise<string[]|null>
 let allTracks = [];
 let allTracksPage = 1;
 let siteSettings = {
@@ -1150,6 +1151,7 @@ async function playTrack(track) {
     audio.muted = isMuted;
     activeAudio = audio;
     window.currentAudio = audio;
+    prefetchWaveform(track);
 
     const waitForMetadata = () => new Promise((resolve) => {
       if (Number.isFinite(audio.duration) && audio.duration > 0) {
@@ -1609,6 +1611,7 @@ function getSongWaveformBarCount() {
 }
 
 function paintSongWaveform(bars) {
+  if (songPage.hidden) return;
   songWaveform.classList.remove("is-loading");
   songWaveform.innerHTML = bars.join("");
 
@@ -1623,6 +1626,75 @@ function showSongWaveformLoading(track, barCount) {
   songWaveform.innerHTML = loadingBars.join("");
 }
 
+// Fetch + decode audio into waveform bar strings.
+// Deduplicates concurrent calls for the same track+barCount via waveformInflight.
+// Returns null on failure (caller should fall back to generated bars).
+async function computeWaveformBars(track, barCount) {
+  const audioUrl = getPreviewUrl(track);
+  if (!audioUrl) return null;
+
+  const inflightKey = `${track.id}:${barCount}`;
+  if (waveformInflight.has(inflightKey)) {
+    return waveformInflight.get(inflightKey);
+  }
+
+  const promise = (async () => {
+    try {
+      const response = await fetch(audioUrl, { mode: "cors" });
+      if (!response.ok) return null;
+      const arrayBuffer = await response.arrayBuffer();
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      ctx.close();
+
+      const channelData = audioBuffer.getChannelData(0);
+      const blockSize = Math.max(1, Math.floor(channelData.length / barCount));
+      const peaks = [];
+      for (let i = 0; i < barCount; i += 1) {
+        let max = 0;
+        const start = i * blockSize;
+        const end = Math.min(start + blockSize, channelData.length);
+        for (let j = start; j < end; j += 4) { // sample every 4th for 4× decode speed
+          const abs = Math.abs(channelData[j]);
+          if (abs > max) max = abs;
+        }
+        peaks.push(max);
+      }
+      const maxPeak = Math.max(...peaks, 0.001);
+      return peaks.map((peak) => `<span style="height:${Math.max(7, Math.round((peak / maxPeak) * 58))}px"></span>`);
+    } catch {
+      return null;
+    } finally {
+      waveformInflight.delete(inflightKey);
+    }
+  })();
+
+  waveformInflight.set(inflightKey, promise);
+  return promise;
+}
+
+// Background-warm the waveform cache as soon as a track starts playing.
+// Called from playTrack so the cache is hot by the time the song page opens.
+function prefetchWaveform(track) {
+  const audioUrl = getPreviewUrl(track);
+  if (!audioUrl) return;
+  const barCount = getSongWaveformBarCount();
+  const cacheKey = `${track.id}:${audioUrl}:${barCount}`;
+  if (waveformCache.has(cacheKey)) {
+    if (!songPage.hidden && selectedTrack?.id === track.id) {
+      paintSongWaveform(waveformCache.get(cacheKey));
+    }
+    return;
+  }
+  computeWaveformBars(track, barCount).then((bars) => {
+    if (!bars || waveformCache.has(cacheKey)) return;
+    waveformCache.set(cacheKey, bars);
+    if (!songPage.hidden && selectedTrack?.id === track.id) {
+      paintSongWaveform(bars);
+    }
+  });
+}
+
 async function renderSongWaveform(track) {
   const token = waveformRenderToken + 1;
   waveformRenderToken = token;
@@ -1635,11 +1707,6 @@ async function renderSongWaveform(track) {
     return;
   }
 
-  if (activeAudio && selectedTrack.id === track.id) {
-    paintSongWaveform(generatedWaveformBars(track, barCount));
-    return;
-  }
-
   if (!audioUrl) {
     const generatedBars = generatedWaveformBars(track, barCount);
     waveformCache.set(cacheKey, generatedBars);
@@ -1647,50 +1714,17 @@ async function renderSongWaveform(track) {
     return;
   }
 
-  showSongWaveformLoading(track, barCount);
+  // Show animated placeholder while the real bars load
+  if (!songPage.hidden) showSongWaveformLoading(track, barCount);
 
-  try {
-    const response = await fetch(audioUrl, { mode: "cors" });
-    if (!response.ok) {
-      throw new Error("Audio preview could not be loaded.");
-    }
+  const bars = await computeWaveformBars(track, barCount);
 
-    const arrayBuffer = await response.arrayBuffer();
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-    ctx.close();
+  // Always cache the result even if this render is no longer the latest
+  const finalBars = bars || generatedWaveformBars(track, barCount);
+  waveformCache.set(cacheKey, finalBars);
 
-    if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
-
-    const channelData = audioBuffer.getChannelData(0);
-    const blockSize = Math.max(1, Math.floor(channelData.length / barCount));
-    const peaks = [];
-
-    for (let i = 0; i < barCount; i += 1) {
-      let max = 0;
-      const start = i * blockSize;
-      const end = Math.min(start + blockSize, channelData.length);
-      for (let j = start; j < end; j += 1) {
-        const abs = Math.abs(channelData[j]);
-        if (abs > max) max = abs;
-      }
-      peaks.push(max);
-    }
-
-    const maxPeak = Math.max(...peaks, 0.001);
-    const realBars = peaks.map((peak) => {
-      const height = Math.max(7, Math.round((peak / maxPeak) * 58));
-      return `<span style="height:${height}px"></span>`;
-    });
-
-    waveformCache.set(cacheKey, realBars);
-    paintSongWaveform(realBars);
-  } catch {
-    if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
-    const generatedBars = generatedWaveformBars(track, barCount);
-    waveformCache.set(cacheKey, generatedBars);
-    paintSongWaveform(generatedBars);
-  }
+  if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
+  paintSongWaveform(finalBars);
 }
 
 function sendAdEvent(endpoint, track, adUrl = "") {
@@ -1818,10 +1852,6 @@ function renderSongAd(track) {
 }
 
 function queueSongWaveformRender() {
-  if (activeAudio && isPlaying) {
-    return;
-  }
-
   if (songPage.hidden || waveformResizeFrame) {
     return;
   }
@@ -1843,7 +1873,7 @@ function openSongPage(track, updateUrl = true) {
   songPage.hidden = false;
   document.body.classList.add("song-view");
   songPlay.dataset.trackId = track.id;
-  songGenre.textContent = track.genre;
+  songGenre.textContent = track.bpm ? `${track.genre} • ${track.bpm} BPM` : track.genre;
   songPageTitle.textContent = track.title;
   songArtist.textContent = track.artist;
   songDuration.textContent = `0:00 / ${track.duration}`;
