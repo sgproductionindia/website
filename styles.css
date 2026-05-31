@@ -3521,6 +3521,8 @@ body.search-open {
   border-radius: 100px;
   background: var(--player-surface3);
   cursor: pointer;
+  touch-action: none;
+  user-select: none;
   transition: height 0.15s;
 }
 

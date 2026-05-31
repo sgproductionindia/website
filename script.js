@@ -92,6 +92,7 @@ let currentVolume = 0.8;
 let isMuted = false;
 let playerVolTimer = 0;
 let pendingPlayerSeekFraction = null;
+let playerSeekActive = false;
 const waveformCache = new Map();
 const waveformInflight = new Map(); // `${track.id}:${barCount}` → Promise<string[]|null>
 let allTracks = [];
@@ -1367,7 +1368,7 @@ function updateProgress() {
   }
 
   if (activeAudio) {
-    if (!progressShell.classList.contains("is-seeking")) {
+    if (!playerSeekActive) {
       const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : playableDuration(selectedTrack, true);
       const elapsed = activeAudio.currentTime;
       progressBar.style.width = `${total ? Math.min(100, (elapsed / total) * 100) : 0}%`;
@@ -1381,7 +1382,7 @@ function updateProgress() {
     return;
   }
 
-  if (!progressShell.classList.contains("is-seeking")) {
+  if (!playerSeekActive) {
     const elapsed = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
     progressBar.style.width = `${(elapsed / PREVIEW_SECONDS) * 100}%`;
     updatePlayerTimer(elapsed, false);
@@ -1462,6 +1463,9 @@ function setPlayerProgress(fraction, shouldCommit = true) {
     pausedAt = targetTime;
 
     if (!shouldCommit && isPlaying) {
+      if (Math.abs(activeAudio.currentTime - targetTime) > 0.15) {
+        activeAudio.currentTime = targetTime;
+      }
       updatePlayerTimer(targetTime, true);
       return;
     }
@@ -1502,7 +1506,12 @@ function setPlayerProgress(fraction, shouldCommit = true) {
 
 function startPlayerSeek(event) {
   event.preventDefault();
+  event.stopPropagation();
+  playerSeekActive = true;
   progressShell.classList.add("is-seeking");
+  if (event.pointerId !== undefined && progressShell.setPointerCapture) {
+    progressShell.setPointerCapture(event.pointerId);
+  }
   pendingPlayerSeekFraction = progressFractionFromPointer(event, progressShell);
   setPlayerProgress(pendingPlayerSeekFraction, false);
 
@@ -1515,8 +1524,16 @@ function startPlayerSeek(event) {
   const stop = () => {
     const finalFraction = pendingPlayerSeekFraction;
     pendingPlayerSeekFraction = null;
+    playerSeekActive = false;
     const shouldRestartSynthetic = isPlaying && activeSource && audioContext && !activeAudio;
     progressShell.classList.remove("is-seeking");
+    if (event.pointerId !== undefined && progressShell.releasePointerCapture) {
+      try {
+        progressShell.releasePointerCapture(event.pointerId);
+      } catch {
+        // Pointer capture can already be released by the browser.
+      }
+    }
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
     window.removeEventListener("pointercancel", stop);
@@ -2203,7 +2220,9 @@ playerClose?.addEventListener("click", () => {
 });
 
 progressShell?.addEventListener("pointerdown", startPlayerSeek);
-progressShell?.addEventListener("touchstart", startPlayerSeek, { passive: false });
+if (!window.PointerEvent) {
+  progressShell?.addEventListener("touchstart", startPlayerSeek, { passive: false });
+}
 progressShell?.addEventListener("keydown", (event) => {
   const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
 
