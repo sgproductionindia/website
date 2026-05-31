@@ -63,6 +63,7 @@ const LOCAL_PREVIEW_TRACKS = [
     createdAt: "2026-05-30",
     isNew: true,
     isFeatured: true,
+    likes: 0,
     bpm: 128,
     tone: 110,
     wave: "sine"
@@ -275,6 +276,7 @@ function normalizeUploadedTrack(track) {
     previewUrl,
     downloadUrl: rawDownloadUrl,
     creditText: track.creditText || "",
+    likes: Number(track.likes ?? track.likeCount ?? 0) || 0,
     createdAt: track.createdAt || track.uploadedAt || track.date || "",
     isNew: Boolean(track.isNew),
     isFeatured: Boolean(track.isFeatured || track.isNew),
@@ -395,6 +397,38 @@ function updatePlayerLike(track) {
   const liked = Boolean(track?.id && localStorage.getItem(`liked_${track.id}`) === "true");
   playerLike.classList.toggle("is-liked", liked);
   playerLike.setAttribute("aria-pressed", String(liked));
+}
+
+function sendTrackLike(track, liked) {
+  if (!track?.id || !/^https?:$/.test(window.location.protocol)) {
+    return;
+  }
+
+  fetch("api/like.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({
+      id: track.id,
+      action: liked ? "like" : "unlike"
+    })
+  })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      if (!data || !data.ok || typeof data.likes === "undefined") {
+        return;
+      }
+
+      track.likes = Number(data.likes) || 0;
+      const match = tracks.find((item) => item.id === track.id);
+      if (match) {
+        match.likes = track.likes;
+      }
+      const allMatch = allTracks.find((item) => item.id === track.id);
+      if (allMatch) {
+        allMatch.likes = track.likes;
+      }
+    })
+    .catch(() => {});
 }
 
 function playTrackByOffset(offset) {
@@ -2485,14 +2519,16 @@ playerLike?.addEventListener("click", () => {
   if (!selectedTrack?.id) return;
 
   const key = `liked_${selectedTrack.id}`;
+  const liked = localStorage.getItem(key) !== "true";
 
-  if (localStorage.getItem(key) === "true") {
-    localStorage.removeItem(key);
-  } else {
+  if (liked) {
     localStorage.setItem(key, "true");
+  } else {
+    localStorage.removeItem(key);
   }
 
   updatePlayerLike(selectedTrack);
+  sendTrackLike(selectedTrack, liked);
 });
 
 if (playerVolBtn && playerVolPopup) {
