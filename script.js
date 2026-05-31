@@ -14,9 +14,13 @@ const playerNext = document.querySelector("#playerNext");
 const playerLike = document.querySelector("#playerLike");
 const playerMute = document.querySelector("#playerMute");
 const volumeSlider = document.querySelector("#volumeSlider");
+const playerVolBtn = document.querySelector(".player-volume");
+const playerVolPopup = document.querySelector("#volumePopup");
 const progressShell = document.querySelector("#progressShell");
 const progressBar = document.querySelector("#progressBar");
 const progressTime = document.querySelector("#progressTime");
+const progressElapsed = document.querySelector("#progressElapsed");
+const progressTotal = document.querySelector("#progressTotal");
 const sideNav = document.querySelector(".side-nav");
 const mobileMenuToggle = document.querySelector("#mobileMenuToggle");
 const sectionNavLinks = Array.from(document.querySelectorAll(".nav-link[data-section-nav]"));
@@ -86,6 +90,7 @@ let audioPlayToken = 0;
 let waveformRenderToken = 0;
 let currentVolume = 0.8;
 let isMuted = false;
+let playerVolTimer = 0;
 const waveformCache = new Map();
 let allTracks = [];
 let allTracksPage = 1;
@@ -140,6 +145,7 @@ function showPlayer() {
   player.style.display = "";
   player.classList.add("is-visible", "active");
   document.body.classList.add("player-visible");
+  document.querySelector(".page")?.style.setProperty("padding-bottom", window.matchMedia("(max-width: 768px)").matches ? "124px" : "104px");
 }
 
 function hidePlayer() {
@@ -150,6 +156,7 @@ function hidePlayer() {
   player.style.display = "none";
   player.classList.remove("is-visible", "active", "is-playing");
   document.body.classList.remove("player-visible");
+  document.querySelector(".page")?.style.removeProperty("padding-bottom");
 }
 
 const PREVIEW_SECONDS = 12;
@@ -1349,7 +1356,7 @@ function syncPlayer() {
 
 function syncPlayingCards() {
   document.querySelectorAll(".track-card").forEach((card) => {
-    card.classList.toggle("is-playing", isPlaying && card.dataset.id === selectedTrack.id);
+    card.classList.toggle("is-playing", isPlaying && selectedTrack && card.dataset.id === selectedTrack.id);
   });
 }
 
@@ -1382,7 +1389,11 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
   progressBar.style.width = `${percent}%`;
-  progressTime.textContent = `${formatTimer(scaledElapsed)} / ${formatTimer(totalSeconds)}`;
+  const elapsedText = formatTimer(scaledElapsed);
+  const totalText = formatTimer(totalSeconds);
+  if (progressTime) progressTime.textContent = `${elapsedText} / ${totalText}`;
+  if (progressElapsed) progressElapsed.textContent = elapsedText;
+  if (progressTotal) progressTotal.textContent = totalText;
   progressShell.setAttribute("aria-valuenow", String(Math.round(percent)));
   progressShell.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
   if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession && Number.isFinite(totalSeconds) && totalSeconds > 0) {
@@ -2067,6 +2078,29 @@ playerLike?.addEventListener("click", () => {
   updatePlayerLike(selectedTrack);
 });
 
+if (playerVolBtn && playerVolPopup) {
+  playerVolBtn.addEventListener("mouseenter", () => {
+    window.clearTimeout(playerVolTimer);
+    playerVolPopup.style.display = "flex";
+  });
+
+  playerVolBtn.addEventListener("mouseleave", () => {
+    playerVolTimer = window.setTimeout(() => {
+      playerVolPopup.style.display = "none";
+    }, 300);
+  });
+
+  playerVolPopup.addEventListener("mouseenter", () => {
+    window.clearTimeout(playerVolTimer);
+  });
+
+  playerVolPopup.addEventListener("mouseleave", () => {
+    playerVolTimer = window.setTimeout(() => {
+      playerVolPopup.style.display = "none";
+    }, 300);
+  });
+}
+
 volumeSlider?.addEventListener("input", () => {
   currentVolume = Math.max(0, Math.min(1, Number(volumeSlider.value) / 100));
   isMuted = currentVolume === 0;
@@ -2075,6 +2109,9 @@ volumeSlider?.addEventListener("input", () => {
 
 playerMute?.addEventListener("click", () => {
   isMuted = !isMuted;
+  if (volumeSlider) {
+    volumeSlider.value = isMuted ? 0 : Math.round((currentVolume || 1) * 100);
+  }
   applyPlayerVolume();
 });
 
@@ -2085,7 +2122,15 @@ playerCover?.addEventListener("click", () => {
 
 playerClose?.addEventListener("click", () => {
   stopCurrent(true);
+  selectedTrack = null;
   hidePlayer();
+  if (playerTitle) {
+    playerTitle.classList.remove("is-scrolling");
+    playerTitle.textContent = "Select a track";
+  }
+  if (playerVolPopup) {
+    playerVolPopup.style.display = "none";
+  }
   syncPlayer();
   syncPlayingCards();
 });

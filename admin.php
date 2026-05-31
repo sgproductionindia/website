@@ -4374,7 +4374,7 @@ $downloadChartData = [
 
           <section class="view-section" id="analytics-section" data-title="Analytics" data-subtitle="Performance overview"><div class="management-toolbar"><div><h2>Analytics</h2><p>Measure downloads, song views, ads, and engagement</p></div><button class="btn btn-primary" type="button" id="analyticsExportCsv">Export CSV</button></div><div class="analytics-filter-bar"><div class="date-chip-group"><button class="date-chip active" type="button" data-analytics-range="7D">7D</button><button class="date-chip" type="button" data-analytics-range="30D">30D</button><button class="date-chip" type="button" data-analytics-range="90D">90D</button><button class="date-chip" type="button" data-analytics-range="all">All Time</button></div><div class="custom-date-range" aria-label="Custom analytics date range"><input id="analyticsStartDate" type="hidden" value="<?= e($weekAgoIso) ?>"><input id="analyticsEndDate" type="hidden" value="<?= e($todayIso) ?>"><button type="button" class="nsdp-trigger" id="nsdpTrigger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span id="nsdpTriggerLabel"><?= e(date('M j', strtotime($weekAgoIso))) ?> – <?= e(date('M j', strtotime($todayIso))) ?></span></button><div class="nsdp-popup" id="nsdpPopup" style="display:none;"><div class="nsdp-inputs-row"><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputFrom" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($weekAgoIso))) ?>" aria-label="Start date" maxlength="10" oninput="nsdpParseInput('from',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('from',this.value,true)"></div><span class="nsdp-input-sep">–</span><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputTo" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($todayIso))) ?>" aria-label="End date" maxlength="10" oninput="nsdpParseInput('to',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('to',this.value,true)"></div></div><div class="nsdp-summary" id="nsdpSummary">7 days selected</div><div class="nsdp-cal-header"><button type="button" class="nsdp-nav" onclick="miniCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="15 18 9 12 15 6"/></svg></button><span class="nsdp-month-label" id="miniMonthLabel"><?= e(date('F Y')) ?></span><button type="button" class="nsdp-nav" onclick="miniCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="9 18 15 12 9 6"/></svg></button></div><div class="nsdp-dow-row"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="nsdp-grid" id="miniCalGrid"></div><div class="nsdp-actions"><button type="button" class="btn btn-ghost" onclick="nsdpCancel()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Cancel</button><button type="button" class="btn btn-primary" id="analyticsApplyRange" onclick="nsdpApply()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Apply</button></div></div></div></div><div class="analytics-kpis"><div class="stat-card cyan"><div class="stat-label">Total Downloads</div><div class="stat-value cyan"><?= e($statText($totalDownloads,$hasDownloadData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card green"><div class="stat-label">Total Song Page Views</div><div class="stat-value green">N/A</div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card orange"><div class="stat-label">Ad Impressions</div><div class="stat-value orange"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card purple"><div class="stat-label">Ad Clicks</div><div class="stat-value purple"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">CTR Percentage</div><div class="stat-value cyan"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change down">N/A vs previous period</div></div><div class="stat-card green"><div class="stat-label">Avg Session Duration</div><div class="stat-value green">N/A</div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">Today&apos;s Visits</div><div class="stat-value cyan" id="visitToday">—</div><div class="stat-change up">Live</div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Downloads Over Time</span><div class="chart-toggle" id="analyticsChartToggle"><button class="active" type="button" data-chart="Downloads">Downloads</button><button type="button" data-chart="Page Views">Page Views</button><button type="button" data-chart="Ad Clicks">Ad Clicks</button></div></div><div class="line-chart-shell"><div class="chart-summary"><span><strong id="analyticsChartTotal">N/A</strong> total downloads</span><span id="analyticsChartPeak">Peak: N/A</span></div><div class="chart-visual"><div class="chart-y-axis" aria-hidden="true"><span style="top:11.5%">1,000</span><span style="top:32.7%">750</span><span style="top:53.8%">500</span><span style="top:75%">250</span><span style="top:91.5%">0</span></div><svg viewBox="0 0 900 260" preserveAspectRatio="none"><g stroke="rgba(255,255,255,.08)" stroke-width="1"><line x1="70" y1="30" x2="880" y2="30"></line><line x1="70" y1="85" x2="880" y2="85"></line><line x1="70" y1="140" x2="880" y2="140"></line><line x1="70" y1="195" x2="880" y2="195"></line><line x1="70" y1="238" x2="880" y2="238"></line></g><polyline id="analyticsLine" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="80,238 194,238 308,238 422,238 536,238 650,238 764,238 875,238"></polyline></svg><div class="chart-point-layer" id="analyticsPointLayer"></div></div><div class="chart-axis"><span>Day 1</span><span>Day 2</span><span>Day 3</span><span>Day 4</span><span>Day 5</span><span>Day 6</span><span>Day 7</span><span>Today</span></div></div></div><div class="two-col"><div class="panel"><div class="panel-header"><span class="panel-title">Top 5 Songs by Downloads</span></div><div class="horizontal-bars"><?php if ($topTracks === []): ?><div class="hbar-row"><div class="hbar-label">N/A</div><div class="hbar-track"><div class="hbar-fill" style="width:0%"></div></div><div class="hbar-value">N/A</div></div><?php else: ?><?php foreach ($topTracks as $track): ?><div class="hbar-row"><div class="hbar-label"><?= e((string) ($track['title'] ?? 'N/A')) ?></div><div class="hbar-track"><div class="hbar-fill" style="width:<?= $hasDownloadData ? '40' : '0' ?>%"></div></div><div class="hbar-value"><?= e($hasDownloadData ? number_format($downloadCountFor($track)) : 'N/A') ?></div></div><?php endforeach; ?><?php endif; ?></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Traffic by Genre</span></div><div class="donut-wrap"><div class="donut-chart"></div><div class="donut-legend"><?php $colors = ['cyan','green','orange','purple']; $i=0; foreach (array_slice($genreUsage,0,4,true) as $genreName=>$count): $percent = $genreTotal > 0 ? round(($count / $genreTotal) * 100) : null; ?><div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--<?= e($colors[$i] ?? 'cyan') ?>)"></span><?= e((string) $genreName) ?></span><strong><?= e($percent !== null ? $percent . '%' : 'N/A') ?></strong></div><?php $i++; endforeach; ?></div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Per-Song Analytics</span></div><div class="analytics-table-wrap"><table class="analytics-table" id="analyticsTable"><thead><tr><th data-sort="index">#</th><th>Cover</th><th data-sort="title">Song Title</th><th data-sort="artist">Artist</th><th data-sort="genre">Genre</th><th data-sort="views">Page Views</th><th data-sort="downloads">Downloads</th><th data-sort="impressions">Ad Impressions</th><th data-sort="clicks">Ad Clicks</th><th data-sort="ctr">CTR</th><th data-sort="time">Avg Time on Page</th></tr></thead><tbody><?php if ($trackCount === 0): ?><tr data-index="0" data-title="N/A" data-artist="N/A" data-genre="N/A" data-views="0" data-downloads="0" data-impressions="0" data-clicks="0" data-ctr="0" data-time="0"><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr><?php else: ?><?php foreach ($tracks as $index => $track): if (!is_array($track)) continue; $trackId=(string)($track['id']??''); $songStats=is_array($adSongs[$trackId]??null)?$adSongs[$trackId]:[]; $rowImpressions=(int)($songStats['impressions']??0); $rowClicks=(int)($songStats['clicks']??0); $rowCtr=$rowImpressions>0?round(($rowClicks/$rowImpressions)*100,2):null; $rowDownloads=$downloadCountFor($track); ?><tr data-index="<?= e((string)($index+1)) ?>" data-title="<?= e((string)($track['title']??'N/A')) ?>" data-artist="<?= e((string)($track['artist']??'N/A')) ?>" data-genre="<?= e((string)($track['genre']??'N/A')) ?>" data-views="0" data-downloads="<?= e((string)$rowDownloads) ?>" data-impressions="<?= e((string)$rowImpressions) ?>" data-clicks="<?= e((string)$rowClicks) ?>" data-ctr="<?= e((string)($rowCtr??0)) ?>" data-time="0"><td><?= e(str_pad((string)($index+1),2,'0',STR_PAD_LEFT)) ?></td><td><div class="table-cover"><img loading="lazy" src="<?= e((string)($track['cover']??'assets/cover-1.jpg')) ?>" alt=""></div></td><td><?= e((string)($track['title']??'N/A')) ?></td><td><?= e((string)($track['artist']??'N/A')) ?></td><td><?= e((string)($track['genre']??'N/A')) ?></td><td>N/A</td><td><?= e($hasDownloadData ? number_format($rowDownloads) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowImpressions) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowClicks) : 'N/A') ?></td><td><?= e($hasAdData && $rowCtr !== null ? $rowCtr . '%' : 'N/A') ?></td><td>N/A</td></tr><?php endforeach; ?><?php endif; ?></tbody></table></div><div class="pagination" id="analyticsPagination"></div></div></section>
 
-          <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add the public preview file and the WAV download link separately"><div class="management-toolbar"><div><h2>Upload New Song</h2><p>Add the public preview file and the WAV download link separately</p></div></div><div class="upload-layout"><div class="panel upload-main-card"><div class="panel-header"><span class="panel-title">Song Details</span></div><form class="admin-form" id="uploadSongForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="upload"><div class="form-grid"><label class="form-field">Song Title<input type="text" name="title" placeholder="Nagin Theme" required></label><label class="form-field">Artist<input type="text" name="artist" value="SG Production"></label><label class="form-field">Artist Profile<select name="artistId"><?php foreach ($artists as $artistOption): if (!is_array($artistOption)) continue; ?><option value="<?= e((string) ($artistOption['id'] ?? '')) ?>"><?= e((string) ($artistOption['name'] ?? 'Artist')) ?></option><?php endforeach; ?></select></label><label class="form-field">Genre<select name="genre"><?php foreach ($genreNames as $genreName): ?><option><?= e($genreName) ?></option><?php endforeach; ?></select></label><label class="form-field full">Preview Song File<input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" required><span class="form-help">Accepts MP3/WAV. Duration will be detected from this file.</span><div class="file-meta" id="previewFileMeta"><span id="previewFileName">No file selected</span><span id="previewFileSize">0 MB</span></div></label><label class="form-field">Duration<input id="uploadDurationInput" type="text" name="duration" placeholder="0:0"></label><label class="form-field">Wave Style<select name="wave"><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Sawtooth</option><option value="triangle">Triangle</option></select></label><label class="form-field"><span>BPM</span><input type="number" name="bpm" value="124" min="40" max="240"></label><label class="form-field full">WAV Download URL<input type="url" name="downloadUrl" placeholder="Direct WAV download URL" required><span class="form-help">Direct URL for the full-quality WAV download.</span></label><label class="form-field full">Cover Image<div class="cover-upload-row"><div class="cover-preview-thumb" id="uploadCoverPreview">Cover</div><div><input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required><span class="form-help">Image preview appears after selection.</span></div></div></label><label class="form-field full">Credit Text<textarea name="creditText" rows="3" placeholder="Optional credit text shown on song page."></textarea></label></div><div class="check-grid"><label class="check-card toggle-card"><span>Show in Latest Releases</span><input type="checkbox" name="isNew" checked></label><label class="check-card toggle-card"><span>Mark as Featured</span><input type="checkbox" name="isFeatured"></label></div><div class="upload-progress" id="uploadProgress"><div class="progress-head"><span>Uploading song</span><span id="uploadProgressValue">0%</span></div><div class="progress-track"><div class="progress-fill" id="uploadProgressFill"></div></div></div><div class="form-actions"><button class="btn btn-outline" type="button" id="saveDraftButton">Save as Draft</button><button class="btn btn-primary" type="submit">Upload Song</button></div></form></div><aside class="panel tips-card"><div class="panel-header"><span class="panel-title">Upload Tips</span></div><ul><li><strong>Cover image:</strong> recommended 1:1 ratio, minimum 500x500px.</li><li><strong>Preview file:</strong> MP3, maximum 10MB for fast public playback.</li><li><strong>WAV link:</strong> should be a direct downloadable URL.</li><li><strong>Wave style:</strong> affects how the waveform looks on the public song page.</li></ul></aside></div></section>
+          <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add the public preview file and the WAV download link separately"><div class="management-toolbar"><div><h2>Upload New Song</h2><p>Add the public preview file and the WAV download link separately</p></div></div><div class="upload-layout"><div class="panel upload-main-card"><div class="panel-header"><span class="panel-title">Song Details</span></div><form class="admin-form" id="uploadSongForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="upload"><div class="form-grid"><label class="form-field">Song Title<input type="text" name="title" placeholder="Nagin Theme" required></label><label class="form-field">Artist<input type="text" name="artist" value="SG Production"></label><label class="form-field">Artist Profile<select name="artistId"><?php foreach ($artists as $artistOption): if (!is_array($artistOption)) continue; ?><option value="<?= e((string) ($artistOption['id'] ?? '')) ?>"><?= e((string) ($artistOption['name'] ?? 'Artist')) ?></option><?php endforeach; ?></select></label><label class="form-field">Genre<select name="genre"><?php foreach ($genreNames as $genreName): ?><option><?= e($genreName) ?></option><?php endforeach; ?></select></label><label class="form-field full">Preview Song File<input id="uploadPreviewFile" type="file" name="audio" accept=".wav,.mp3,audio/wav,audio/mpeg" required><span class="form-help">Accepts MP3/WAV. Duration will be detected from this file.</span><div class="file-meta" id="previewFileMeta"><span id="previewFileName">No file selected</span><span id="previewFileSize">0 MB</span></div></label><label class="form-field">Duration<input id="uploadDurationInput" type="text" name="duration" placeholder="0:0"></label><label class="form-field">Wave Style<select name="wave"><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Sawtooth</option><option value="triangle">Triangle</option></select></label><label class="form-field"><span>BPM <span id="bpmDetectStatus" style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35)"></span></span><input id="uploadBpmInput" type="number" name="bpm" value="124" min="40" max="240"></label><label class="form-field full">WAV Download URL<input type="url" name="downloadUrl" placeholder="Direct WAV download URL" required><span class="form-help">Direct URL for the full-quality WAV download.</span></label><label class="form-field full">Cover Image<div class="cover-upload-row"><div class="cover-preview-thumb" id="uploadCoverPreview">Cover</div><div><input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required><span class="form-help">Image preview appears after selection.</span></div></div></label><label class="form-field full">Credit Text<textarea name="creditText" rows="3" placeholder="Optional credit text shown on song page."></textarea></label></div><div class="check-grid"><label class="check-card toggle-card"><span>Show in Latest Releases</span><input type="checkbox" name="isNew" checked></label><label class="check-card toggle-card"><span>Mark as Featured</span><input type="checkbox" name="isFeatured"></label></div><div class="upload-progress" id="uploadProgress"><div class="progress-head"><span>Uploading song</span><span id="uploadProgressValue">0%</span></div><div class="progress-track"><div class="progress-fill" id="uploadProgressFill"></div></div></div><div class="form-actions"><button class="btn btn-outline" type="button" id="saveDraftButton">Save as Draft</button><button class="btn btn-primary" type="submit">Upload Song</button></div></form></div><aside class="panel tips-card"><div class="panel-header"><span class="panel-title">Upload Tips</span></div><ul><li><strong>Cover image:</strong> recommended 1:1 ratio, minimum 500x500px.</li><li><strong>Preview file:</strong> MP3, maximum 10MB for fast public playback.</li><li><strong>WAV link:</strong> should be a direct downloadable URL.</li><li><strong>Wave style:</strong> affects how the waveform looks on the public song page.</li></ul></aside></div></section>
 
           <section class="view-section" id="songs-section" data-title="Uploaded Songs" data-subtitle="Manage and monitor all your tracks"><div class="management-toolbar"><div><h2>Uploaded Songs</h2><p>Manage and monitor all your tracks</p></div><div class="song-controls"><input class="admin-control song-search" id="songSearchInput" type="search" placeholder="Search songs"><select class="admin-control" id="songGenreFilter"><option value="all">All Genres</option><?php foreach ($genreNames as $genreName): ?><option><?= e($genreName) ?></option><?php endforeach; ?></select><select class="admin-control" id="songSortSelect"><option value="newest">Newest</option><option value="downloads">Most Downloaded</option><option value="az">A-Z</option></select></div></div><div class="empty-state <?= $trackCount === 0 ? 'is-visible' : '' ?>" id="songsEmptyState"><div><h3>No songs uploaded yet</h3><p>Upload your first song to start building the catalog.</p><button class="btn btn-primary" type="button" data-action-section="upload">Upload Your First Song</button></div></div><div class="songs-list" id="songsList" style="display:<?= $trackCount > 0 ? 'flex' : 'none' ?>">
             <?php foreach ($tracks as $track): if (!is_array($track)) continue; $trackId = (string) ($track['id'] ?? ''); $title = (string) ($track['title'] ?? 'N/A'); $genre = (string) ($track['genre'] ?? 'N/A'); $duration = (string) ($track['duration'] ?? 'N/A'); $artistName = (string) ($track['artist'] ?? 'SG Production'); $downloads = $downloadCountFor($track); $adTrackClicks = $adClickCountFor($track); $status = 'Published'; ?>
@@ -4889,6 +4889,74 @@ $downloadChartData = [
   const uploadProgressValue = document.querySelector('#uploadProgressValue');
   const saveDraftButton = document.querySelector('#saveDraftButton');
 
+  // ── BPM detection ────────────────────────────────────────────────────────
+  function estimateBPMFromBuffer(audioBuffer) {
+    const sr = audioBuffer.sampleRate;
+    const raw = audioBuffer.getChannelData(0);
+    // Limit to first 60 s for performance
+    const samples = raw.length > sr * 60 ? raw.slice(0, sr * 60) : raw;
+
+    // 10 ms energy windows
+    const winLen = Math.round(sr / 100);
+    const energies = [];
+    for (let i = 0; i + winLen < samples.length; i += winLen) {
+      let e = 0;
+      for (let j = 0; j < winLen; j++) e += samples[i + j] ** 2;
+      energies.push(e / winLen);
+    }
+
+    // Beat detection via local-energy ratio (Fontana & Avanzini)
+    const histLen = 43; // ~430 ms history
+    const beats = [];
+    for (let i = histLen; i < energies.length; i++) {
+      const win = energies.slice(i - histLen, i);
+      const mean = win.reduce((a, b) => a + b, 0) / histLen;
+      const variance = win.reduce((a, b) => a + (b - mean) ** 2, 0) / histLen;
+      const threshold = -0.0025714 * variance + 1.5142857;
+      if (energies[i] > threshold * mean) beats.push(i);
+    }
+
+    if (beats.length < 4) return 120;
+
+    // Inter-beat intervals → histogram → dominant period
+    const hist = new Map();
+    for (let i = 1; i < beats.length; i++) {
+      const d = beats[i] - beats[i - 1];
+      if (d < 1) continue;
+      const key = Math.round(d / 2) * 2;
+      hist.set(key, (hist.get(key) || 0) + 1);
+    }
+    let bestKey = 43, bestCount = 0;
+    for (const [key, count] of hist) {
+      if (count > bestCount) { bestCount = count; bestKey = key; }
+    }
+
+    // IBI → BPM, normalise to 60–200
+    let bpm = 60 / (bestKey / 100);
+    while (bpm < 60) bpm *= 2;
+    while (bpm > 200) bpm /= 2;
+    return Math.round(bpm);
+  }
+
+  async function detectBPMFromSource(source) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+      let buf;
+      if (source instanceof File || source instanceof Blob) {
+        buf = await source.arrayBuffer();
+      } else {
+        const resp = await fetch(source);
+        if (!resp.ok) throw new Error('Fetch failed');
+        buf = await resp.arrayBuffer();
+      }
+      const audioBuffer = await ctx.decodeAudioData(buf);
+      return estimateBPMFromBuffer(audioBuffer);
+    } finally {
+      ctx.close();
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   uploadPreviewFile?.addEventListener('change', () => {
     const file = uploadPreviewFile.files && uploadPreviewFile.files[0];
     if (!file) return;
@@ -4904,6 +4972,20 @@ $downloadChartData = [
       URL.revokeObjectURL(objectUrl);
     });
     audio.addEventListener('error', () => URL.revokeObjectURL(objectUrl));
+
+    // Auto-detect BPM
+    const bpmInput = document.querySelector('#uploadBpmInput');
+    const bpmStatus = document.querySelector('#bpmDetectStatus');
+    if (bpmInput && bpmStatus) {
+      bpmStatus.textContent = 'Detecting…';
+      detectBPMFromSource(file)
+        .then(bpm => {
+          bpmInput.value = bpm;
+          bpmStatus.textContent = `Detected: ${bpm} BPM`;
+          setTimeout(() => { bpmStatus.textContent = ''; }, 4000);
+        })
+        .catch(() => { bpmStatus.textContent = 'Detection failed'; });
+    }
   });
 
   uploadCoverInput?.addEventListener('change', () => {
@@ -5406,6 +5488,56 @@ $downloadChartData = [
     notificationSettingsPanel?.classList.toggle('open');
     toggleNotificationSettings.textContent = notificationSettingsPanel?.classList.contains('open') ? 'Hide Settings' : 'Show Settings';
   });
+
+  // ── Inject "Detect BPM" buttons into every edit-panel BPM field ──────────
+  document.querySelectorAll('.track-edit-panel').forEach(panel => {
+    const bpmField = panel.querySelector('input[name="bpm"]');
+    if (!bpmField) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Detect';
+    btn.className = 'btn btn-outline bpm-detect-btn';
+    btn.style.cssText = 'padding:2px 10px;font-size:11px;height:28px;margin-left:6px;vertical-align:middle';
+    bpmField.insertAdjacentElement('afterend', btn);
+
+    const status = document.createElement('span');
+    status.style.cssText = 'font-size:11px;color:rgba(255,255,255,0.35);margin-left:6px';
+    btn.insertAdjacentElement('afterend', status);
+
+    btn.addEventListener('click', async () => {
+      // Resolve the preview URL from the sibling play-button link
+      const row = panel.closest('.song-row');
+      const playLink = row && row.querySelector('a.song-action-btn[href]');
+      const previewUrl = playLink ? playLink.getAttribute('href') : null;
+
+      // Prefer a freshly-selected replacement file if one is staged
+      const replaceInput = panel.querySelector('input[name="audio"]');
+      const source = (replaceInput && replaceInput.files && replaceInput.files[0]) || previewUrl;
+
+      if (!source || source === '#') {
+        status.textContent = 'No audio source';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '…';
+      status.textContent = 'Detecting BPM…';
+
+      try {
+        const bpm = await detectBPMFromSource(source);
+        bpmField.value = bpm;
+        status.textContent = `✓ ${bpm} BPM`;
+        setTimeout(() => { status.textContent = ''; }, 4000);
+      } catch {
+        status.textContent = 'Detection failed';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Detect';
+      }
+    });
+  });
+  // ─────────────────────────────────────────────────────────────────────────
 
   openSection(location.hash.replace('#', '') || 'dashboard');
 })();
