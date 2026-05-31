@@ -91,6 +91,7 @@ let waveformRenderToken = 0;
 let currentVolume = 0.8;
 let isMuted = false;
 let playerVolTimer = 0;
+let pendingPlayerSeekFraction = null;
 const waveformCache = new Map();
 const waveformInflight = new Map(); // `${track.id}:${barCount}` → Promise<string[]|null>
 let allTracks = [];
@@ -146,7 +147,6 @@ function showPlayer() {
   player.style.display = "";
   player.classList.add("is-visible", "active");
   document.body.classList.add("player-visible");
-  document.querySelector(".page")?.style.setProperty("padding-bottom", window.matchMedia("(max-width: 768px)").matches ? "124px" : "104px");
 }
 
 function hidePlayer() {
@@ -157,7 +157,6 @@ function hidePlayer() {
   player.style.display = "none";
   player.classList.remove("is-visible", "active", "is-playing");
   document.body.classList.remove("player-visible");
-  document.querySelector(".page")?.style.removeProperty("padding-bottom");
 }
 
 const PREVIEW_SECONDS = 12;
@@ -1449,7 +1448,7 @@ function progressFractionFromPointer(event, element) {
   return Math.max(0, Math.min(1, ratio));
 }
 
-function setPlayerProgress(fraction) {
+function setPlayerProgress(fraction, shouldCommit = true) {
   const clamped = Math.min(1, Math.max(0, fraction));
   progressBar.style.width = `${clamped * 100}%`;
 
@@ -1459,8 +1458,15 @@ function setPlayerProgress(fraction) {
     }
 
     const total = activeAudio.duration;
-    activeAudio.currentTime = clamped * total;
-    pausedAt = activeAudio.currentTime;
+    const targetTime = clamped * total;
+    pausedAt = targetTime;
+
+    if (!shouldCommit && isPlaying) {
+      updatePlayerTimer(targetTime, true);
+      return;
+    }
+
+    activeAudio.currentTime = targetTime;
     updatePlayerTimer(pausedAt, true);
     return;
   }
@@ -1474,7 +1480,7 @@ function setPlayerProgress(fraction) {
   const previewOffset = Math.min(PREVIEW_SECONDS - 0.01, clamped * PREVIEW_SECONDS);
 
   if (isPlaying && activeSource && audioContext) {
-    if (progressShell.classList.contains("is-seeking")) {
+    if (!shouldCommit || progressShell.classList.contains("is-seeking")) {
       // During drag: only update position, defer the restart to when drag ends
       pausedAt = previewOffset;
       updatePlayerTimer(pausedAt, false);
@@ -1497,22 +1503,33 @@ function setPlayerProgress(fraction) {
 function startPlayerSeek(event) {
   event.preventDefault();
   progressShell.classList.add("is-seeking");
-  setPlayerProgress(progressFractionFromPointer(event, progressShell));
+  pendingPlayerSeekFraction = progressFractionFromPointer(event, progressShell);
+  setPlayerProgress(pendingPlayerSeekFraction, false);
 
   const move = (moveEvent) => {
     moveEvent.preventDefault();
-    setPlayerProgress(progressFractionFromPointer(moveEvent, progressShell));
+    pendingPlayerSeekFraction = progressFractionFromPointer(moveEvent, progressShell);
+    setPlayerProgress(pendingPlayerSeekFraction, false);
   };
 
   const stop = () => {
+    const finalFraction = pendingPlayerSeekFraction;
+    pendingPlayerSeekFraction = null;
+    const shouldRestartSynthetic = isPlaying && activeSource && audioContext && !activeAudio;
     progressShell.classList.remove("is-seeking");
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
+    window.removeEventListener("pointercancel", stop);
     window.removeEventListener("touchmove", move);
     window.removeEventListener("touchend", stop);
     window.removeEventListener("touchcancel", stop);
+
+    if (finalFraction !== null) {
+      setPlayerProgress(finalFraction, !shouldRestartSynthetic);
+    }
+
     // For AudioContext-based playback: restart from the seeked position now that drag is done
-    if (isPlaying && activeSource && audioContext) {
+    if (shouldRestartSynthetic && isPlaying && activeSource && audioContext) {
       activeSource.onended = null;
       activeSource.stop();
       activeSource = null;
@@ -1529,6 +1546,7 @@ function startPlayerSeek(event) {
   } else {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop, { once: true });
+    window.addEventListener("pointercancel", stop, { once: true });
   }
 }
 

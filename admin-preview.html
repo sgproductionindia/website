@@ -552,12 +552,10 @@
     border: 1px solid var(--separator);
     border-radius: var(--radius-md);
     padding: var(--sp-3) var(--sp-4);
-    transition: background var(--duration) var(--ease-out),
-                border-color var(--duration) var(--ease-out);
+    transition: border-color var(--duration) var(--ease-out);
   }
   .song-row:hover {
-    background: var(--bg-tertiary);
-    border-color: rgba(84,84,88,0.9);
+    border-color: var(--separator);
   }
 
   .song-main { display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
