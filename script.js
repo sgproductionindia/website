@@ -125,7 +125,7 @@ let siteSettings = {
   },
   catalog: {
     latestCount: 5,
-    tracksPerPage: 15,
+    tracksPerPage: 14,
     paginationDemoPages: 12
   },
   advertising: {
@@ -168,7 +168,7 @@ function hidePlayer() {
 }
 
 const PREVIEW_SECONDS = 12;
-let allTracksPerPage = 15;
+let allTracksPerPage = 14;
 let demoTrackPageCount = 12;
 let latestTrackCount = 5;
 
@@ -859,7 +859,7 @@ function applySiteSettings() {
 
   const configuredLatestCount = Number(catalog.latestCount);
   latestTrackCount = Number.isFinite(configuredLatestCount) ? Math.max(0, Math.min(12, configuredLatestCount)) : 5;
-  allTracksPerPage = Math.max(5, Math.min(50, Number(catalog.tracksPerPage) || 15));
+  allTracksPerPage = Math.max(5, Math.min(14, Number(catalog.tracksPerPage) || 14));
   demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
 
   applyRouteMeta("/");
