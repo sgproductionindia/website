@@ -4,14 +4,12 @@ Music download platform built with PHP and Apache.
 
 ## Environment Variables Required
 
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
 SMTP_USERNAME=
 SMTP_PASSWORD=
 SMTP_FROM=
 SMTP_FROM_NAME=
 CONTACT_TO=
+ADMIN_PASSWORD=
 
 ## Deployment
 

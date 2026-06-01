@@ -147,7 +147,7 @@ function sg_contact_send($name, $email, $subject, $message) {
     'To: <' . $to . '>',
     'Reply-To: <' . $email . '>',
     'Subject: =?UTF-8?B?'
-      . base64_encode('Contact: ' . $subject)
+      . base64_encode('Message from SG Production')
       . '?=',
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
@@ -228,12 +228,8 @@ function sg_contact_save_message($name, $email, $subject, $message) {
 
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/data/contact-debug.log');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  ini_set('log_errors', 1);
-  error_log('SG contact form submitted');
-
   $name = sg_contact_clean($_POST['name'] ?? '');
   $email = sg_contact_clean($_POST['email'] ?? '');
   $subject = sg_contact_clean($_POST['subject'] ?? '');
@@ -273,7 +269,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!$errors) {
     $saved = sg_contact_save_message($name, $email, $subject, $message);
     $sent = sg_contact_send($name, $email, $subject, $message);
-    error_log('SG contact send result: ' . ($sent ? 'SUCCESS' : 'FAILED'));
 
     if ($sent) {
       $success = 'Message sent successfully. We will get back to you soon.';
@@ -328,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.min.css?v=20260531-beta-popup">
+    <link rel="stylesheet" href="styles.css?v=20260601-audit">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="page-search.js?v=20260528-page-search" defer></script>
@@ -340,10 +335,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           if (href === '/') return 'index.html';
           if (href === '/tracks') return 'index.html?view=tracks';
           if (href === '/licensing') return 'index.html?view=licensing';
-          if (href === '/about') return 'about-preview.html';
-          if (href === '/contact') return 'contact-preview.html';
+          if (href === '/about') return 'about.php';
+          if (href === '/contact') return 'contact.php';
           if (href === '/artists') return 'artists.html';
-          if (href === 'usage-policy.php') return 'usage-policy-preview.html';
+          if (href === '/usage-policy' || href === 'usage-policy.php') return 'usage-policy.php';
           if (href.startsWith('/song/')) return 'index.html?song=' + encodeURIComponent(href.replace(/^\/song\//, ''));
           if (href.startsWith('/artist/')) return 'artists.html?artist=' + encodeURIComponent(href.replace(/^\/artist\//, ''));
           return '';
@@ -479,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="nav-spacer" aria-hidden="true"></div>
 
         <div class="nav-section nav-utility">
-          <a class="nav-link" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
+          <a class="nav-link" href="/usage-policy" data-policy-link aria-label="Usage policy" title="Usage Policy">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>

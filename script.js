@@ -209,6 +209,12 @@ function normalizeLocalPreviewLinks() {
       link.setAttribute("href", "index.html?view=tracks");
     } else if (href === "/licensing") {
       link.setAttribute("href", "index.html?view=licensing");
+    } else if (href === "/about") {
+      link.setAttribute("href", "about.php");
+    } else if (href === "/contact") {
+      link.setAttribute("href", "contact.php");
+    } else if (href === "/usage-policy") {
+      link.setAttribute("href", "usage-policy.php");
     } else if (href === "/artists") {
       link.setAttribute("href", "artists.html");
     } else if (href.startsWith("/song/")) {
@@ -704,9 +710,9 @@ function publicRoutePath(href) {
   if (clean === "/" || clean === "/index.html" || leaf === "index.html") return "/";
   if (clean === "/tracks" || params.get("view") === "tracks") return "/tracks";
   if (clean === "/licensing" || params.get("view") === "licensing") return "/licensing";
-  if (clean === "/about" || clean === "/about.php" || leaf === "about.php" || leaf === "about-preview.html") return "/about";
-  if (clean === "/contact" || clean === "/contact.php" || leaf === "contact.php" || leaf === "contact-preview.html") return "/contact";
-  if (clean === "/usage-policy" || clean === "/usage-policy.php" || leaf === "usage-policy.php" || leaf === "usage-policy-preview.html") return "/usage-policy";
+  if (clean === "/about" || clean === "/about.php" || leaf === "about.php") return "/about";
+  if (clean === "/contact" || clean === "/contact.php" || leaf === "contact.php") return "/contact";
+  if (clean === "/usage-policy" || clean === "/usage-policy.php" || leaf === "usage-policy.php") return "/usage-policy";
   if (clean === "/artists" || clean === "/artists.html" || leaf === "artists.html") return "/artists";
   if (clean.startsWith("/artist/")) return clean;
 
@@ -719,9 +725,9 @@ function publicRouteUrl(path) {
     if (path === "/") return "index.html";
     if (path === "/tracks") return "index.html?view=tracks";
     if (path === "/licensing") return "index.html?view=licensing";
-    if (path === "/about") return "about-preview.html";
-    if (path === "/contact") return "contact-preview.html";
-    if (path === "/usage-policy") return "usage-policy-preview.html";
+    if (path === "/about") return "about.php";
+    if (path === "/contact") return "contact.php";
+    if (path === "/usage-policy") return "usage-policy.php";
     if (path === "/artists") return "artists.html";
     if (path.startsWith("/artist/")) return `artists.html?artist=${encodeURIComponent(path.replace(/^\/artist\//, ""))}`;
   }
@@ -730,9 +736,9 @@ function publicRouteUrl(path) {
 
 function shellFetchUrl(path) {
   if (!canUseCleanUrls()) {
-    if (path === "/about") return "about-preview.html";
-    if (path === "/contact") return "contact-preview.html";
-    if (path === "/usage-policy") return "usage-policy-preview.html";
+    if (path === "/about") return "about.php";
+    if (path === "/contact") return "contact.php";
+    if (path === "/usage-policy") return "usage-policy.php";
   }
   if (path === "/about") return "/about";
   if (path === "/contact") return "/contact";
@@ -940,7 +946,6 @@ function applySiteSettings() {
   const licenseTitle = document.querySelector("#license-title");
   const youtubeText = document.querySelector("#youtubeText");
   const youtubeSubscribe = document.querySelector("#youtubeSubscribe");
-  const contactHref = site.contactEmail ? `mailto:${site.contactEmail}` : "";
 
   if (siteTitle) {
     siteTitle.textContent = site.title;
@@ -966,7 +971,6 @@ function applySiteSettings() {
   setLink('a[aria-label="Spotify"]', links.spotify);
   setLink('a[aria-label="Apple Music"]', links.appleMusic);
   setLink('a[aria-label="YouTube"]', links.youtube);
-  setLink('a[aria-label="Contact SG Production"]', contactHref);
 }
 
 function preloadAdMedia(advertising) {
@@ -2976,11 +2980,11 @@ sideNav.addEventListener("focusout", () => {
   shareWA?.addEventListener('click', function() {
     const { songUrl } = currentShareData();
     const songTitle = document.querySelector(
-      '.song-title, h1'
+      '#songPageTitle, .song-title, h1'
     )?.textContent?.trim() || 'SG Production Track';
 
     const songGenre = document.querySelector(
-      '.song-genre, .genre-tag, .track-genre'
+      '#songGenre, .song-genre, .genre-tag, .track-genre'
     )?.textContent?.trim() || '';
 
     const whatsappText =

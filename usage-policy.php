@@ -28,13 +28,13 @@
     <meta property="og:title" content="Usage Policy &amp; Legal Disclaimer | SG Production">
     <meta property="og:description" content="Read before downloading or using any music from SG Production.">
     <meta property="og:image" content="https://sgproduction.music/assets/cover-1.jpg">
-    <meta property="og:url" content="https://sgproduction.music/usage-policy.php">
+    <meta property="og:url" content="https://sgproduction.music/usage-policy">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Usage Policy &amp; Legal Disclaimer | SG Production">
     <meta name="twitter:description" content="Read before downloading or using any music from SG Production.">
     <meta name="twitter:image" content="https://sgproduction.music/assets/cover-1.jpg">
-    <link rel="canonical" href="https://sgproduction.music/usage-policy.php">
+    <link rel="canonical" href="https://sgproduction.music/usage-policy">
     <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/sg-logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,10 +52,10 @@
           if (href === '/') return 'index.html';
           if (href === '/tracks') return 'index.html?view=tracks';
           if (href === '/licensing') return 'index.html?view=licensing';
-          if (href === '/about') return 'about-preview.html';
-          if (href === '/contact') return 'contact-preview.html';
+          if (href === '/about') return 'about.php';
+          if (href === '/contact') return 'contact.php';
           if (href === '/artists') return 'artists.html';
-          if (href === 'usage-policy.php') return 'usage-policy-preview.html';
+          if (href === '/usage-policy' || href === 'usage-policy.php') return 'usage-policy.php';
           if (href.startsWith('/song/')) return 'index.html?song=' + encodeURIComponent(href.replace(/^\/song\//, ''));
           if (href.startsWith('/artist/')) return 'artists.html?artist=' + encodeURIComponent(href.replace(/^\/artist\//, ''));
           return '';
@@ -143,7 +143,7 @@
         <div class="nav-spacer" aria-hidden="true"></div>
 
         <div class="nav-section nav-utility">
-          <a class="nav-link active-line" href="usage-policy.php" data-policy-link aria-label="Usage policy" title="Usage Policy">
+          <a class="nav-link active-line" href="/usage-policy" data-policy-link aria-label="Usage policy" title="Usage Policy">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
