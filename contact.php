@@ -26,31 +26,16 @@ function sg_contact_env($key, $default = '') {
 }
 
 function sg_contact_send($name, $email, $subject, $message) {
-  $host = getenv('SMTP_HOST') ?: 'smtpout.secureserver.net';
-  $port = (int)(getenv('SMTP_PORT') ?: 465);
+  $host = 'smtp.office365.com';
+  $port = 587;
+  $secure = 'tls';
   $username = getenv('SMTP_USERNAME') ?: 'support@sgproduction.music';
   $password = getenv('SMTP_PASSWORD') ?: '';
   $from = getenv('SMTP_FROM') ?: 'support@sgproduction.music';
   $fromName = getenv('SMTP_FROM_NAME') ?: 'SG Production';
   $to = getenv('CONTACT_TO') ?: 'support@sgproduction.music';
 
-  $context = stream_context_create([
-    'ssl' => [
-      'verify_peer' => false,
-      'verify_peer_name' => false,
-      'allow_self_signed' => true,
-    ]
-  ]);
-
-  $socket = @stream_socket_client(
-    'ssl://' . $host . ':' . $port,
-    $errno,
-    $errstr,
-    30,
-    STREAM_CLIENT_CONNECT,
-    $context
-  );
-
+  $socket = @fsockopen($host, $port, $errno, $errstr, 30);
   if (!$socket) {
     error_log('SG SMTP connect failed: ' . $errstr . ' (' . $errno . ')');
     return false;
@@ -62,9 +47,9 @@ function sg_contact_send($name, $email, $subject, $message) {
     $data = '';
     while ($line = fgets($sock, 515)) {
       $data .= $line;
-      if (substr($line, 3, 1) === ' ') break;
+      if (isset($line[3]) && $line[3] === ' ') break;
     }
-    return [(int)substr($data, 0, 3), $data];
+    return [(int)substr($data, 0, 3), trim($data)];
   }
 
   function smtp_cmd($sock, $cmd, $expect) {
@@ -84,6 +69,31 @@ function sg_contact_send($name, $email, $subject, $message) {
 
   if (!smtp_cmd($socket, 'EHLO ' . $domain, 250)) {
     smtp_cmd($socket, 'HELO ' . $domain, 250);
+  }
+
+  fwrite($socket, "STARTTLS\r\n");
+  [$code, $response] = smtp_read($socket);
+  if ($code !== 220) {
+    fclose($socket);
+    error_log('SG SMTP STARTTLS failed: ' . $response);
+    return false;
+  }
+
+  $tlsEnabled = stream_socket_enable_crypto(
+    $socket,
+    true,
+    STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+  );
+  if (!$tlsEnabled) {
+    fclose($socket);
+    error_log('SG SMTP TLS upgrade failed');
+    return false;
+  }
+
+  if (!smtp_cmd($socket, 'EHLO ' . $domain, 250)) {
+    fclose($socket);
+    error_log('SG SMTP EHLO after TLS failed');
+    return false;
   }
 
   fwrite($socket, "AUTH LOGIN\r\n");
