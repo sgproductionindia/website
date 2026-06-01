@@ -59,11 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if (!$errors) {
     $to = 'support@sgproductionindia.music';
-    $mailSubject = '[SG Production Contact] ' . $subject;
+    $mailSubject = 'Message from SG Production';
     $mailBody = "New message from SG Production contact page\n\n"
       . "Full Name: {$name}\n"
       . "Email Address: {$email}\n"
-      . "Subject: {$subject}\n\n"
+      . "Selected Subject: {$subject}\n\n"
       . "Message:\n{$message}\n";
 
     $headers = [

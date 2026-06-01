@@ -399,17 +399,32 @@ function updatePlayerLike(track) {
   playerLike.setAttribute("aria-pressed", String(liked));
 }
 
-function sendTrackLike(track, liked) {
-  if (!track?.id || !/^https?:$/.test(window.location.protocol)) {
-    return;
+function getLikeClientId() {
+  const key = "sg_like_client_id";
+  let id = localStorage.getItem(key);
+
+  if (!id) {
+    id = window.crypto?.randomUUID ? window.crypto.randomUUID() : `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, id);
   }
 
-  fetch("api/like.php", {
+  return id;
+}
+
+function sendTrackLike(track, liked) {
+  if (!track?.id || !/^https?:$/.test(window.location.protocol)) {
+    return Promise.resolve(null);
+  }
+
+  return fetch("/api/like.php", {
     method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
       id: track.id,
-      action: liked ? "like" : "unlike"
+      action: liked ? "like" : "unlike",
+      client_id: getLikeClientId()
     })
   })
     .then((response) => (response.ok ? response.json() : null))
@@ -427,8 +442,29 @@ function sendTrackLike(track, liked) {
       if (allMatch) {
         allMatch.likes = track.likes;
       }
+
+      return data;
     })
-    .catch(() => {});
+    .catch(() => null);
+}
+
+function syncStoredLikeWithServer(track) {
+  if (!track?.id || !/^https?:$/.test(window.location.protocol)) {
+    return;
+  }
+
+  const likedKey = `liked_${track.id}`;
+  const syncKey = `liked_sync_${track.id}`;
+
+  if (localStorage.getItem(likedKey) !== "true" || localStorage.getItem(syncKey) === "true") {
+    return;
+  }
+
+  sendTrackLike(track, true).then((data) => {
+    if (data?.ok) {
+      localStorage.setItem(syncKey, "true");
+    }
+  });
 }
 
 function playTrackByOffset(offset) {
@@ -1661,6 +1697,7 @@ function syncPlayer() {
   playerToggle.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   songPlay.setAttribute("aria-label", isPlaying ? `Pause ${selectedTrack.title}` : `Play ${selectedTrack.title}`);
   updatePlayerLike(selectedTrack);
+  syncStoredLikeWithServer(selectedTrack);
   applyPlayerVolume();
   updateMediaSession(selectedTrack);
   updatePlayerTimer(pausedAt);
@@ -2528,7 +2565,15 @@ playerLike?.addEventListener("click", () => {
   }
 
   updatePlayerLike(selectedTrack);
-  sendTrackLike(selectedTrack, liked);
+  sendTrackLike(selectedTrack, liked).then((data) => {
+    if (!data?.ok) return;
+    const syncKey = `liked_sync_${selectedTrack.id}`;
+    if (liked) {
+      localStorage.setItem(syncKey, "true");
+    } else {
+      localStorage.removeItem(syncKey);
+    }
+  });
 });
 
 if (playerVolBtn && playerVolPopup) {
