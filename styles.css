@@ -4233,8 +4233,19 @@ body.search-open {
 }
 
 @media (max-width: 768px) {
+  .song-action-row {
+    align-items: stretch;
+  }
+  .btn-download {
+    flex: 1 1 auto;
+  }
+  .share-popup-wrap {
+    flex: 0 0 50px;
+    width: 50px;
+    min-width: 50px;
+  }
   .btn-share {
-    flex: none;
+    flex: 0 0 50px;
     width: 50px;
     min-width: 50px;
     padding: 0;
@@ -4243,7 +4254,7 @@ body.search-open {
     justify-content: center;
   }
   .btn-share .btn-share-text {
-    display: none;
+    display: none !important;
   }
   .btn-share svg {
     margin: 0;
