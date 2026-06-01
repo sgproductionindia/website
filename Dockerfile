@@ -5,7 +5,7 @@ COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
 COPY . /var/www/html/
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
+    && apt-get install -y --no-install-recommends curl unzip libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install gd mysqli pdo pdo_mysql \
     && a2enmod rewrite headers expires deflate brotli \
@@ -13,6 +13,10 @@ RUN apt-get update \
     && chown -R www-data:www-data /var/www/html/uploads /var/www/html/data \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sS https://getcomposer.org/installer \
+    | php -- --install-dir=/usr/local/bin --filename=composer \
+    && composer install --no-dev --working-dir=/var/www/html --optimize-autoloader
 
 EXPOSE 80
 
