@@ -26,74 +26,147 @@ function sg_contact_env($key, $default = '') {
 }
 
 function sg_contact_send($name, $email, $subject, $message) {
-  require_once __DIR__ . '/vendor/autoload.php';
+  $host = getenv('SMTP_HOST') ?: 'smtpout.secureserver.net';
+  $port = (int)(getenv('SMTP_PORT') ?: 465);
+  $username = getenv('SMTP_USERNAME') ?: 'support@sgproductionindia.music';
+  $password = getenv('SMTP_PASSWORD') ?: '';
+  $from = getenv('SMTP_FROM') ?: 'support@sgproductionindia.music';
+  $fromName = getenv('SMTP_FROM_NAME') ?: 'SG Production';
+  $to = getenv('CONTACT_TO') ?: 'support@sgproductionindia.music';
 
-  $host = sg_contact_env('SMTP_HOST', 'smtpout.secureserver.net');
-  $port = (int) sg_contact_env('SMTP_PORT', '587');
-  $secure = strtolower(sg_contact_env('SMTP_SECURE', 'tls'));
-  $username = sg_contact_env('SMTP_USERNAME');
-  $password = sg_contact_env('SMTP_PASSWORD');
-  $from = sg_contact_env('SMTP_FROM', 'support@sgproductionindia.music');
-  $fromName = sg_contact_env('SMTP_FROM_NAME', 'SG Production Website');
-  $to = sg_contact_env('CONTACT_TO', 'support@sgproductionindia.music');
+  $context = stream_context_create([
+    'ssl' => [
+      'verify_peer' => false,
+      'verify_peer_name' => false,
+      'allow_self_signed' => true,
+    ]
+  ]);
 
-  $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+  $socket = @stream_socket_client(
+    'ssl://' . $host . ':' . $port,
+    $errno,
+    $errstr,
+    30,
+    STREAM_CLIENT_CONNECT,
+    $context
+  );
 
-  try {
-    $mail->isSMTP();
-    $mail->Host = $host;
-    $mail->SMTPAuth = true;
-    $mail->Username = $username;
-    $mail->Password = $password;
-    $mail->Port = $port;
-
-    if ($secure === 'ssl') {
-      $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-    } else {
-      $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-    }
-
-    $mail->SMTPOptions = [
-      'ssl' => [
-        'verify_peer' => false,
-        'verify_peer_name' => false,
-        'allow_self_signed' => true,
-      ],
-    ];
-
-    $mail->setFrom($from, $fromName);
-    $mail->addAddress($to);
-    $mail->addReplyTo($email, $name);
-
-    $mail->Subject = 'Message from SG Production Contact Form';
-    $mail->Body =
-      "New message from SG Production contact page\n\n"
-      . "Full Name: {$name}\n"
-      . "Email: {$email}\n"
-      . "Subject: {$subject}\n\n"
-      . "Message:\n{$message}";
-
-    $mail->send();
-    return true;
-  } catch (Exception $e) {
-    $errorMsg = date('Y-m-d H:i:s') . ' SMTP Error: '
-      . $mail->ErrorInfo . "\n"
-      . 'Host: ' . $host . "\n"
-      . 'Port: ' . $port . "\n"
-      . 'Secure: ' . $secure . "\n"
-      . 'Username: ' . $username . "\n"
-      . 'From: ' . $from . "\n"
-      . 'To: ' . $to . "\n"
-      . '---' . "\n";
-
-    file_put_contents(
-      __DIR__ . '/data/contact-debug.log',
-      $errorMsg,
-      FILE_APPEND
-    );
-    error_log('SG contact mail error: ' . $mail->ErrorInfo);
+  if (!$socket) {
+    error_log('SG SMTP connect failed: ' . $errstr . ' (' . $errno . ')');
     return false;
   }
+
+  stream_set_timeout($socket, 30);
+
+  function smtp_read($sock) {
+    $data = '';
+    while ($line = fgets($sock, 515)) {
+      $data .= $line;
+      if (substr($line, 3, 1) === ' ') break;
+    }
+    return [(int)substr($data, 0, 3), $data];
+  }
+
+  function smtp_cmd($sock, $cmd, $expect) {
+    fwrite($sock, $cmd . "\r\n");
+    [$code] = smtp_read($sock);
+    return $code === $expect;
+  }
+
+  [$code] = smtp_read($socket);
+  if ($code !== 220) {
+    fclose($socket);
+    error_log('SG SMTP greeting failed: ' . $code);
+    return false;
+  }
+
+  $domain = 'sgproduction.music';
+
+  if (!smtp_cmd($socket, 'EHLO ' . $domain, 250)) {
+    smtp_cmd($socket, 'HELO ' . $domain, 250);
+  }
+
+  fwrite($socket, "AUTH LOGIN\r\n");
+  [$code] = smtp_read($socket);
+  if ($code !== 334) {
+    fclose($socket);
+    error_log('SG SMTP AUTH failed: ' . $code);
+    return false;
+  }
+
+  fwrite($socket, base64_encode($username) . "\r\n");
+  [$code] = smtp_read($socket);
+  if ($code !== 334) {
+    fclose($socket);
+    error_log('SG SMTP username failed: ' . $code);
+    return false;
+  }
+
+  fwrite($socket, base64_encode($password) . "\r\n");
+  [$code] = smtp_read($socket);
+  if ($code !== 235) {
+    fclose($socket);
+    error_log('SG SMTP password failed: ' . $code);
+    return false;
+  }
+
+  if (!smtp_cmd($socket, 'MAIL FROM:<' . $from . '>', 250)) {
+    fclose($socket);
+    error_log('SG SMTP MAIL FROM failed');
+    return false;
+  }
+
+  if (!smtp_cmd($socket, 'RCPT TO:<' . $to . '>', 250)) {
+    fclose($socket);
+    error_log('SG SMTP RCPT TO failed');
+    return false;
+  }
+
+  if (!smtp_cmd($socket, 'DATA', 354)) {
+    fclose($socket);
+    error_log('SG SMTP DATA failed');
+    return false;
+  }
+
+  $boundary = md5(uniqid());
+  $headers = implode("\r\n", [
+    'Date: ' . date('r'),
+    'From: =?UTF-8?B?'
+      . base64_encode($fromName)
+      . '?= <' . $from . '>',
+    'To: <' . $to . '>',
+    'Reply-To: <' . $email . '>',
+    'Subject: =?UTF-8?B?'
+      . base64_encode('Contact: ' . $subject)
+      . '?=',
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+  ]);
+
+  $body = base64_encode(
+    "New contact message from SG Production\r\n\r\n"
+    . "Name: $name\r\n"
+    . "Email: $email\r\n"
+    . "Subject: $subject\r\n\r\n"
+    . "Message:\r\n$message"
+  );
+
+  $body = chunk_split($body, 76, "\r\n");
+
+  fwrite($socket, $headers . "\r\n\r\n" . $body . "\r\n.\r\n");
+
+  [$code] = smtp_read($socket);
+  $sent = ($code === 250);
+
+  smtp_cmd($socket, 'QUIT', 221);
+  fclose($socket);
+
+  if (!$sent) {
+    error_log('SG SMTP send failed with code: ' . $code);
+  }
+
+  return $sent;
 }
 
 function sg_contact_save_message($name, $email, $subject, $message) {
@@ -148,6 +221,9 @@ ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/data/contact-debug.log');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  ini_set('log_errors', 1);
+  error_log('SG contact form submitted');
+
   $name = sg_contact_clean($_POST['name'] ?? '');
   $email = sg_contact_clean($_POST['email'] ?? '');
   $subject = sg_contact_clean($_POST['subject'] ?? '');
@@ -187,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!$errors) {
     $saved = sg_contact_save_message($name, $email, $subject, $message);
     $sent = sg_contact_send($name, $email, $subject, $message);
+    error_log('SG contact send result: ' . ($sent ? 'SUCCESS' : 'FAILED'));
 
     if ($sent) {
       $success = 'Message sent successfully. We will get back to you soon.';
