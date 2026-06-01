@@ -20,6 +20,71 @@ function sg_contact_e($value) {
   return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function sg_contact_send_mail($name, $email, $subject, $message) {
+  $to = 'support@sgproductionindia.music';
+  $mailSubject = 'Message from SG Production';
+  $mailBody = "New message from SG Production contact page\n\n"
+    . "Full Name: {$name}\n"
+    . "Email Address: {$email}\n"
+    . "Selected Subject: {$subject}\n\n"
+    . "Message:\n{$message}\n";
+
+  $headers = [
+    'From: SG Production Website <support@sgproductionindia.music>',
+    'Reply-To: ' . $email,
+    'Content-Type: text/plain; charset=UTF-8',
+  ];
+
+  return @mail($to, $mailSubject, $mailBody, implode("\r\n", $headers));
+}
+
+function sg_contact_save_message($name, $email, $subject, $message) {
+  $dataDir = __DIR__ . '/data';
+  $dataFile = $dataDir . '/contact-messages.json';
+
+  if (!is_dir($dataDir) && !mkdir($dataDir, 0775, true)) {
+    error_log('SG contact: unable to create data directory.');
+    return false;
+  }
+
+  $id = date('YmdHis') . '-' . substr(sha1($email . $subject . microtime(true)), 0, 8);
+  $record = [
+    'id' => $id,
+    'createdAt' => date('c'),
+    'name' => $name,
+    'email' => $email,
+    'subject' => $subject,
+    'message' => $message,
+    'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+    'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+  ];
+
+  $handle = @fopen($dataFile, 'c+');
+  if (!$handle) {
+    error_log('SG contact: unable to open contact messages file.');
+    return false;
+  }
+
+  $saved = false;
+  if (flock($handle, LOCK_EX)) {
+    $contents = stream_get_contents($handle);
+    $messages = $contents ? json_decode($contents, true) : [];
+    if (!is_array($messages)) {
+      $messages = [];
+    }
+
+    $messages[] = $record;
+    rewind($handle);
+    ftruncate($handle, 0);
+    $saved = fwrite($handle, json_encode($messages, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    fflush($handle);
+    flock($handle, LOCK_UN);
+  }
+
+  fclose($handle);
+  return $saved;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = sg_contact_clean($_POST['name'] ?? '');
   $email = sg_contact_clean($_POST['email'] ?? '');
@@ -58,21 +123,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   if (!$errors) {
-    $to = 'support@sgproductionindia.music';
-    $mailSubject = 'Message from SG Production';
-    $mailBody = "New message from SG Production contact page\n\n"
-      . "Full Name: {$name}\n"
-      . "Email Address: {$email}\n"
-      . "Selected Subject: {$subject}\n\n"
-      . "Message:\n{$message}\n";
+    $saved = sg_contact_save_message($name, $email, $subject, $message);
+    $mailed = sg_contact_send_mail($name, $email, $subject, $message);
 
-    $headers = [
-      'From: SG Production Website <support@sgproductionindia.music>',
-      'Reply-To: ' . $email,
-      'Content-Type: text/plain; charset=UTF-8',
-    ];
-
-    if (mail($to, $mailSubject, $mailBody, implode("\r\n", $headers))) {
+    if ($saved || $mailed) {
       $success = 'Message sent successfully. We will get back to you soon.';
       $old = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
     } else {
@@ -406,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="form-alert" role="alert"><strong><?php echo sg_contact_e($error); ?></strong></div>
             <?php endif; ?>
         
-            <form class="contact-form" method="post" action="/contact" novalidate>
+            <form class="contact-form" id="contactForm" method="post" action="/contact" novalidate>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="contact-name">Full Name</label>
