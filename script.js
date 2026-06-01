@@ -2260,9 +2260,12 @@ function openSongPage(track, updateUrl = true) {
   songPageTitle.textContent = track.title;
   songArtist.textContent = track.artist;
   songDuration.textContent = `0:00 / ${track.duration}`;
+  songDownload.href = downloadEndpoint(track);
   revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
   updateShareMeta(`${track.title} | ${siteSettings.site.title}`, songMetaDescription(track), preferredTrackCover(track) || siteSettings.seo.ogImage, siteUrl(trackUrl(track)));
+  setMetaTag("property", "og:type", "music.song");
+  setMetaTag("property", "og:site_name", "SG Production");
   renderSongWaveform(track);
   renderSongAd(track);
   syncPlayer();
@@ -2694,7 +2697,8 @@ function startSongWaveformSeek(event) {
 songWaveform.addEventListener("pointerdown", startSongWaveformSeek);
 songWaveform.addEventListener("touchstart", startSongWaveformSeek, { passive: false });
 
-songDownload.addEventListener("click", () => {
+songDownload.addEventListener("click", (event) => {
+  event.preventDefault();
   const track = tracks.find((item) => item.id === songPlay.dataset.trackId) || selectedTrack;
   downloadTrack(track);
 });
@@ -2921,4 +2925,107 @@ sideNav.addEventListener("focusout", () => {
       backdrop.style.display = 'flex';
     }
   }, 1500);
+})();
+
+(function() {
+  const btnShare = document.getElementById('btnShare');
+  const sharePopup = document.getElementById('sharePopup');
+  const copyLink = document.getElementById('copyLink');
+  const shareWA = document.getElementById('shareWhatsApp');
+  const shareIG = document.getElementById('shareInstagram');
+  const shareTW = document.getElementById('shareTwitter');
+  const shareMore = document.getElementById('shareMore');
+  const toast = document.getElementById('shareToast');
+
+  if (!btnShare || !sharePopup || !toast) return;
+
+  function currentShareData() {
+    const track = selectedTrack;
+    const songUrl = track ? siteUrl(trackUrl(track)) : window.location.href;
+    const songTitle = track?.title || document.querySelector(
+      '.song-title, h1, #songPageTitle'
+    )?.textContent?.trim() || 'SG Production Track';
+    const shareText = '🎵 ' + songTitle
+      + ' by SG Production — Listen & Download free!';
+
+    return { songUrl, songTitle, shareText };
+  }
+
+  btnShare.addEventListener('click', function(e) {
+    e.stopPropagation();
+    sharePopup.classList.toggle('is-open');
+  });
+
+  document.addEventListener('click', function() {
+    sharePopup.classList.remove('is-open');
+  });
+
+  sharePopup.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  copyLink?.addEventListener('click', function() {
+    const { songUrl } = currentShareData();
+    navigator.clipboard.writeText(songUrl)
+      .then(function() {
+        showToast('🔗 Link copied to clipboard!');
+        sharePopup.classList.remove('is-open');
+      });
+  });
+
+  shareWA?.addEventListener('click', function() {
+    const { songUrl, shareText } = currentShareData();
+    const text = encodeURIComponent(
+      shareText + '\n' + songUrl
+    );
+    window.open('https://wa.me/?text=' + text, '_blank');
+    sharePopup.classList.remove('is-open');
+  });
+
+  if (shareIG) {
+    shareIG.addEventListener('click', function() {
+      const { songUrl } = currentShareData();
+      navigator.clipboard.writeText(songUrl)
+        .then(function() {
+          showToast('🔗 Link copied — paste it on Instagram!');
+        });
+      sharePopup.classList.remove('is-open');
+    });
+  }
+
+  shareTW?.addEventListener('click', function() {
+    const { songUrl, shareText } = currentShareData();
+    const text = encodeURIComponent(shareText);
+    const url = encodeURIComponent(songUrl);
+    window.open(
+      'https://twitter.com/intent/tweet?text='
+      + text + '&url=' + url, '_blank'
+    );
+    sharePopup.classList.remove('is-open');
+  });
+
+  shareMore?.addEventListener('click', function() {
+    const { songUrl, songTitle, shareText } = currentShareData();
+    if (navigator.share) {
+      navigator.share({
+        title: songTitle + ' — SG Production',
+        text: shareText,
+        url: songUrl
+      });
+    } else {
+      navigator.clipboard.writeText(songUrl)
+        .then(function() {
+          showToast('🔗 Link copied!');
+        });
+    }
+    sharePopup.classList.remove('is-open');
+  });
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(function() {
+      toast.classList.remove('show');
+    }, 2500);
+  }
 })();

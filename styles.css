@@ -3986,3 +3986,197 @@ body.search-open {
   font-size:11px;color:rgba(255,255,255,0.2);
   text-align:center;line-height:1.5;
 }
+
+.song-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 820px);
+  margin-top: clamp(20px, 3.5vh, 28px);
+}
+
+.btn-download {
+  flex: 85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  background: #0a84ff;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: -.1px;
+  transition: background .15s, transform .12s;
+  box-shadow: 0 4px 16px rgba(10,132,255,0.25);
+  min-width: 0;
+}
+.btn-download:hover { background: #409cff; }
+.btn-download:active { transform: scale(.97); }
+.btn-download svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round;
+  stroke-linejoin: round; flex-shrink: 0;
+}
+
+.share-popup-wrap {
+  flex: 15;
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.btn-share {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 50px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.8);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  letter-spacing: -.1px;
+  transition: background .15s, color .15s, transform .12s;
+}
+.btn-share:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.btn-share:active { transform: scale(.97); }
+.btn-share svg {
+  width: 15px; height: 15px;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round;
+  stroke-linejoin: round; flex-shrink: 0;
+}
+
+.share-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  background: rgba(28,28,30,0.98);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.06),
+    0 20px 48px rgba(0,0,0,0.8);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  animation: share-popup-in .2s
+    cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes share-popup-in {
+  from { opacity: 0; transform: scale(.9) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.share-popup.is-open { display: block; }
+
+.share-popup-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 12px 14px 8px;
+}
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background .12s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: rgba(255,255,255,0.8);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+.share-option:hover {
+  background: rgba(255,255,255,0.06);
+}
+.share-option:last-child {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+}
+.share-option-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.share-option-icon svg {
+  width: 15px; height: 15px;
+}
+.share-option-icon:not(.so-whatsapp):not(.so-twitter):not(.so-instagram):not(.so-copy) svg {
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.so-whatsapp .share-option-icon,
+.share-option-icon.so-whatsapp {
+  background: rgba(37,211,102,0.12);
+}
+.so-twitter .share-option-icon,
+.share-option-icon.so-twitter {
+  background: rgba(255,255,255,0.08);
+}
+.so-instagram .share-option-icon,
+.share-option-icon.so-instagram {
+  background: rgba(225,48,108,0.12);
+}
+.so-copy .share-option-icon,
+.share-option-icon.so-copy {
+  background: rgba(255,255,255,0.06);
+}
+
+.share-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(28,28,30,0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  z-index: 999;
+}
+.share-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media(max-width: 480px) {
+  .btn-download { font-size: 13px; }
+  .btn-share { font-size: 13px; }
+}
