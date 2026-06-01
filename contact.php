@@ -20,18 +20,149 @@ function sg_contact_e($value) {
   return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-function sg_contact_send_mail($name, $email, $subject, $message) {
-  $to = 'support@sgproductionindia.music';
-  $mailSubject = 'Message from SG Production';
-  $mailBody = "New message from SG Production contact page\n\n"
+function sg_contact_env($key, $default = '') {
+  $value = getenv($key);
+  return ($value === false || $value === '') ? $default : $value;
+}
+
+function sg_contact_header_value($value) {
+  return trim(str_replace(["\r", "\n"], '', (string) $value));
+}
+
+function sg_contact_mail_body($name, $email, $subject, $message) {
+  return "New message from SG Production contact page\n\n"
     . "Full Name: {$name}\n"
     . "Email Address: {$email}\n"
     . "Selected Subject: {$subject}\n\n"
     . "Message:\n{$message}\n";
+}
+
+function sg_contact_smtp_read($socket) {
+  $response = '';
+  $code = 0;
+
+  while (($line = fgets($socket, 515)) !== false) {
+    $response .= $line;
+    if (preg_match('/^(\d{3})(\s|-)/', $line, $matches)) {
+      $code = (int) $matches[1];
+      if ($matches[2] === ' ') {
+        break;
+      }
+    }
+  }
+
+  return [$code, $response];
+}
+
+function sg_contact_smtp_expect($socket, $allowedCodes) {
+  [$code, $response] = sg_contact_smtp_read($socket);
+  if (!in_array($code, $allowedCodes, true)) {
+    error_log('SG contact SMTP error: ' . trim($response));
+    return false;
+  }
+
+  return true;
+}
+
+function sg_contact_smtp_command($socket, $command, $allowedCodes) {
+  fwrite($socket, $command . "\r\n");
+  return sg_contact_smtp_expect($socket, $allowedCodes);
+}
+
+function sg_contact_smtp_data($body) {
+  $lines = preg_split("/\r\n|\n|\r/", $body);
+  $safeLines = array_map(function($line) {
+    return isset($line[0]) && $line[0] === '.' ? '.' . $line : $line;
+  }, $lines);
+
+  return implode("\r\n", $safeLines);
+}
+
+function sg_contact_send_smtp($name, $email, $subject, $message) {
+  $host = sg_contact_env('SMTP_HOST');
+  $username = sg_contact_env('SMTP_USERNAME');
+  $password = sg_contact_env('SMTP_PASSWORD');
+  $secure = strtolower(sg_contact_env('SMTP_SECURE', 'tls'));
+  $port = (int) sg_contact_env('SMTP_PORT', $secure === 'ssl' ? '465' : '587');
+  $to = sg_contact_env('CONTACT_TO', 'support@sgproductionindia.music');
+  $from = sg_contact_env('SMTP_FROM', $username ?: 'support@sgproductionindia.music');
+  $fromName = sg_contact_env('SMTP_FROM_NAME', 'SG Production Website');
+
+  if ($host === '' || $from === '' || $to === '') {
+    return false;
+  }
+
+  $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
+  $socket = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+  if (!$socket) {
+    error_log('SG contact SMTP connection failed: ' . $errstr);
+    return false;
+  }
+
+  stream_set_timeout($socket, 15);
+
+  $domain = $_SERVER['SERVER_NAME'] ?? 'sgproduction.music';
+  $mailSubject = 'Message from SG Production';
+  $mailBody = sg_contact_mail_body($name, $email, $subject, $message);
+  $fromHeader = sg_contact_header_value($fromName) . ' <' . sg_contact_header_value($from) . '>';
+
+  $ok = sg_contact_smtp_expect($socket, [220])
+    && sg_contact_smtp_command($socket, 'EHLO ' . $domain, [250]);
+
+  if ($ok && $secure === 'tls') {
+    $ok = sg_contact_smtp_command($socket, 'STARTTLS', [220]);
+    if ($ok) {
+      $cryptoMethod = defined('STREAM_CRYPTO_METHOD_TLS_CLIENT')
+        ? STREAM_CRYPTO_METHOD_TLS_CLIENT
+        : STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
+      $ok = @stream_socket_enable_crypto($socket, true, $cryptoMethod);
+    }
+    $ok = $ok && sg_contact_smtp_command($socket, 'EHLO ' . $domain, [250]);
+  }
+
+  if ($ok && $username !== '' && $password !== '') {
+    $ok = sg_contact_smtp_command($socket, 'AUTH LOGIN', [334])
+      && sg_contact_smtp_command($socket, base64_encode($username), [334])
+      && sg_contact_smtp_command($socket, base64_encode($password), [235]);
+  }
 
   $headers = [
-    'From: SG Production Website <support@sgproductionindia.music>',
-    'Reply-To: ' . $email,
+    'Date: ' . date(DATE_RFC2822),
+    'To: ' . sg_contact_header_value($to),
+    'From: ' . $fromHeader,
+    'Reply-To: ' . sg_contact_header_value($email),
+    'Subject: ' . sg_contact_header_value($mailSubject),
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+  ];
+
+  $data = implode("\r\n", $headers) . "\r\n\r\n" . sg_contact_smtp_data($mailBody);
+
+  $ok = $ok
+    && sg_contact_smtp_command($socket, 'MAIL FROM:<' . sg_contact_header_value($from) . '>', [250])
+    && sg_contact_smtp_command($socket, 'RCPT TO:<' . sg_contact_header_value($to) . '>', [250, 251])
+    && sg_contact_smtp_command($socket, 'DATA', [354]);
+
+  if ($ok) {
+    fwrite($socket, $data . "\r\n.\r\n");
+    $ok = sg_contact_smtp_expect($socket, [250]);
+  }
+
+  sg_contact_smtp_command($socket, 'QUIT', [221, 250]);
+  fclose($socket);
+
+  return (bool) $ok;
+}
+
+function sg_contact_send_mail($name, $email, $subject, $message) {
+  $to = sg_contact_env('CONTACT_TO', 'support@sgproductionindia.music');
+  $from = sg_contact_env('SMTP_FROM', 'support@sgproductionindia.music');
+  $mailSubject = 'Message from SG Production';
+  $mailBody = sg_contact_mail_body($name, $email, $subject, $message);
+
+  $headers = [
+    'From: SG Production Website <' . sg_contact_header_value($from) . '>',
+    'Reply-To: ' . sg_contact_header_value($email),
     'Content-Type: text/plain; charset=UTF-8',
   ];
 
@@ -124,7 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if (!$errors) {
     $saved = sg_contact_save_message($name, $email, $subject, $message);
-    $mailed = sg_contact_send_mail($name, $email, $subject, $message);
+    $mailed = sg_contact_send_smtp($name, $email, $subject, $message)
+      || sg_contact_send_mail($name, $email, $subject, $message);
 
     if ($saved || $mailed) {
       $success = 'Message sent successfully. We will get back to you soon.';
