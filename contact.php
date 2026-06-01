@@ -76,6 +76,21 @@ function sg_contact_send($name, $email, $subject, $message) {
     $mail->send();
     return true;
   } catch (Exception $e) {
+    $errorMsg = date('Y-m-d H:i:s') . ' SMTP Error: '
+      . $mail->ErrorInfo . "\n"
+      . 'Host: ' . $host . "\n"
+      . 'Port: ' . $port . "\n"
+      . 'Secure: ' . $secure . "\n"
+      . 'Username: ' . $username . "\n"
+      . 'From: ' . $from . "\n"
+      . 'To: ' . $to . "\n"
+      . '---' . "\n";
+
+    file_put_contents(
+      __DIR__ . '/data/contact-debug.log',
+      $errorMsg,
+      FILE_APPEND
+    );
     error_log('SG contact mail error: ' . $mail->ErrorInfo);
     return false;
   }
@@ -127,6 +142,10 @@ function sg_contact_save_message($name, $email, $subject, $message) {
   fclose($handle);
   return $saved;
 }
+
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/data/contact-debug.log');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = sg_contact_clean($_POST['name'] ?? '');
