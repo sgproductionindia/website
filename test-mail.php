@@ -24,21 +24,12 @@ echo "Username: $username\n";
 echo "From: $from\n";
 echo "To: $to\n\n";
 
-$context = stream_context_create([
-  'ssl' => [
-    'verify_peer' => false,
-    'verify_peer_name' => false,
-    'allow_self_signed' => true,
-  ]
-]);
-
-echo "Connecting to ssl://$host:$port ...\n";
+echo "Connecting to $host:$port ...\n";
 
 $socket = @stream_socket_client(
-  'ssl://' . $host . ':' . $port,
+  $host . ':' . $port,
   $errno, $errstr, 30,
-  STREAM_CLIENT_CONNECT,
-  $context
+  STREAM_CLIENT_CONNECT
 );
 
 if (!$socket) {
@@ -55,6 +46,15 @@ echo "Greeting: $code - $response\n";
 fwrite($socket, "EHLO sgproduction.music\r\n");
 [$code, $response] = smtp_read($socket);
 echo "EHLO: $code - $response\n";
+
+fwrite($socket, "STARTTLS\r\n");
+[$code, $response] = smtp_read($socket);
+echo "STARTTLS: $code - $response\n";
+
+stream_socket_enable_crypto(
+  $socket, true,
+  STREAM_CRYPTO_METHOD_TLS_CLIENT
+);
 
 fwrite($socket, "AUTH LOGIN\r\n");
 [$code, $response] = smtp_read($socket);
