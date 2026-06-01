@@ -28,11 +28,11 @@ function sg_contact_env($key, $default = '') {
 function sg_contact_send($name, $email, $subject, $message) {
   $host = getenv('SMTP_HOST') ?: 'smtpout.secureserver.net';
   $port = (int)(getenv('SMTP_PORT') ?: 465);
-  $username = getenv('SMTP_USERNAME') ?: 'support@sgproductionindia.music';
+  $username = getenv('SMTP_USERNAME') ?: 'support@sgproduction.music';
   $password = getenv('SMTP_PASSWORD') ?: '';
-  $from = getenv('SMTP_FROM') ?: 'support@sgproductionindia.music';
+  $from = getenv('SMTP_FROM') ?: 'support@sgproduction.music';
   $fromName = getenv('SMTP_FROM_NAME') ?: 'SG Production';
-  $to = getenv('CONTACT_TO') ?: 'support@sgproductionindia.music';
+  $to = getenv('CONTACT_TO') ?: 'support@sgproduction.music';
 
   $context = stream_context_create([
     'ssl' => [
@@ -561,7 +561,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="contact-card-title">Licensing Inquiry</div>
                 <div class="contact-card-text">Want to use our music commercially? Get in touch for pricing and licensing options.</div>
-                <a href="mailto:support@sgproductionindia.music?subject=Licensing%20Inquiry" class="contact-card-link">
+                <a href="mailto:support@sgproduction.music?subject=Licensing%20Inquiry" class="contact-card-link">
                   Send Inquiry ↗
                 </a>
               </article>
@@ -572,7 +572,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="contact-card-title">DMCA &amp; Copyright</div>
                 <div class="contact-card-text">Copyright owner with a takedown request? We take all valid requests seriously and respond promptly.</div>
-                <a href="mailto:support@sgproductionindia.music?subject=DMCA%20Copyright%20Takedown%20Request" class="contact-card-link">
+                <a href="mailto:support@sgproduction.music?subject=DMCA%20Copyright%20Takedown%20Request" class="contact-card-link">
                   Submit Request ↗
                 </a>
               </article>
@@ -583,7 +583,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="contact-card-title">General Questions</div>
                 <div class="contact-card-text">Any other questions about SG Production, our music, or the website?</div>
-                <a href="mailto:support@sgproductionindia.music?subject=General%20Question" class="contact-card-link">
+                <a href="mailto:support@sgproduction.music?subject=General%20Question" class="contact-card-link">
                   Get in Touch ↗
                 </a>
               </article>
@@ -649,10 +649,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <span class="contact-info-value">instagram.com/sgproduction.music</span>
                 </span>
               </a>
-              <a class="contact-info-row" href="mailto:support@sgproductionindia.music">
+              <a class="contact-info-row" href="mailto:support@sgproduction.music">
                 <span class="contact-info-left">
                   <span class="contact-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="m22 6-10 7L2 6"></path></svg></span>
-                  <span class="contact-info-value">support@sgproductionindia.music</span>
+                  <span class="contact-info-value">support@sgproduction.music</span>
                 </span>
               </a>
             </div>
