@@ -2974,11 +2974,32 @@ sideNav.addEventListener("focusout", () => {
   });
 
   shareWA?.addEventListener('click', function() {
-    const { songUrl, shareText } = currentShareData();
-    const text = encodeURIComponent(
-      shareText + '\n' + songUrl
+    const { songUrl } = currentShareData();
+    const songTitle = document.querySelector(
+      '.song-title, h1'
+    )?.textContent?.trim() || 'SG Production Track';
+
+    const songGenre = document.querySelector(
+      '.song-genre, .genre-tag, .track-genre'
+    )?.textContent?.trim() || '';
+
+    const whatsappText =
+      '🎵 *' + songTitle + '* by SG Production\n' +
+      (songGenre ? '🎧 Genre: ' + songGenre + '\n' : '') +
+      '⬇️ Free Download — No sign up needed\n' +
+      '🔊 Stream & Download now:\n' +
+      songUrl + '\n' +
+      '\n' +
+      '━━━━━━━━━━━━━━\n' +
+      '\n' +
+      'SG Production • Official Music Website\n' +
+      'www.sgproduction.music';
+
+    window.open(
+      'https://wa.me/?text=' +
+      encodeURIComponent(whatsappText),
+      '_blank'
     );
-    window.open('https://wa.me/?text=' + text, '_blank');
     sharePopup.classList.remove('is-open');
   });
 

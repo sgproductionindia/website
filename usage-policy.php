@@ -40,7 +40,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.min.css?v=20260531-beta-popup">
+    <link rel="stylesheet" href="styles.css?v=20260601-credit-box">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="page-search.js?v=20260528-page-search" defer></script>
@@ -266,7 +266,7 @@
                   <div class="subsection">
                     <div class="subsection-label">3.1 — Personal Non-Commercial Use</div>
                     <p>You are permitted to use SG Production original tracks for personal, non-commercial purposes provided that appropriate credit is given as follows:</p>
-                    <div class="credit-box">"Music by SG Production – sgproduction.music"</div>
+                    <div class="credit-box"><span class="credit-box-text" id="creditText">"Music by SG Production – www.sgproduction.music"</span><button class="credit-copy-btn" id="creditCopy" type="button"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="credit-copy-label">Copy</span></button></div>
                   </div>
                   <div class="subsection">
                     <div class="subsection-label">3.2 — Commercial Licensing</div>
@@ -574,6 +574,29 @@
     }, 1500);
   })();
 </script>
+
+    <script>
+      (function() {
+        const copyBtn = document.getElementById('creditCopy');
+        const creditText = document.getElementById('creditText');
+        if (!copyBtn || !creditText) return;
+
+        copyBtn.addEventListener('click', function() {
+          const text = creditText.textContent.trim()
+            .replace(/^"|"$/g, '');
+
+          navigator.clipboard.writeText(text)
+            .then(function() {
+              copyBtn.classList.add('copied');
+              copyBtn.setAttribute('aria-label', 'Credit text copied');
+              setTimeout(function() {
+                copyBtn.classList.remove('copied');
+                copyBtn.setAttribute('aria-label', 'Copy credit text');
+              }, 2000);
+            });
+        });
+      })();
+    </script>
 
   </body>
 </html>

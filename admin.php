@@ -6,7 +6,7 @@ session_start();
 // Load central config (defines ROOT_DIR and UPLOADS_DIR and $pdo)
 require_once rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/') . '/config.php';
 
-define('ADMIN_PASSWORD', (string) (getenv('ADMIN_PASSWORD') ?: 'hyqhyp-viKfa3-timfaw'));
+define('ADMIN_PASSWORD', (string) (getenv('ADMIN_PASSWORD') ?: ''));
 define('TRACKS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/tracks.json');
 define('SETTINGS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/settings.json');
 define('ARTISTS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/artists.json');
@@ -1910,6 +1910,34 @@ $downloadChartData = [
   }
   .song-row:hover {
     border-color: var(--separator);
+  }
+
+  .bpm-confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+  }
+  .bpm-confidence-badge.high {
+    color: var(--sys-green);
+    background: var(--sys-green-bg);
+    border-color: rgba(48,209,88,0.28);
+  }
+  .bpm-confidence-badge.medium {
+    color: var(--sys-orange);
+    background: var(--sys-orange-bg);
+    border-color: rgba(255,159,10,0.28);
+  }
+  .bpm-confidence-badge.low {
+    color: var(--sys-red);
+    background: var(--sys-red-bg);
+    border-color: rgba(255,69,58,0.28);
   }
 
   .song-main { display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
@@ -4894,85 +4922,156 @@ $downloadChartData = [
   const saveDraftButton = document.querySelector('#saveDraftButton');
 
   // ── BPM detection ────────────────────────────────────────────────────────
+  function bpmDetectionResult(bpm, beats) {
+    const confidence = beats >= 20 ? 'high' : beats >= 8 ? 'medium' : 'low';
+    return { bpm: Math.round(bpm * 2) / 2, beats, confidence };
+  }
+
   function estimateBPMFromBuffer(audioBuffer) {
     const sr = audioBuffer.sampleRate;
-    const raw = audioBuffer.getChannelData(0);
-    // Limit to first 60 s for performance
-    const samples = raw.length > sr * 60 ? raw.slice(0, sr * 60) : raw;
 
-    // 10 ms energy windows (100 windows per second)
-    const winLen = Math.round(sr / 100);
+    // Mix all channels for better accuracy.
+    const numChannels = audioBuffer.numberOfChannels;
+    const length = Math.min(audioBuffer.length, sr * 90);
+    const mixed = new Float32Array(length);
+    for (let c = 0; c < numChannels; c++) {
+      const ch = audioBuffer.getChannelData(c);
+      for (let i = 0; i < length; i++) {
+        mixed[i] += ch[i] / numChannels;
+      }
+    }
+
+    // Low-pass filter to isolate bass/kick frequencies.
+    const filterSize = Math.max(1, Math.round(sr / 200));
+    const filtered = new Float32Array(length);
+    let rolling = 0;
+    for (let i = 0; i < length; i++) {
+      rolling += mixed[i];
+      if (i >= filterSize) rolling -= mixed[i - filterSize];
+      if (i >= filterSize - 1) filtered[i] = rolling / filterSize;
+    }
+
+    // 20 ms energy windows are better for bass-heavy beat detection.
+    const winLen = Math.round(sr / 50);
     const energies = [];
-    for (let i = 0; i + winLen < samples.length; i += winLen) {
+    for (let i = 0; i + winLen < filtered.length; i += winLen) {
       let e = 0;
-      for (let j = 0; j < winLen; j++) e += samples[i + j] ** 2;
+      for (let j = 0; j < winLen; j++) {
+        e += filtered[i + j] ** 2;
+      }
       energies.push(e / winLen);
     }
 
-    // Beat detection via local-energy ratio (Fontana & Avanzini)
-    // Refractory period of 25 windows (250 ms) prevents a single
-    // kick drum — which elevates energy for 50-100 ms — from
-    // registering as multiple consecutive beats and inflating BPM.
-    const histLen = 43;    // ~430 ms local history window
-    const refractory = 25; // min 250 ms between beats → max ~240 BPM
+    const maxE = Math.max(...energies);
+    if (!Number.isFinite(maxE) || maxE === 0) return bpmDetectionResult(120, 0);
+    const normE = energies.map(e => e / maxE);
+
+    // Beat detection with adaptive threshold.
+    const histLen = 30;    // 600 ms context window
+    const refractory = 15; // 300 ms minimum between beats
     const beats = [];
     let lastBeat = -refractory;
-    for (let i = histLen; i < energies.length; i++) {
+    for (let i = histLen; i < normE.length; i++) {
       if (i - lastBeat < refractory) continue;
-      const win = energies.slice(i - histLen, i);
+
+      const win = normE.slice(i - histLen, i);
       const mean = win.reduce((a, b) => a + b, 0) / histLen;
-      if (mean <= 0) continue;
-      const variance = win.reduce((a, b) => a + (b - mean) ** 2, 0) / histLen;
-      // Clamp threshold to at least 1.1 so it never falls below 1
-      const threshold = Math.max(1.1, -0.0025714 * variance + 1.5142857);
-      if (energies[i] > threshold * mean) {
+      if (mean <= 0.001) continue;
+
+      const threshold = mean * 1.3 + 0.02;
+      if (
+        normE[i] > threshold &&
+        normE[i] > (normE[i - 1] || 0) &&
+        normE[i] > (normE[i + 1] || 0)
+      ) {
         beats.push(i);
         lastBeat = i;
       }
     }
 
-    if (beats.length < 4) return 120;
+    if (beats.length < 4) return bpmDetectionResult(120, beats.length);
 
-    // Inter-beat intervals → histogram → dominant period
-    // Bin width of 4 windows (40 ms) absorbs small timing jitter
-    const hist = new Map();
+    // Inter-beat intervals.
+    const intervals = [];
     for (let i = 1; i < beats.length; i++) {
-      const d = beats[i] - beats[i - 1];
-      if (d < refractory) continue; // skip implausibly short intervals
-      const key = Math.round(d / 4) * 4;
+      const interval = beats[i] - beats[i - 1];
+      if (interval >= 6 && interval <= 38) {
+        intervals.push(interval);
+      }
+    }
+
+    if (intervals.length < 3) return bpmDetectionResult(120, beats.length);
+
+    // Build histogram with smaller buckets for precision.
+    const hist = new Map();
+    for (const d of intervals) {
+      const key = Math.round(d / 2) * 2;
       hist.set(key, (hist.get(key) || 0) + 1);
     }
 
-    if (hist.size === 0) return 120;
+    if (hist.size === 0) return bpmDetectionResult(120, beats.length);
 
-    let bestKey = 48, bestCount = 0; // 48 windows = 480 ms ≈ 125 BPM default
+    let bestKey = 15;
+    let bestCount = 0;
     for (const [key, count] of hist) {
-      if (count > bestCount) { bestCount = count; bestKey = key; }
+      if (count > bestCount || (count === bestCount && key < bestKey)) {
+        bestCount = count;
+        bestKey = key;
+      }
     }
 
-    // bestKey windows × 10 ms/window = IBI; BPM = 60 / (bestKey/100) = 6000/bestKey
-    let bpm = 6000 / bestKey;
+    const samplesPerBeat = bestKey * winLen;
+    let bpm = (60 * sr) / samplesPerBeat;
     while (bpm < 60) bpm *= 2;
     while (bpm > 200) bpm /= 2;
-    return Math.round(bpm);
+    return bpmDetectionResult(bpm, beats.length);
   }
 
-  async function detectBPMFromSource(source) {
+  async function detectBPMFromSource(source, onProgress) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     try {
       let buf;
       if (source instanceof File || source instanceof Blob) {
+        if (onProgress) onProgress('Reading file...');
         buf = await source.arrayBuffer();
       } else {
+        if (onProgress) onProgress('Fetching audio...');
         const resp = await fetch(source);
         if (!resp.ok) throw new Error('Fetch failed');
         buf = await resp.arrayBuffer();
       }
+      if (onProgress) onProgress('Analyzing audio...');
       const audioBuffer = await ctx.decodeAudioData(buf);
-      return estimateBPMFromBuffer(audioBuffer);
+      if (onProgress) onProgress('Detecting beats...');
+      const result = estimateBPMFromBuffer(audioBuffer);
+      if (onProgress) onProgress('Done!');
+      return result;
+    } catch (err) {
+      console.error('BPM detection error:', err);
+      return bpmDetectionResult(120, 0);
     } finally {
       ctx.close();
     }
+  }
+
+  function resetBPMStatus(statusEl, text = '') {
+    if (!statusEl) return;
+    statusEl.className = '';
+    statusEl.style.cssText = 'font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-left:6px';
+    statusEl.textContent = text;
+  }
+
+  function showBPMConfidence(statusEl, result) {
+    if (!statusEl || !result) return;
+    const confidence = result.confidence || 'low';
+    const label = confidence === 'high'
+      ? 'High confidence'
+      : confidence === 'medium'
+        ? 'Medium confidence'
+        : 'Low confidence - verify manually';
+    statusEl.removeAttribute('style');
+    statusEl.className = 'bpm-confidence-badge ' + confidence;
+    statusEl.textContent = label + ' (' + result.beats + ' beats)';
   }
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -5004,14 +5103,14 @@ $downloadChartData = [
     const bpmInput = document.querySelector('#uploadBpmInput');
     const bpmStatus = document.querySelector('#bpmDetectStatus');
     if (bpmInput && bpmStatus) {
-      bpmStatus.textContent = 'Detecting…';
-      detectBPMFromSource(file)
-        .then(bpm => {
-          bpmInput.value = bpm;
-          bpmStatus.textContent = `Detected: ${bpm} BPM`;
-          setTimeout(() => { bpmStatus.textContent = ''; }, 4000);
+      resetBPMStatus(bpmStatus, 'Detecting...');
+      detectBPMFromSource(file, message => resetBPMStatus(bpmStatus, message))
+        .then(result => {
+          bpmInput.value = result.bpm;
+          showBPMConfidence(bpmStatus, result);
+          setTimeout(() => { resetBPMStatus(bpmStatus); }, 6000);
         })
-        .catch(() => { bpmStatus.textContent = 'Detection failed'; });
+        .catch(() => { resetBPMStatus(bpmStatus, 'Detection failed'); });
     }
   });
 
@@ -5549,15 +5648,15 @@ $downloadChartData = [
 
       btn.disabled = true;
       btn.textContent = '…';
-      status.textContent = 'Detecting BPM…';
+      resetBPMStatus(status, 'Detecting BPM...');
 
       try {
-        const bpm = await detectBPMFromSource(source);
-        bpmField.value = bpm;
-        status.textContent = `✓ ${bpm} BPM`;
-        setTimeout(() => { status.textContent = ''; }, 4000);
+        const result = await detectBPMFromSource(source, message => resetBPMStatus(status, message));
+        bpmField.value = result.bpm;
+        showBPMConfidence(status, result);
+        setTimeout(() => { resetBPMStatus(status); }, 6000);
       } catch {
-        status.textContent = 'Detection failed';
+        resetBPMStatus(status, 'Detection failed');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Detect';
