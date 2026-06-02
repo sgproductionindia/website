@@ -1,3 +1,35 @@
+<?php
+$settingsFile = __DIR__ . '/data/settings.json';
+$settings = [];
+if (is_readable($settingsFile)) {
+  $decodedSettings = json_decode((string) file_get_contents($settingsFile), true);
+  if (is_array($decodedSettings)) {
+    $settings = $decodedSettings;
+  }
+}
+
+$siteSettings = is_array($settings['site'] ?? null) ? $settings['site'] : [];
+$seoSettings = is_array($settings['seo'] ?? null) ? $settings['seo'] : [];
+
+function sg_meta_e($value): string {
+  return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function sg_absolute_site_url($path): string {
+  $path = trim((string) $path);
+  if ($path === '') {
+    $path = 'assets/sg-logo.svg';
+  }
+  if (preg_match('#^https?://#i', $path)) {
+    return $path;
+  }
+  return 'https://sgproduction.music/' . ltrim($path, '/');
+}
+
+$pageTitle = (string) ($siteSettings['title'] ?? 'SG Production');
+$metaDescription = 'Original music, DJ soundcheck tracks, Marathi Halgi beats, Hindi remixes and bass music from India. Free direct download. No sign up needed.';
+$ogImage = sg_absolute_site_url($seoSettings['ogImage'] ?? $seoSettings['og_image'] ?? $settings['og_image'] ?? 'assets/sg-logo.svg');
+?>
 <!doctype html>
 <html lang="en">
   <head>
@@ -21,19 +53,16 @@
         document.head.appendChild(base);
       })();
     </script>
-    <meta
-      name="description"
-      content="SG Production is an independent artist music catalog with direct downloads, latest releases, and original tracks."
-    >
-    <meta property="og:title" content="SG Production">
-    <meta property="og:description" content="Original music • direct download • no barriers">
-    <meta property="og:image" content="https://sgproduction.music/assets/sg-logo.svg">
+    <meta name="description" content="<?= sg_meta_e($metaDescription) ?>">
+    <meta property="og:title" content="<?= sg_meta_e($pageTitle) ?>">
+    <meta property="og:description" content="<?= sg_meta_e($metaDescription) ?>">
+    <meta property="og:image" content="<?= sg_meta_e($ogImage) ?>">
     <meta property="og:url" content="https://sgproduction.music/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SG Production">
-    <meta name="twitter:description" content="Original music • direct download • no barriers">
-    <meta name="twitter:image" content="https://sgproduction.music/assets/sg-logo.svg">
+    <meta name="twitter:title" content="<?= sg_meta_e($pageTitle) ?>">
+    <meta name="twitter:description" content="<?= sg_meta_e($metaDescription) ?>">
+    <meta name="twitter:image" content="<?= sg_meta_e($ogImage) ?>">
     <link rel="canonical" href="https://sgproduction.music/">
     <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/sg-logo.svg">
