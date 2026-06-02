@@ -1,84 +1,60 @@
 <?php
-$settingsFile = __DIR__ . '/data/settings.json';
-$settings = [];
-if (is_readable($settingsFile)) {
-  $decodedSettings = json_decode((string) file_get_contents($settingsFile), true);
-  if (is_array($decodedSettings)) {
-    $settings = $decodedSettings;
-  }
-}
-
-$siteSettings = is_array($settings['site'] ?? null) ? $settings['site'] : [];
-$seoSettings = is_array($settings['seo'] ?? null) ? $settings['seo'] : [];
-
-function sg_meta_e($value): string {
+function sg_artist_meta_e($value): string {
   return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-function sg_slugify($value): string {
+function sg_artist_slugify($value): string {
   $slug = strtolower(trim((string) $value));
   $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?: '';
   return trim($slug, '-');
 }
 
-function sg_load_json_array(string $path, string $key): array {
-  if (!is_readable($path)) {
-    return [];
+function sg_artist_image_url($image): string {
+  $image = trim((string) $image);
+  if ($image === '') {
+    return 'https://sgproduction.music/assets/sg-logo.svg';
   }
-  $decoded = json_decode((string) file_get_contents($path), true);
-  if (is_array($decoded) && array_is_list($decoded)) {
-    return $decoded;
+  if (preg_match('#^https?://#i', $image)) {
+    return $image;
   }
-  if (is_array($decoded) && is_array($decoded[$key] ?? null)) {
-    return $decoded[$key];
+  if (str_starts_with($image, '/') || str_contains($image, '/')) {
+    return 'https://sgproduction.music/' . ltrim($image, '/');
   }
-  return [];
+  return 'https://sgproduction.music/uploads/artists/' . $image;
 }
 
-function sg_absolute_site_url($path): string {
-  $path = trim((string) $path);
-  if ($path === '') {
-    $path = 'assets/sg-logo.svg';
+$artistTitle = 'Artists — SG Production';
+$artistDescription = 'Explore SG Production artists and releases. Free direct download.';
+$artistImage = 'https://sgproduction.music/assets/sg-logo.svg';
+$artistUrl = 'https://sgproduction.music/artists';
+$artistType = 'website';
+$requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/artists'), PHP_URL_PATH) ?: '/artists';
+if (preg_match('#^/artist/([^/]+)#', $requestPath, $artistMatch)) {
+  $artistSlug = sg_artist_slugify(rawurldecode($artistMatch[1]));
+  $artistsFile = __DIR__ . '/data/artists.json';
+  $artists = [];
+  if (is_readable($artistsFile)) {
+    $decodedArtists = json_decode((string) file_get_contents($artistsFile), true);
+    if (is_array($decodedArtists) && array_is_list($decodedArtists)) {
+      $artists = $decodedArtists;
+    } elseif (is_array($decodedArtists) && is_array($decodedArtists['artists'] ?? null)) {
+      $artists = $decodedArtists['artists'];
+    }
   }
-  if (preg_match('#^https?://#i', $path)) {
-    return $path;
-  }
-  return 'https://sgproduction.music/' . ltrim($path, '/');
-}
-
-function sg_song_cover_url($cover): string {
-  $cover = trim((string) $cover);
-  if ($cover === '') {
-    return sg_absolute_site_url('assets/sg-logo.svg');
-  }
-  if (preg_match('#^https?://#i', $cover) || str_starts_with($cover, '/') || str_contains($cover, '/')) {
-    return sg_absolute_site_url($cover);
-  }
-  return sg_absolute_site_url('uploads/covers/' . $cover);
-}
-
-$pageTitle = (string) ($siteSettings['title'] ?? 'SG Production');
-$metaDescription = 'Original music, DJ soundcheck tracks, Marathi Halgi beats, Hindi remixes and bass music from India. Free direct download. No sign up needed.';
-$ogImage = sg_absolute_site_url($seoSettings['ogImage'] ?? $seoSettings['og_image'] ?? $settings['og_image'] ?? 'assets/sg-logo.svg');
-$ogUrl = 'https://sgproduction.music/';
-$ogType = 'website';
-$requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
-if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
-  $songSlug = sg_slugify(rawurldecode($songMatch[1]));
-  foreach (sg_load_json_array(__DIR__ . '/data/tracks.json', 'tracks') as $track) {
-    if (!is_array($track)) {
+  foreach ($artists as $artist) {
+    if (!is_array($artist)) {
       continue;
     }
-    $trackSlug = sg_slugify($track['slug'] ?? $track['id'] ?? $track['title'] ?? '');
-    if ($trackSlug !== $songSlug) {
+    $candidateSlug = sg_artist_slugify($artist['slug'] ?? $artist['id'] ?? $artist['name'] ?? '');
+    if ($candidateSlug !== $artistSlug) {
       continue;
     }
-    $songTitle = (string) ($track['title'] ?? 'SG Production Track');
-    $pageTitle = $songTitle . ' — SG Production';
-    $metaDescription = 'Listen and download ' . $songTitle . ' by SG Production. Free direct download. No sign up needed.';
-    $ogImage = sg_song_cover_url($track['cover'] ?? '');
-    $ogUrl = 'https://sgproduction.music/song/' . $songSlug;
-    $ogType = 'music.song';
+    $artistName = (string) ($artist['name'] ?? 'SG Production Artist');
+    $artistTitle = $artistName . ' — SG Production';
+    $artistDescription = 'Listen to ' . $artistName . ' tracks on SG Production. Free direct download.';
+    $artistImage = sg_artist_image_url($artist['image'] ?? '');
+    $artistUrl = 'https://sgproduction.music/artist/' . $artistSlug;
+    $artistType = 'profile';
     break;
   }
 }
@@ -98,7 +74,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#000000">
-    <title>SG Production | Direct Music Downloads</title>
+    <title><?= sg_artist_meta_e($artistTitle) ?></title>
     <script>
       (function() {
         var base = document.createElement("base");
@@ -106,23 +82,23 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
         document.head.appendChild(base);
       })();
     </script>
-    <meta name="description" content="<?= sg_meta_e($metaDescription) ?>">
-    <meta property="og:title" content="<?= sg_meta_e($pageTitle) ?>">
-    <meta property="og:description" content="<?= sg_meta_e($metaDescription) ?>">
-    <meta property="og:image" content="<?= sg_meta_e($ogImage) ?>">
-    <meta property="og:url" content="<?= sg_meta_e($ogUrl) ?>">
-    <meta property="og:type" content="<?= sg_meta_e($ogType) ?>">
+    <meta name="description" content="<?= sg_artist_meta_e($artistDescription) ?>">
+    <meta property="og:title" content="<?= sg_artist_meta_e($artistTitle) ?>">
+    <meta property="og:description" content="<?= sg_artist_meta_e($artistDescription) ?>">
+    <meta property="og:image" content="<?= sg_artist_meta_e($artistImage) ?>">
+    <meta property="og:url" content="<?= sg_artist_meta_e($artistUrl) ?>">
+    <meta property="og:type" content="<?= sg_artist_meta_e($artistType) ?>">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?= sg_meta_e($pageTitle) ?>">
-    <meta name="twitter:description" content="<?= sg_meta_e($metaDescription) ?>">
-    <meta name="twitter:image" content="<?= sg_meta_e($ogImage) ?>">
-    <link rel="canonical" href="<?= sg_meta_e($ogUrl) ?>">
+    <meta name="twitter:title" content="<?= sg_artist_meta_e($artistTitle) ?>">
+    <meta name="twitter:description" content="<?= sg_artist_meta_e($artistDescription) ?>">
+    <meta name="twitter:image" content="<?= sg_artist_meta_e($artistImage) ?>">
+    <link rel="canonical" href="<?= sg_artist_meta_e($artistUrl) ?>">
     <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/sg-logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260601-mobile-share">
+    <link rel="stylesheet" href="styles.css?v=20260601-audit">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script>
@@ -145,10 +121,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
         document.addEventListener('click', function(event) {
           var link = event.target.closest && event.target.closest('a[href]');
           if (!link) return;
-          if (window.sgShellNavigate && window.sgShellNavigate(link.getAttribute('href'))) {
-            event.preventDefault();
-            return;
-          }
           var nextHref = localPreviewHref(link.getAttribute('href'));
           if (!nextHref) return;
           event.preventDefault();
@@ -163,6 +135,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
         });
       }
     </script>
+    <script src="artists.min.js?v=20260525-nav-fix" defer></script>
   </head>
   <body>
     <header class="mobile-topbar" aria-label="Mobile navigation">
@@ -193,7 +166,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
             <span class="nav-label brand-label">SG Production</span>
           </a>
 
-          <button class="nav-link" id="focusSearch" type="button" aria-label="Search tracks" title="Search">
+          <button class="nav-link" id="focusArtistSearch" type="button" aria-label="Search artists" title="Search">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -202,7 +175,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
             </span>
             <span class="nav-label">Search</span>
           </button>
-          <a class="nav-link active-line" href="/tracks" data-section-nav aria-label="Music library" title="Music Library">
+          <a class="nav-link" href="/tracks" aria-label="Music library" title="Music Library">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M9 18V5l12-2v13"></path>
@@ -212,7 +185,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
             </span>
             <span class="nav-label">Music Library</span>
           </a>
-          <a class="nav-link" href="/artists" aria-label="Artists" title="Artists">
+          <a class="nav-link active-line" href="/artists" aria-label="Artists" title="Artists">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
@@ -304,165 +277,44 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
         </div>
       </nav>
 
-      <main class="page" id="top">
-        <header class="hero" aria-labelledby="site-title">
-          <div class="hero-inner">
-            <div class="brand-block">
-              <h1 id="site-title">SG Production</h1>
-              <p class="tagline" id="siteTagline">Original music <span></span> direct download <span></span> no barriers</p>
-            </div>
+      <main class="page artists-page" id="top">
+        <section class="section artist-section artist-directory" id="artistDirectory" aria-labelledby="artists-title">
+          <div class="artist-title-row">
+            <h1 id="artists-title">Artists</h1>
           </div>
-        </header>
-
-        <section class="section" id="latest" aria-labelledby="latest-title">
-          <div class="section-heading">
-            <h2 id="latest-title">Latest Releases</h2>
-          </div>
-          <div class="track-grid latest-grid" id="latestGrid"></div>
-        </section>
-
-        <section class="section catalog-section" id="all-tracks" aria-labelledby="tracks-title">
-          <div class="section-heading catalog-heading">
-            <h2 id="tracks-title">All Tracks</h2>
-          </div>
-          <div class="track-grid" id="trackGrid"></div>
-          <nav class="track-pagination" id="trackPagination" aria-label="All tracks pages"></nav>
-        </section>
-
-        <section class="info-band" id="licensing" aria-labelledby="license-title">
-          <div>
-            <h2 id="license-title">Subscribe on YouTube</h2>
-            <p id="youtubeText">
-              Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.
-            </p>
-          </div>
-          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer">Subscribe</a>
-        </section>
-
-        <section class="song-page" id="songPage" aria-labelledby="songPageTitle" hidden>
-          <div class="song-detail">
-            <button class="song-back" id="songBack" type="button" aria-label="Back to music library">
+          <div class="artist-toolbar">
+            <label class="artist-search" for="artistSearchInput">
               <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M19 12H5"></path>
-                <path d="m12 19-7-7 7-7"></path>
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
               </svg>
-              Music Library
-            </button>
-
-            <div class="song-main">
-              <p class="song-kicker" id="songGenre">Original Track</p>
-              <h2 id="songPageTitle">Track Title</h2>
-              <p class="song-artist" id="songArtist">SG Production</p>
-
-              <div class="song-wave-row">
-                <button class="song-play" id="songPlay" type="button" aria-label="Play track">
-                  <svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="m8 5 11 7-11 7z"></path>
-                  </svg>
-                  <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="M8 5v14"></path>
-                    <path d="M16 5v14"></path>
-                  </svg>
-                </button>
-                <div class="song-waveform" id="songWaveform" aria-hidden="true"></div>
-                <span class="song-duration" id="songDuration">0:00</span>
-              </div>
-
-              <div class="song-action-row">
-                <a class="btn-download" id="songDownload" href="#" download>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  Download Track
-                </a>
-                <div class="share-popup-wrap">
-                  <button class="btn-share" id="btnShare" type="button" aria-label="Share track">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <circle cx="18" cy="5" r="3"/>
-                      <circle cx="6" cy="12" r="3"/>
-                      <circle cx="18" cy="19" r="3"/>
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                    </svg>
-                    <span class="btn-share-text">Share</span>
-                  </button>
-                  <div class="share-popup" id="sharePopup">
-                    <div class="share-popup-title">Share this track</div>
-                    <button class="share-option so-copy" id="copyLink" type="button">
-                      <span class="share-option-icon so-copy">
-                        <svg viewBox="0 0 24 24" fill="none"
-                          stroke="rgba(255,255,255,0.6)"
-                          stroke-width="2" stroke-linecap="round"
-                          stroke-linejoin="round">
-                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                      </span>
-                      Copy Link
-                    </button>
-                    <button class="share-option so-whatsapp" id="shareWhatsApp" type="button">
-                      <span class="share-option-icon so-whatsapp">
-                        <svg viewBox="0 0 24 24" fill="#25d366">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.855L.057 23.882l6.234-1.634A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.877 9.877 0 0 1-5.031-1.375l-.361-.214-3.741.981.999-3.648-.235-.374A9.869 9.869 0 0 1 2.106 12C2.106 6.58 6.58 2.106 12 2.106c5.42 0 9.894 4.474 9.894 9.894 0 5.42-4.474 9.894-9.894 9.894z"/>
-                        </svg>
-                      </span>
-                      WhatsApp
-                    </button>
-                    <button class="share-option so-instagram" id="shareInstagram" type="button">
-                      <span class="share-option-icon so-instagram">
-                        <svg viewBox="0 0 24 24" width="18" height="18">
-                          <defs>
-                            <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
-                              <stop offset="0%" stop-color="#f09433"/>
-                              <stop offset="25%" stop-color="#e6683c"/>
-                              <stop offset="50%" stop-color="#dc2743"/>
-                              <stop offset="75%" stop-color="#cc2366"/>
-                              <stop offset="100%" stop-color="#bc1888"/>
-                            </linearGradient>
-                          </defs>
-                          <rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="url(#ig-grad)" stroke-width="2"/>
-                          <circle cx="12" cy="12" r="4" fill="none" stroke="url(#ig-grad)" stroke-width="2"/>
-                          <circle cx="17.5" cy="6.5" r="1.2" fill="url(#ig-grad)" stroke="none"/>
-                        </svg>
-                      </span>
-                      Instagram
-                    </button>
-                    <button class="share-option so-twitter" id="shareTwitter" type="button">
-                      <span class="share-option-icon so-twitter">
-                        <svg viewBox="0 0 24 24" fill="#fff">
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/>
-                        </svg>
-                      </span>
-                      X / Twitter
-                    </button>
-                    <button class="share-option" id="shareMore" type="button">
-                      <span class="share-option-icon" style="background:rgba(255,255,255,0.06)">
-                        <svg viewBox="0 0 24 24">
-                          <circle cx="18" cy="5" r="3"/>
-                          <circle cx="6" cy="12" r="3"/>
-                          <circle cx="18" cy="19" r="3"/>
-                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                        </svg>
-                      </span>
-                      More options...
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="share-toast" id="shareToast">
-                🔗 Link copied!
-              </div>
-
-              <p id="creditText" hidden></p>
-            </div>
+              <input id="artistSearchInput" type="search" autocomplete="off" placeholder="Search Artists">
+            </label>
           </div>
+          <div class="artist-grid" id="artistGrid"></div>
+        </section>
 
-          <aside class="song-ad" id="songAd" aria-label="Advertising space"></aside>
+        <section class="artist-profile-page" id="artistProfilePage" aria-labelledby="artistProfileName" hidden>
+          <header class="artist-profile-hero">
+            <div class="artist-profile-hero-bg" id="artistProfileBg" aria-hidden="true"></div>
+            <a class="artist-profile-back" href="/artists">Artists</a>
+            <div class="artist-profile-portrait">
+              <img loading="lazy" id="artistProfileImage" src="assets/artist-photo-1.svg" alt="">
+            </div>
+            <div class="artist-profile-heading">
+              <h1 id="artistProfileName">SG Production</h1>
+            </div>
+          </header>
+
+          <section class="artist-profile-tracks" aria-labelledby="popularTracksTitle">
+            <h2 id="popularTracksTitle">Releases</h2>
+            <div class="artist-track-list track-grid" id="artistTrackList"></div>
+          </section>
+
+          <section class="artist-related" aria-labelledby="relatedArtistsTitle">
+            <h2 id="relatedArtistsTitle">You might also like...</h2>
+            <div class="artist-grid related-artist-grid" id="relatedArtistGrid"></div>
+          </section>
         </section>
 
         <footer class="footer" id="contact">
@@ -470,101 +322,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
         </footer>
       </main>
     </div>
-
-    <section class="search-overlay" id="searchOverlay" aria-labelledby="searchTitle" aria-hidden="true">
-      <div class="search-panel" role="dialog" aria-modal="true">
-        <div class="search-head">
-          <div>
-            <h2 id="searchTitle">Search</h2>
-          </div>
-          <button class="search-close" id="searchClose" type="button" aria-label="Close search">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M18 6 6 18"></path>
-              <path d="m6 6 12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <label class="search-field" for="siteSearchInput">
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
-          <input id="siteSearchInput" type="search" autocomplete="off" placeholder="Search SG Production">
-        </label>
-        <div class="search-results" id="searchResults" role="list"></div>
-      </div>
-    </section>
-
-    <aside class="player" id="player" aria-live="polite">
-      <div class="player-track">
-        <button class="player-cover" id="playerCover" type="button" aria-label="Open song"></button>
-        <div class="player-meta">
-          <div class="player-title-wrapper">
-            <span class="player-title-text" id="playerTitle">Select a track</span>
-          </div>
-          <span id="playerGenre">Ready</span>
-        </div>
-      </div>
-      <div class="player-center">
-        <div class="player-controls">
-          <button class="player-control player-prev" id="playerPrev" type="button" aria-label="Previous">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polygon points="19 20 9 12 19 4 19 20"></polygon>
-              <line x1="5" y1="4" x2="5" y2="20"></line>
-            </svg>
-          </button>
-          <button class="player-control player-playpause" id="playerToggle" type="button" aria-label="Play">
-            <svg class="play-icon" viewBox="0 0 24 24">
-              <path d="m8 5 11 7-11 7z"></path>
-            </svg>
-            <svg class="pause-icon" viewBox="0 0 24 24">
-              <path d="M8 5v14"></path>
-              <path d="M16 5v14"></path>
-            </svg>
-          </button>
-          <button class="player-control player-next" id="playerNext" type="button" aria-label="Next">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polygon points="5 4 15 12 5 20 5 4"></polygon>
-              <line x1="19" y1="4" x2="19" y2="20"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="player-progress-row">
-          <span class="progress-elapsed" id="progressElapsed">0:00</span>
-          <div class="progress-shell" id="progressShell" role="slider" tabindex="0" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <div class="progress-bar" id="progressBar"></div>
-          </div>
-          <span class="progress-total" id="progressTotal">0:00</span>
-        </div>
-      </div>
-      <div class="player-right">
-        <div class="player-volume">
-          <button class="player-mute" id="playerMute" type="button" aria-label="Volume">
-            <svg viewBox="0 0 24 24">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            </svg>
-          </button>
-          <div class="volume-popup" id="volumePopup" style="display:none">
-            <input class="volume-slider-vertical" id="volumeSlider" type="range" min="0" max="100" value="80" orient="vertical" aria-label="Volume">
-          </div>
-        </div>
-        <button class="player-like" id="playerLike" type="button" aria-label="Like track">
-          <svg viewBox="0 0 24 24">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
-        </button>
-        <button class="player-close" id="playerClose" type="button" aria-label="Close player">
-          <svg viewBox="0 0 24 24">
-            <path d="M18 6 6 18"></path>
-            <path d="m6 6 12 12"></path>
-          </svg>
-        </button>
-      </div>
-    </aside>
-
-    <script src="script.js?v=20260601-download-share"></script>
     <script>
       // Track page visit
       (function() {
