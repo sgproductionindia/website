@@ -127,22 +127,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <style>
-      .page-hero {
-        padding: 48px 48px 32px;
-        border-bottom: 1px solid #222;
-      }
-      .hero-title {
-        font-size: 32px;
-        font-weight: 800;
-        color: #fff;
-        letter-spacing: -.8px;
-        margin: 0 0 8px;
-      }
-      .hero-sub {
-        font-size: 13px;
-        color: #666;
-        margin: 0;
-      }
       .load-more-btn {
         display: none;
         align-items: center;
@@ -162,10 +146,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       .load-more-btn:hover {
         color: #fff;
         border-color: #444;
-      }
-      @media(max-width:700px){
-        .page-hero { padding: 24px 20px; }
-        .hero-title { font-size: 24px; }
       }
     </style>
     <script>
@@ -348,11 +328,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </nav>
 
       <main class="page" id="top">
-        <div class="page-hero" id="pageHero">
-          <h1 class="hero-title">SG Production</h1>
-          <p class="hero-sub">Official Music Website</p>
-        </div>
-
         <header class="hero" aria-labelledby="site-title">
           <div class="hero-inner">
             <div class="brand-block">

@@ -176,39 +176,6 @@
 
         <div class="nav-spacer" aria-hidden="true"></div>
 
-        <div class="nav-section nav-utility">
-          <a class="nav-link" href="/usage-policy" data-policy-link aria-label="Usage policy" title="Usage Policy">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <path d="M14 2v6h6"></path>
-                <path d="M16 13H8"></path>
-                <path d="M16 17H8"></path>
-                <path d="M10 9H8"></path>
-              </svg>
-            </span>
-            <span class="nav-label">Usage Policy</span>
-          </a>
-          <a class="nav-link active-line" href="/about" aria-label="About SG Production" title="About">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 16v-4"></path>
-                <path d="M12 8h.01"></path>
-              </svg>
-            </span>
-            <span class="nav-label">About</span>
-          </a>
-          <a class="nav-link" href="/contact" aria-label="Contact SG Production" title="Contact">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.91.33 1.8.63 2.65a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.43-1.2a2 2 0 0 1 2.11-.45c.85.3 1.74.51 2.65.63A2 2 0 0 1 22 16.92z"></path>
-              </svg>
-            </span>
-            <span class="nav-label">Contact</span>
-          </a>
-        </div>
-
         <div class="nav-section nav-social">
           <a class="nav-link" href="https://www.youtube.com/@sgproductionindia" aria-label="YouTube" title="YouTube">
             <span class="nav-icon" aria-hidden="true">
