@@ -122,9 +122,52 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260601-mobile-share">
+    <link rel="preload" href="/styles.min.css?v=20260602-performance" as="style">
+    <link rel="stylesheet" href="/styles.min.css?v=20260602-performance">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
+    <style>
+      .page-hero {
+        padding: 48px 48px 32px;
+        border-bottom: 1px solid #222;
+      }
+      .hero-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -.8px;
+        margin: 0 0 8px;
+      }
+      .hero-sub {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+      }
+      .load-more-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 14px;
+        background: none;
+        border: 1px solid #222;
+        color: #666;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 16px;
+        transition: color .15s, border-color .15s;
+      }
+      .load-more-btn:hover {
+        color: #fff;
+        border-color: #444;
+      }
+      @media(max-width:700px){
+        .page-hero { padding: 24px 20px; }
+        .hero-title { font-size: 24px; }
+      }
+    </style>
     <script>
       // Keep clean live URLs, but make local file:// previews navigable.
       if (window.location.protocol === 'file:' || /^(127\.0\.0\.1|localhost|\[::1\])$/.test(window.location.hostname)) {
@@ -305,6 +348,11 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </nav>
 
       <main class="page" id="top">
+        <div class="page-hero" id="pageHero">
+          <h1 class="hero-title">SG Production</h1>
+          <p class="hero-sub">Official Music Website</p>
+        </div>
+
         <header class="hero" aria-labelledby="site-title">
           <div class="hero-inner">
             <div class="brand-block">
@@ -326,6 +374,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
             <h2 id="tracks-title">All Tracks</h2>
           </div>
           <div class="track-grid" id="trackGrid"></div>
+          <button class="load-more-btn" id="loadMore" type="button">Load More Tracks</button>
           <nav class="track-pagination" id="trackPagination" aria-label="All tracks pages"></nav>
         </section>
 
@@ -564,7 +613,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script src="script.js?v=20260601-download-share"></script>
+    <script src="/script.min.js?v=20260602-performance" defer></script>
     <script>
       // Track page visit
       (function() {

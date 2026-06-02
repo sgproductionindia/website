@@ -128,7 +128,7 @@ function defaultSettings(): array
     return [
         'site' => [
             'title' => 'SG Production',
-            'tagline' => 'Original music • direct download • no barriers',
+            'tagline' => 'Official Music Website',
             'youtubeHeading' => 'Subscribe on YouTube',
             'youtubeText' => 'Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.',
             'contactEmail' => '',
@@ -880,7 +880,7 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 
         $settings['site'] = [
             'title' => trim((string) ($_POST['siteTitle'] ?? 'SG Production')) ?: 'SG Production',
-            'tagline' => trim((string) ($_POST['tagline'] ?? 'Original music • direct download • no barriers')) ?: 'Original music • direct download • no barriers',
+            'tagline' => trim((string) ($_POST['tagline'] ?? 'Official Music Website')) ?: 'Official Music Website',
             'youtubeHeading' => trim((string) ($_POST['youtubeHeading'] ?? 'Subscribe on YouTube')) ?: 'Subscribe on YouTube',
             'youtubeText' => trim((string) ($_POST['youtubeText'] ?? '')) ?: defaultSettings()['site']['youtubeText'],
             'contactEmail' => trim((string) ($_POST['contactEmail'] ?? '')),

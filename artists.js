@@ -21,7 +21,7 @@ let tracks = [...defaultTracks];
 let siteSettings = {
   site: {
     title: "SG Production",
-    tagline: "Original music • direct download • no barriers",
+    tagline: "Official Music Website",
     contactEmail: ""
   },
   links: {
