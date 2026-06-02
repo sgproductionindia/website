@@ -653,7 +653,7 @@ function updateShareMeta(title, description, image, url) {
 }
 
 function songMetaDescription(track) {
-  return `Listen to ${track.title} by ${track.artist}. Preview and download the full WAV of this ${track.genre} release from SG Production.`;
+  return `${track.title} by SG Production. Listen and download free at sgproduction.music`;
 }
 
 function routeMeta(path = "/") {
@@ -2267,7 +2267,7 @@ function openSongPage(track, updateUrl = true) {
   songDownload.href = downloadEndpoint(track);
   revealCreditText(track);
   document.title = `${track.title} | ${siteSettings.site.title}`;
-  updateShareMeta(`${track.title} | ${siteSettings.site.title}`, songMetaDescription(track), preferredTrackCover(track) || siteSettings.seo.ogImage, siteUrl(trackUrl(track)));
+  updateShareMeta(`${track.title} — SG Production`, songMetaDescription(track), preferredTrackCover(track) || siteSettings.seo.ogImage, siteUrl(trackUrl(track)));
   setMetaTag("property", "og:type", "music.song");
   setMetaTag("property", "og:site_name", "SG Production");
   renderSongWaveform(track);
@@ -2979,9 +2979,9 @@ sideNav.addEventListener("focusout", () => {
 
   shareWA?.addEventListener('click', function() {
     const { songUrl } = currentShareData();
-    const songTitle = document.querySelector(
+    const songTitle = (document.querySelector(
       '#songPageTitle, .song-title, h1'
-    )?.textContent?.trim() || 'SG Production Track';
+    )?.textContent?.trim() || 'SG Production Track').replace(/^[◆🔷�\uFFFD\s]+/, '');
 
     const songGenre = document.querySelector(
       '#songGenre, .song-genre, .genre-tag, .track-genre'
