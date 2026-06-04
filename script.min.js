@@ -170,7 +170,9 @@ function hidePlayer() {
 }
 
 const PREVIEW_SECONDS = 12;
-const TRACKS_PER_PAGE = 12;
+const TRACKS_PER_PAGE = 10;
+const WAVEFORM_MAX_BARS = 80;
+const WAVEFORM_ANALYSIS_SECONDS = 30;
 let tracksShown = TRACKS_PER_PAGE;
 let allTracksPerPage = TRACKS_PER_PAGE;
 let demoTrackPageCount = 12;
@@ -2001,7 +2003,7 @@ function generatedWaveformBars(track, barCount) {
 function getSongWaveformBarCount() {
   const fallbackWidth = Math.min(window.innerWidth - 92, 820);
   const availableWidth = songWaveform.clientWidth || fallbackWidth;
-  return Math.max(42, Math.min(180, Math.floor(availableWidth / 5)));
+  return Math.max(42, Math.min(WAVEFORM_MAX_BARS, Math.floor(availableWidth / 5)));
 }
 
 function paintSongWaveform(bars) {
@@ -2041,16 +2043,19 @@ async function computeWaveformBars(track, barCount) {
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
       ctx.close();
 
-      const channelData = audioBuffer.getChannelData(0);
-      const blockSize = Math.max(1, Math.floor(channelData.length / barCount));
+      const analysisLength = Math.min(audioBuffer.length, Math.floor(audioBuffer.sampleRate * WAVEFORM_ANALYSIS_SECONDS));
+      const blockSize = Math.max(1, Math.floor(analysisLength / barCount));
       const peaks = [];
       for (let i = 0; i < barCount; i += 1) {
         let max = 0;
         const start = i * blockSize;
-        const end = Math.min(start + blockSize, channelData.length);
-        for (let j = start; j < end; j += 4) { // sample every 4th for 4× decode speed
-          const abs = Math.abs(channelData[j]);
-          if (abs > max) max = abs;
+        const end = Math.min(start + blockSize, analysisLength);
+        for (let channelIndex = 0; channelIndex < audioBuffer.numberOfChannels; channelIndex += 1) {
+          const channelData = audioBuffer.getChannelData(channelIndex);
+          for (let j = start; j < end; j += 4) { // sample every 4th for 4× decode speed
+            const abs = Math.abs(channelData[j]);
+            if (abs > max) max = abs;
+          }
         }
         peaks.push(max);
       }
@@ -2118,7 +2123,10 @@ async function renderSongWaveform(track) {
   waveformCache.set(cacheKey, finalBars);
 
   if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
-  paintSongWaveform(finalBars);
+  requestAnimationFrame(() => {
+    if (waveformRenderToken !== token || !selectedTrack || selectedTrack.id !== track.id) return;
+    paintSongWaveform(finalBars);
+  });
 }
 
 function sendAdEvent(endpoint, track, adUrl = "") {
@@ -2681,19 +2689,40 @@ songPlay.addEventListener("click", () => {
 function startSongWaveformSeek(event) {
   if (!selectedTrack) return;
   event.preventDefault();
-  setPlayerProgress(progressFractionFromPointer(event, songWaveform));
+  event.stopPropagation();
+
+  let latestFraction = progressFractionFromPointer(event, songWaveform);
+  let moved = false;
+  const wasPlaying = isPlaying;
+
+  setPlayerProgress(latestFraction, false);
 
   const move = (moveEvent) => {
     moveEvent.preventDefault();
-    setPlayerProgress(progressFractionFromPointer(moveEvent, songWaveform));
+    moved = true;
+    latestFraction = progressFractionFromPointer(moveEvent, songWaveform);
+    setPlayerProgress(latestFraction, false);
   };
 
   const stop = () => {
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
+    window.removeEventListener("pointercancel", stop);
     window.removeEventListener("touchmove", move);
     window.removeEventListener("touchend", stop);
     window.removeEventListener("touchcancel", stop);
+
+    setPlayerProgress(latestFraction, true);
+
+    if (!wasPlaying || !isPlaying) {
+      playTrack(selectedTrack);
+      return;
+    }
+
+    if (!moved) {
+      syncPlayer();
+      syncPlayingCards();
+    }
   };
 
   if (event.type === "touchstart") {
@@ -2703,11 +2732,14 @@ function startSongWaveformSeek(event) {
   } else {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop, { once: true });
+    window.addEventListener("pointercancel", stop, { once: true });
   }
 }
 
 songWaveform.addEventListener("pointerdown", startSongWaveformSeek);
-songWaveform.addEventListener("touchstart", startSongWaveformSeek, { passive: false });
+if (!window.PointerEvent) {
+  songWaveform.addEventListener("touchstart", startSongWaveformSeek, { passive: false });
+}
 
 songDownload.addEventListener("click", (event) => {
   event.preventDefault();
