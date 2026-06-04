@@ -127,7 +127,6 @@ let siteSettings = {
   },
   catalog: {
     latestCount: 5,
-    tracksPerPage: 14,
     paginationDemoPages: 12
   },
   advertising: {
@@ -170,10 +169,10 @@ function hidePlayer() {
 }
 
 const PREVIEW_SECONDS = 12;
-const TRACKS_PER_PAGE = Number.isFinite(Number(window.TRACKS_PER_PAGE)) ? Math.max(1, Number(window.TRACKS_PER_PAGE)) : 10;
+const TRACKS_PER_PAGE = window.TRACKS_PER_PAGE || 10;
 const WAVEFORM_MAX_BARS = 80;
 const WAVEFORM_ANALYSIS_SECONDS = 30;
-let tracksShown = TRACKS_PER_PAGE;
+let tracksShown = 10;
 let allTracksPerPage = TRACKS_PER_PAGE;
 let demoTrackPageCount = 12;
 let latestTrackCount = 5;
@@ -867,11 +866,17 @@ function mediaArtworkType(path) {
 }
 
 function updateMediaSession(track) {
-  if (!("mediaSession" in navigator) || !track) {
+  if (!("mediaSession" in navigator)) {
+    return;
+  }
+
+  if (!track) {
+    navigator.mediaSession.playbackState = "paused";
     return;
   }
 
   navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+  setupMediaSessionControls();
 
   if (!("MediaMetadata" in window)) {
     return;
@@ -881,9 +886,9 @@ function updateMediaSession(track) {
   const artworkType = mediaArtworkType(artworkUrl);
 
   navigator.mediaSession.metadata = new MediaMetadata({
-    title: track.title,
-    artist: track.artist || siteSettings.site.title,
-    album: track.genre || siteSettings.site.tagline,
+    title: track.title || "SG Production Track",
+    artist: track.artist || "SG Production",
+    album: "SG Production",
     artwork: ["96x96", "128x128", "192x192", "256x256", "384x384", "512x512"].map((sizes) => ({
       src: artworkUrl,
       sizes,
@@ -904,25 +909,99 @@ function currentPlaybackPosition() {
   return pausedAt || 0;
 }
 
+function updatePositionState(totalOverride = null, positionOverride = null) {
+  if (!("mediaSession" in navigator) || !("setPositionState" in navigator.mediaSession)) {
+    return;
+  }
+
+  if (!selectedTrack) {
+    return;
+  }
+
+  const total = Number.isFinite(totalOverride) && totalOverride > 0
+    ? totalOverride
+    : playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+  const position = Number.isFinite(positionOverride)
+    ? positionOverride
+    : currentPlaybackPosition();
+
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(position)) {
+    return;
+  }
+
+  try {
+    navigator.mediaSession.setPositionState({
+      duration: total,
+      playbackRate: activeAudio?.playbackRate || 1,
+      position: Math.min(total, Math.max(0, position))
+    });
+  } catch {
+    // Some browsers reject position updates until metadata is ready.
+  }
+}
+
+function updatePlayPauseUI(playing) {
+  player?.classList.toggle("is-playing", playing);
+  playerToggle?.classList.toggle("is-playing", playing);
+  songPlay?.classList.toggle("is-playing", playing && selectedTrack?.id === songPlay.dataset.trackId);
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+  }
+}
+
+function playPreviousTrack() {
+  playTrackByOffset(-1);
+}
+
+function playNextTrack() {
+  playTrackByOffset(1);
+}
+
 function setupMediaSessionControls() {
   if (!("mediaSession" in navigator)) {
     return;
   }
 
-  try {
-    navigator.mediaSession.setActionHandler("play", () => playTrack(selectedTrack));
-    navigator.mediaSession.setActionHandler("pause", () => pauseCurrent());
-    navigator.mediaSession.setActionHandler("seekbackward", () => {
-      const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
-      setPlayerProgress(total ? (currentPlaybackPosition() - 10) / total : 0);
-    });
-    navigator.mediaSession.setActionHandler("seekforward", () => {
-      const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
-      setPlayerProgress(total ? (currentPlaybackPosition() + 10) / total : 0);
-    });
-  } catch {
-    // Media Session action support varies by mobile browser.
-  }
+  const setHandler = (action, handler) => {
+    try {
+      navigator.mediaSession.setActionHandler(action, handler);
+    } catch {
+      // Media Session action support varies by mobile browser.
+    }
+  };
+
+  setHandler("play", () => {
+    if (!selectedTrack) return;
+    playTrack(selectedTrack);
+    updatePlayPauseUI(true);
+  });
+  setHandler("pause", () => {
+    pauseCurrent();
+    updatePlayPauseUI(false);
+  });
+  setHandler("previoustrack", playPreviousTrack);
+  setHandler("nexttrack", playNextTrack);
+  setHandler("seekbackward", (details) => {
+    if (!selectedTrack) return;
+    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    const skipTime = details?.seekOffset || 10;
+    setPlayerProgress(total ? (currentPlaybackPosition() - skipTime) / total : 0);
+    updatePositionState();
+  });
+  setHandler("seekforward", (details) => {
+    if (!selectedTrack) return;
+    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    const skipTime = details?.seekOffset || 10;
+    setPlayerProgress(total ? (currentPlaybackPosition() + skipTime) / total : 0);
+    updatePositionState();
+  });
+  setHandler("seekto", (details) => {
+    if (!selectedTrack || !details || !Number.isFinite(details.seekTime)) return;
+    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    setPlayerProgress(total ? details.seekTime / total : 0);
+    updatePositionState();
+  });
 }
 
 function siteUrl(path = "/") {
@@ -1272,24 +1351,20 @@ function renderPagination(totalPages) {
   trackPagination.innerHTML = items.join("");
 }
 
-function fixIncompleteRow() {
+function getColumnCount() {
   const grid = document.querySelector("#trackGrid, #allTracksGrid, .tracks-grid, .track-grid");
-  if (!grid) return;
+  if (!grid) return 5;
+  const cols = window.getComputedStyle(grid).getPropertyValue("grid-template-columns").split(" ").filter(Boolean).length;
+  return cols || 5;
+}
 
-  const computedStyle = window.getComputedStyle(grid);
-  const cols = computedStyle.getPropertyValue("grid-template-columns").split(" ").filter(Boolean).length;
+function getTracksToShow(baseCount) {
+  const cols = getColumnCount();
+  return Math.ceil(baseCount / cols) * cols;
+}
 
-  if (cols <= 1) return;
-
-  const cards = Array.from(grid.querySelectorAll(".track-card, .song-card, .track-item")).filter((card) => card.style.display !== "none");
-  const remainder = cards.length % cols;
-
-  if (remainder !== 0) {
-    const toHide = cards.length - remainder;
-    cards.slice(toHide).forEach((card) => {
-      card.style.display = "none";
-    });
-  }
+function showTracks() {
+  renderAllTracksPage(1, false);
 }
 
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
@@ -1305,7 +1380,8 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   if (page <= 1) {
     allTracksPage = 1;
   }
-  const cards = allTracks.slice(0, tracksShown).map((track, index) => renderCard(track, index === 0));
+  const visibleTrackCount = Math.min(allTracks.length, getTracksToShow(tracksShown));
+  const cards = allTracks.slice(0, visibleTrackCount).map((track, index) => renderCard(track, index === 0));
 
   const adCard = renderGridAdCard();
   if (adCard) {
@@ -1314,15 +1390,11 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
 
   trackGrid.replaceChildren(...cards);
-  trackGrid.querySelectorAll(".track-card, .song-card, .track-item").forEach((card) => {
-    card.style.display = "";
-  });
   syncPlayingCards();
   trackPagination.replaceChildren();
   if (loadMoreButton) {
-    loadMoreButton.style.display = tracksShown >= allTracks.length ? "none" : "flex";
+    loadMoreButton.style.display = visibleTrackCount >= allTracks.length ? "none" : "flex";
   }
-  setTimeout(fixIncompleteRow, 100);
 
   if (shouldScroll) {
     document.querySelector("#all-tracks").scrollIntoView({ block: "start", behavior: "smooth" });
@@ -1599,6 +1671,9 @@ async function playTrack(track) {
     try {
       await playPromise;
       pausedAt = 0;
+      updateMediaSession(track);
+      updatePlayPauseUI(true);
+      updatePositionState();
       updateProgress();
     } catch {
       if (audioPlayToken !== token || activeAudio !== audio) {
@@ -1651,6 +1726,9 @@ async function playTrack(track) {
   syncPlayer();
   showPlayer();
   syncPlayingCards();
+  updateMediaSession(track);
+  updatePlayPauseUI(true);
+  updatePositionState();
   updateProgress();
 }
 
@@ -1788,17 +1866,7 @@ function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(se
   if (progressTotal) progressTotal.textContent = totalText;
   progressShell.setAttribute("aria-valuenow", String(Math.round(percent)));
   progressShell.setAttribute("aria-valuetext", `${formatTimer(scaledElapsed)} of ${formatTimer(totalSeconds)}`);
-  if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession && Number.isFinite(totalSeconds) && totalSeconds > 0) {
-    try {
-      navigator.mediaSession.setPositionState({
-        duration: totalSeconds,
-        playbackRate: 1,
-        position: Math.min(totalSeconds, Math.max(0, scaledElapsed))
-      });
-    } catch {
-      // Some browsers reject position updates until metadata is ready.
-    }
-  }
+  updatePositionState(totalSeconds, scaledElapsed);
   if (playingTrackId === selectedTrack.id) {
     const bars = songWaveform.children;
     const playedCount = Math.round((percent / 100) * bars.length);
@@ -2803,14 +2871,13 @@ trackPagination.addEventListener("click", (event) => {
 });
 
 loadMoreButton?.addEventListener("click", () => {
-  tracksShown += TRACKS_PER_PAGE;
-  renderAllTracksPage(1, false);
-  setTimeout(fixIncompleteRow, 150);
+  const cols = getColumnCount();
+  tracksShown += cols * 2;
+  showTracks();
 });
 
-setTimeout(fixIncompleteRow, 300);
 window.addEventListener("resize", () => {
-  setTimeout(fixIncompleteRow, 200);
+  setTimeout(showTracks, 200);
 });
 
 document.addEventListener("click", (event) => {

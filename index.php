@@ -10,15 +10,6 @@ if (is_readable($settingsFile)) {
 
 $siteSettings = is_array($settings['site'] ?? null) ? $settings['site'] : [];
 $seoSettings = is_array($settings['seo'] ?? null) ? $settings['seo'] : [];
-$catalogSettings = is_array($settings['catalog'] ?? null) ? $settings['catalog'] : [];
-$songsPerPage = (int) (
-  $settings['songs_per_page']
-  ?? $settings['tracksPerPage']
-  ?? $settings['per_page']
-  ?? $catalogSettings['tracksPerPage']
-  ?? 10
-);
-$songsPerPage = max(1, min(50, $songsPerPage));
 
 function sg_meta_e($value): string {
   return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
@@ -597,9 +588,6 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script>
-      window.TRACKS_PER_PAGE = <?= (int) $songsPerPage ?>;
-    </script>
     <script src="/script.min.js?v=20260602-performance" defer></script>
     <script>
       // Track page visit
