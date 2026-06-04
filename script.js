@@ -170,7 +170,7 @@ function hidePlayer() {
 }
 
 const PREVIEW_SECONDS = 12;
-const TRACKS_PER_PAGE = 10;
+const TRACKS_PER_PAGE = Number.isFinite(Number(window.TRACKS_PER_PAGE)) ? Math.max(1, Number(window.TRACKS_PER_PAGE)) : 10;
 const WAVEFORM_MAX_BARS = 80;
 const WAVEFORM_ANALYSIS_SECONDS = 30;
 let tracksShown = TRACKS_PER_PAGE;
@@ -939,7 +939,8 @@ function applySiteSettings() {
   const { site, links, catalog, seo } = siteSettings;
 
   const configuredLatestCount = Number(catalog.latestCount);
-  latestTrackCount = Number.isFinite(configuredLatestCount) ? Math.max(0, Math.min(12, configuredLatestCount)) : 5;
+  const latestCountLimit = Math.max(1, Math.floor(TRACKS_PER_PAGE / 2));
+  latestTrackCount = Number.isFinite(configuredLatestCount) ? Math.max(0, Math.min(latestCountLimit, configuredLatestCount)) : latestCountLimit;
   allTracksPerPage = TRACKS_PER_PAGE;
   demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
 
@@ -1271,6 +1272,26 @@ function renderPagination(totalPages) {
   trackPagination.innerHTML = items.join("");
 }
 
+function fixIncompleteRow() {
+  const grid = document.querySelector("#trackGrid, #allTracksGrid, .tracks-grid, .track-grid");
+  if (!grid) return;
+
+  const computedStyle = window.getComputedStyle(grid);
+  const cols = computedStyle.getPropertyValue("grid-template-columns").split(" ").filter(Boolean).length;
+
+  if (cols <= 1) return;
+
+  const cards = Array.from(grid.querySelectorAll(".track-card, .song-card, .track-item")).filter((card) => card.style.display !== "none");
+  const remainder = cards.length % cols;
+
+  if (remainder !== 0) {
+    const toHide = cards.length - remainder;
+    cards.slice(toHide).forEach((card) => {
+      card.style.display = "none";
+    });
+  }
+}
+
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   if (!allTracks.length) {
     allTracksPage = 1;
@@ -1293,11 +1314,15 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
 
   trackGrid.replaceChildren(...cards);
+  trackGrid.querySelectorAll(".track-card, .song-card, .track-item").forEach((card) => {
+    card.style.display = "";
+  });
   syncPlayingCards();
   trackPagination.replaceChildren();
   if (loadMoreButton) {
     loadMoreButton.style.display = tracksShown >= allTracks.length ? "none" : "flex";
   }
+  setTimeout(fixIncompleteRow, 100);
 
   if (shouldScroll) {
     document.querySelector("#all-tracks").scrollIntoView({ block: "start", behavior: "smooth" });
@@ -2780,6 +2805,12 @@ trackPagination.addEventListener("click", (event) => {
 loadMoreButton?.addEventListener("click", () => {
   tracksShown += TRACKS_PER_PAGE;
   renderAllTracksPage(1, false);
+  setTimeout(fixIncompleteRow, 150);
+});
+
+setTimeout(fixIncompleteRow, 300);
+window.addEventListener("resize", () => {
+  setTimeout(fixIncompleteRow, 200);
 });
 
 document.addEventListener("click", (event) => {
