@@ -79,12 +79,14 @@
       }
     </script>
   <style>
-.about-hero{padding:56px 48px 48px;border-bottom:1px solid #222}
+.about-hero{padding:36px 48px 32px;border-bottom:1px solid #222}
 .hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 .hero-tag{font-size:11px;color:#666;background:#111;border:1px solid #2a2a2a;padding:4px 12px;font-weight:500}
-.about-section{padding:48px 48px;border-bottom:1px solid #222}
-.about-section:last-of-type{border-bottom:none}
-.section-eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#666;margin-bottom:10px}
+.about-section{padding:0 0 40px;margin:0 0 40px;border-bottom:1px solid #222}
+.about-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.about-section > p{color:#aaa;font-size:13.5px;line-height:1.8;margin:0 0 12px}
+.about-section > p:last-child{margin-bottom:0}
+.section-eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#666;margin-bottom:8px}
 .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
 .card{background:#111;border:1px solid #2a2a2a;padding:24px;display:flex;flex-direction:column;gap:14px}
 .card-icon{width:36px;height:36px;background:#181818;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center}
@@ -106,11 +108,11 @@
 .platform-name::after{content:' : ';color:#666;font-weight:500;margin:0 4px}
 .platform-label{font-size:12px;color:#666}
 .platform-arrow{color:#666;font-size:14px;flex-shrink:0}
-.tagline-band{text-align:center;padding:56px 48px;border-top:1px solid #222}
+.tagline-band{text-align:center;padding:0;border-top:none}
 .tagline-band p{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px;line-height:1.4}
 .tagline-band .sub{font-size:13px;color:#666;margin-top:10px;font-weight:400}
 @media(max-width:900px){.cards-grid{grid-template-columns:1fr}.expect-grid{grid-template-columns:1fr}}
-@media(max-width:700px){.about-hero{padding:32px 20px}.about-section{padding:32px 20px}.tagline-band{padding:40px 20px}.tagline-band p{font-size:18px}}
+@media(max-width:700px){.about-hero{padding:24px 20px}.tagline-band p{font-size:18px}}
 </style>
 </head>
   <body>
@@ -221,8 +223,8 @@
       </nav>
 
       <main class="page" id="top">
-        <section class="about-page">
-          <section class="about-hero">
+        <section class="policy-page about-page">
+          <div class="policy-hero about-hero">
             <h1>About SG Production</h1>
             <p>Your ultimate destination for powerful soundcheck music, heavy bass drops, Halgi energy, and DJ remixes from India.</p>
             <div class="hero-tags" aria-label="Music categories">
@@ -234,16 +236,18 @@
               <span class="hero-tag">Subwoofer Test</span>
               <span class="hero-tag">India</span>
             </div>
-          </section>
-        
-          <section class="about-section">
-            <div class="section-eyebrow">Who We Are</div>
+          </div>
+
+          <div class="policy-body">
+            <div class="policy-sections">
+              <section class="policy-section about-section">
+            <div class="section-eyebrow section-label">Who We Are</div>
             <p>SG Production is an independent music production project from India specializing in high-energy DJ music, bass-heavy soundcheck tracks, Marathi Halgi beats, and premium DJ remixes.</p>
             <p>We create music for DJs, car audio lovers, bassheads, and music enthusiasts — tracks designed to shake your system and elevate your vibe. No barriers. No paywalls. Just direct downloads.</p>
-          </section>
+              </section>
         
-          <section class="about-section">
-            <div class="section-eyebrow">What We Make</div>
+              <section class="policy-section about-section">
+            <div class="section-eyebrow section-label">What We Make</div>
             <div class="cards-grid">
               <article class="card">
                 <div class="card-icon" aria-hidden="true">
@@ -269,10 +273,10 @@
                 <div class="card-desc">Every track available for direct download. High-quality audio for DJs, car audio setups, home theaters, and music lovers who want to own what they love.</div>
               </article>
             </div>
-          </section>
+              </section>
         
-          <section class="about-section">
-            <div class="section-eyebrow">What You Can Expect</div>
+              <section class="policy-section about-section">
+            <div class="section-eyebrow section-label">What You Can Expect</div>
             <div class="expect-grid">
               <div class="expect-item">Halgi Bass Mix sessions</div>
               <div class="expect-item">Soundcheck 2025 &amp; 2026 tracks</div>
@@ -283,20 +287,20 @@
               <div class="expect-item">Heavy drops and hard kicks</div>
               <div class="expect-item">Weekly new uploads</div>
             </div>
-          </section>
+              </section>
         
-          <section class="about-section">
-            <div class="section-eyebrow">Made For</div>
+              <section class="policy-section about-section">
+            <div class="section-eyebrow section-label">Made For</div>
             <div class="chips-row">
               <span class="chip">DJs &amp; Performers</span>
               <span class="chip">Car Audio &amp; Bassheads</span>
               <span class="chip">Home Theater Enthusiasts</span>
               <span class="chip">Music Lovers &amp; Fans</span>
             </div>
-          </section>
+              </section>
         
-          <section class="about-section">
-            <div class="section-eyebrow">Find Us On</div>
+              <section class="policy-section about-section">
+            <div class="section-eyebrow section-label">Find Us On</div>
             <div class="platforms-list">
               <a class="platform-row" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noopener">
                 <span class="platform-left">
@@ -330,12 +334,14 @@
                 <span class="platform-arrow">↗</span>
               </a>
             </div>
-          </section>
+              </section>
         
-          <section class="tagline-band">
+              <section class="policy-section tagline-band">
             <p>"Feel the bass. Test the power. Turn up with SG Production. 🎧🔥"</p>
             <div class="sub">Built for loud systems, clean downloads, and independent music lovers.</div>
-          </section>
+              </section>
+            </div>
+          </div>
         </section>
 
         <footer class="footer" id="contact">

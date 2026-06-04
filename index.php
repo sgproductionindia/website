@@ -360,7 +360,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
               Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.
             </p>
           </div>
-          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer">Subscribe</a>
+          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer" aria-label="Subscribe to SG Production on YouTube">Subscribe on YouTube</a>
         </section>
 
         <section class="song-page" id="songPage" aria-labelledby="songPageTitle" hidden>

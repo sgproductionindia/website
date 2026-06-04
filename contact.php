@@ -362,14 +362,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     </script>
   <style>
-.contact-hero{padding:56px 48px 48px;border-bottom:1px solid #222}
-.contact-hero .breadcrumb{font-size:12px;color:#666;margin-bottom:16px;display:flex;align-items:center;gap:6px}
-.contact-hero .breadcrumb a{color:#666;text-decoration:none}
-.contact-hero .breadcrumb a:hover{color:#aaa}
+.contact-hero{padding:36px 48px 32px;border-bottom:1px solid #222}
 .contact-hero h1{font-size:32px;font-weight:800;letter-spacing:-.8px;margin:0 0 10px;color:#fff}
 .contact-hero p{font-size:14px;color:#aaa;margin:0;max-width:620px;line-height:1.7}
-.contact-section{padding:48px 48px;border-bottom:1px solid #222}
-.contact-section:last-of-type{border-bottom:none}
+.contact-section{padding:0 0 40px;margin:0 0 40px;border-bottom:1px solid #222}
+.contact-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .contact-section h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 18px;letter-spacing:-.3px}
 .contact-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
 .contact-card{background:#111;border:1px solid #2a2a2a;padding:24px;display:flex;flex-direction:column;gap:12px}
@@ -407,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .contact-notice{background:#111;border:1px solid #2a2a2a;border-left:3px solid #fff;padding:14px 18px;margin-top:16px;font-size:13px;color:#aaa;line-height:1.7;max-width:480px}
 .contact-notice strong{color:#fff}
 @media(max-width:900px){.contact-cards{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}}
-@media(max-width:700px){.contact-hero{padding:32px 20px}.contact-section{padding:32px 20px}}
+@media(max-width:700px){.contact-hero{padding:24px 20px}}
 </style>
 </head>
   <body>
@@ -518,14 +515,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </nav>
 
       <main class="page" id="top">
-        <section class="contact-page">
-          <section class="contact-hero">
-            <div class="breadcrumb"><a href="/">Home</a><span>/</span><span>Contact</span></div>
+        <section class="policy-page contact-page">
+          <div class="policy-hero contact-hero">
             <h1>Contact Us</h1>
             <p>Have a question, licensing inquiry, or DMCA request? We'd love to hear from you.</p>
-          </section>
-        
-          <section class="contact-section" aria-label="Contact options">
+          </div>
+
+          <div class="policy-body">
+            <div class="policy-sections">
+              <section class="policy-section contact-section" aria-label="Contact options">
             <div class="contact-cards">
               <article class="contact-card">
                 <div class="contact-card-icon" aria-hidden="true">
@@ -560,10 +558,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
               </article>
             </div>
-          </section>
+              </section>
         
-          <section class="contact-section" id="contact-form" aria-labelledby="contact-form-title">
-            <h2 id="contact-form-title">Send Message</h2>
+              <section class="policy-section contact-section" id="contact-form" aria-labelledby="contact-form-title">
+            <h2 class="section-title" id="contact-form-title">Send Message</h2>
         
             <?php if ($success): ?>
               <div class="form-success" role="status"><strong><?php echo sg_contact_e($success); ?></strong></div>
@@ -604,10 +602,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
               <button class="form-submit" type="submit">Send Message</button>
             </form>
-          </section>
+              </section>
         
-          <section class="contact-section" aria-labelledby="other-ways-title">
-            <h2 id="other-ways-title">Other Ways to Reach Us</h2>
+              <section class="policy-section contact-section" aria-labelledby="other-ways-title">
+            <h2 class="section-title" id="other-ways-title">Other Ways to Reach Us</h2>
             <div class="contact-info-list">
               <a class="contact-info-row" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noopener">
                 <span class="contact-info-left">
@@ -629,7 +627,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </a>
             </div>
             <div class="contact-notice"><strong>Response time:</strong> We typically respond within 24-48 hours. For urgent DMCA requests, please mention URGENT in your subject line.</div>
-          </section>
+              </section>
+            </div>
+          </div>
         </section>
 
         <script>
