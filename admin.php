@@ -4858,7 +4858,7 @@ $downloadChartData = [
     })
     .catch(function() {});
 
-  fetch('api/likes', { cache: 'no-store' })
+  fetch('/api/likes', { cache: 'no-store' })
     .then(function(response) { return response.ok ? response.json() : null; })
     .then(function(payload) {
       var tracks = payload && Array.isArray(payload.tracks) ? payload.tracks : [];
