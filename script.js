@@ -431,19 +431,22 @@ function sendTrackLike(track, liked) {
     return Promise.resolve(null);
   }
 
-  return fetch("/api/like", {
+  const payload = JSON.stringify({
+    id: track.id,
+    slug: track.slug || track.id,
+    action: liked ? "like" : "unlike",
+    client_id: getLikeClientId()
+  });
+  const postLike = (endpoint) => fetch(endpoint, {
     method: "POST",
     cache: "no-store",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify({
-      id: track.id,
-      slug: track.slug || track.id,
-      action: liked ? "like" : "unlike",
-      client_id: getLikeClientId()
-    })
-  })
-    .then((response) => (response.ok ? response.json() : null))
+    body: payload
+  }).then((response) => (response.ok ? response.json() : null)).catch(() => null);
+
+  return postLike("/api/like")
+    .then((data) => (data?.ok ? data : postLike("/api/like.php")))
     .then((data) => {
       if (!data || !data.ok || typeof data.likes === "undefined") {
         return;

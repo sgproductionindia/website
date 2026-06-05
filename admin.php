@@ -4858,8 +4858,22 @@ $downloadChartData = [
     })
     .catch(function() {});
 
-  fetch('/api/likes', { cache: 'no-store' })
-    .then(function(response) { return response.ok ? response.json() : null; })
+  function fetchAdminLikes() {
+    return fetch('/api/likes', { cache: 'no-store' })
+      .then(function(response) { return response.ok ? response.json() : null; })
+      .then(function(payload) {
+        if (payload && payload.ok) return payload;
+        return fetch('/api/likes.php', { cache: 'no-store' })
+          .then(function(response) { return response.ok ? response.json() : null; });
+      })
+      .catch(function() {
+        return fetch('/api/likes.php', { cache: 'no-store' })
+          .then(function(response) { return response.ok ? response.json() : null; })
+          .catch(function() { return null; });
+      });
+  }
+
+  fetchAdminLikes()
     .then(function(payload) {
       var tracks = payload && Array.isArray(payload.tracks) ? payload.tracks : [];
       if (!payload || !payload.ok) return;
