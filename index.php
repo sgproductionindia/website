@@ -588,7 +588,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260602-performance" defer></script>
+    <script src="/script.min.js?v=20260606-likes" defer></script>
     <script>
       // Track page visit
       (function() {

@@ -12,6 +12,7 @@ define('SETTINGS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/sett
 define('ARTISTS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/artists.json');
 define('GENRES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/genres.json');
 define('AD_STATS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/ad-stats.json');
+define('LIKES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/likes.json');
 define('COVER_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/covers');
 define('AUDIO_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/audio');
 define('AD_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/ads');
@@ -1214,8 +1215,44 @@ $downloadCountFor = static function (array $track): int {
 
     return max($downloads, $downloadCount, $downloadEvents);
 };
-$likeCountFor = static function (array $track): int {
-    return (int) ($track['likes'] ?? $track['likeCount'] ?? 0);
+$likesStore = [];
+if (file_exists(LIKES_FILE)) {
+    $decodedLikes = json_decode(file_get_contents(LIKES_FILE) ?: '{}', true);
+    $likesStore = is_array($decodedLikes) ? $decodedLikes : [];
+}
+$trackLikeKeys = static function (array $track): array {
+    $keys = [
+        (string) ($track['id'] ?? ''),
+        (string) ($track['slug'] ?? ''),
+        slugify((string) ($track['slug'] ?? '')),
+        slugify((string) ($track['title'] ?? '')),
+    ];
+
+    return array_values(array_unique(array_filter($keys, static fn (string $key): bool => $key !== '')));
+};
+$storedLikeCountFor = static function (array $keys) use ($likesStore): int {
+    $best = 0;
+
+    foreach ($likesStore as $key => $entry) {
+        if (!is_array($entry)) {
+            continue;
+        }
+
+        $aliases = is_array($entry['aliases'] ?? null) ? $entry['aliases'] : [];
+        $entryKeys = array_values(array_unique(array_merge([(string) $key], array_map('strval', $aliases))));
+
+        if (array_intersect($keys, $entryKeys) !== []) {
+            $best = max($best, (int) ($entry['likes'] ?? $entry['likeCount'] ?? 0));
+        }
+    }
+
+    return $best;
+};
+$likeCountFor = static function (array $track) use ($trackLikeKeys, $storedLikeCountFor): int {
+    return max(
+        (int) ($track['likes'] ?? $track['likeCount'] ?? 0),
+        $storedLikeCountFor($trackLikeKeys($track))
+    );
 };
 $hasDownloadData = false;
 $totalDownloads = 0;
@@ -4821,14 +4858,15 @@ $downloadChartData = [
     })
     .catch(function() {});
 
-  fetch('data/tracks.json', { cache: 'no-store' })
+  fetch('api/likes', { cache: 'no-store' })
     .then(function(response) { return response.ok ? response.json() : null; })
-    .then(function(tracks) {
-      if (!Array.isArray(tracks)) return;
+    .then(function(payload) {
+      var tracks = payload && Array.isArray(payload.tracks) ? payload.tracks : [];
+      if (!payload || !payload.ok) return;
       var total = 0;
       tracks.forEach(function(track) {
         if (!track || typeof track !== 'object') return;
-        var count = Number(track.likes || track.likeCount || 0);
+        var count = Number(track.likes || 0);
         total += count;
         var id = String(track.id || '');
         if (!id) return;
@@ -4838,7 +4876,7 @@ $downloadChartData = [
         if (row) row.dataset.likes = String(count);
       });
       var totalEl = document.getElementById('totalLikesCount');
-      if (totalEl) totalEl.textContent = total.toLocaleString();
+      if (totalEl) totalEl.textContent = Number(payload.total || total).toLocaleString();
     })
     .catch(function() {});
 
