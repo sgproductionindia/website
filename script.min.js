@@ -430,7 +430,7 @@ function sendTrackLike(track, liked) {
     return Promise.resolve(null);
   }
 
-  return fetch("/api/like.php", {
+  return fetch("/api/like", {
     method: "POST",
     cache: "no-store",
     credentials: "same-origin",
