@@ -172,7 +172,9 @@ const PREVIEW_SECONDS = 12;
 const TRACKS_PER_PAGE = window.TRACKS_PER_PAGE || 10;
 const WAVEFORM_MAX_BARS = 80;
 const WAVEFORM_ANALYSIS_SECONDS = 30;
-let tracksShown = 10;
+const hasAdOnLoad = true;
+const initialTracks = hasAdOnLoad ? TRACKS_PER_PAGE - 1 : TRACKS_PER_PAGE;
+let tracksShown = getTracksToShow(initialTracks);
 let allTracksPerPage = TRACKS_PER_PAGE;
 let demoTrackPageCount = 12;
 let latestTrackCount = 5;
@@ -270,13 +272,15 @@ function normalizeUploadedTrack(track) {
     return null;
   }
 
-  const id = track.id || slugClass(track.title);
+  const id = String(track.id || track.slug || slugClass(track.title));
+  const slug = String(track.slug || slugClass(track.title || id));
   const rawDownloadUrl = track.downloadUrl || "";
   const previewUrl = track.previewUrl || track.audioUrl || (isLocalAudioPath(rawDownloadUrl) ? rawDownloadUrl : "");
   const cover = track.cover || track.coverUrl || track.coverPath || track.image || track.imageUrl || track.artwork || track.thumbnail || "";
 
   return {
     id,
+    slug,
     title: track.title,
     artist: track.artist || "SG Production",
     genre: track.genre || "Soundcheck",
@@ -433,12 +437,15 @@ function sendTrackLike(track, liked) {
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
       id: track.id,
+      slug: track.slug || track.id,
       action: liked ? "like" : "unlike",
       client_id: getLikeClientId()
     })
   })
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
+      console.log("Like API response:", data);
+      console.log("Track ID sent:", track.id);
       if (!data || !data.ok || typeof data.likes === "undefined") {
         return;
       }
@@ -1380,10 +1387,15 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   if (page <= 1) {
     allTracksPage = 1;
   }
-  const visibleTrackCount = Math.min(allTracks.length, getTracksToShow(tracksShown));
+  const adCard = renderGridAdCard();
+  const hasAdCard = Boolean(adCard);
+  const completeRowItemCount = getTracksToShow(tracksShown);
+  const visibleTrackCount = Math.min(
+    allTracks.length,
+    Math.max(1, completeRowItemCount - (hasAdCard ? 1 : 0))
+  );
   const cards = allTracks.slice(0, visibleTrackCount).map((track, index) => renderCard(track, index === 0));
 
-  const adCard = renderGridAdCard();
   if (adCard) {
     const pos = Math.min(Math.max(1, Number((siteSettings.advertising.gridAd || {}).position) || 8), cards.length + 1);
     cards.splice(pos - 1, 0, adCard);
@@ -2872,8 +2884,11 @@ trackPagination.addEventListener("click", (event) => {
 
 loadMoreButton?.addEventListener("click", () => {
   const cols = getColumnCount();
-  tracksShown += cols * 2;
+  const hasAdCard = Boolean(renderGridAdCard());
+  const increment = hasAdCard ? cols * 2 - 1 : cols * 2;
+  tracksShown += increment;
   showTracks();
+  setTimeout(showTracks, 150);
 });
 
 window.addEventListener("resize", () => {
