@@ -444,8 +444,6 @@ function sendTrackLike(track, liked) {
   })
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
-      console.log("Like API response:", data);
-      console.log("Track ID sent:", track.id);
       if (!data || !data.ok || typeof data.likes === "undefined") {
         return;
       }
