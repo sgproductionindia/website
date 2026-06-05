@@ -100,6 +100,7 @@ let isMuted = false;
 let playerVolTimer = 0;
 let pendingPlayerSeekFraction = null;
 let playerSeekActive = false;
+const likeSyncInFlight = new Set();
 const waveformCache = new Map();
 const waveformInflight = new Map(); // `${track.id}:${barCount}` → Promise<string[]|null>
 let allTracks = [];
@@ -469,17 +470,27 @@ function syncStoredLikeWithServer(track) {
   }
 
   const likedKey = `liked_${track.id}`;
-  const syncKey = `liked_sync_${track.id}`;
 
-  if (localStorage.getItem(likedKey) !== "true" || localStorage.getItem(syncKey) === "true") {
+  if (localStorage.getItem(likedKey) !== "true" || likeSyncInFlight.has(track.id)) {
     return;
   }
 
+  likeSyncInFlight.add(track.id);
   sendTrackLike(track, true).then((data) => {
     if (data?.ok) {
-      localStorage.setItem(syncKey, "true");
+      localStorage.setItem(`liked_sync_${track.id}`, "true");
     }
+  }).finally(() => {
+    likeSyncInFlight.delete(track.id);
   });
+}
+
+function syncAllStoredLikesWithServer() {
+  if (!/^https?:$/.test(window.location.protocol)) {
+    return;
+  }
+
+  allTracks.forEach((track) => syncStoredLikeWithServer(track));
 }
 
 function playTrackByOffset(offset) {
@@ -2521,6 +2532,7 @@ async function initializeCatalog() {
   }
 
   allTracks = tracks;
+  syncAllStoredLikesWithServer();
   normalizeInitialUrl();
   const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
 

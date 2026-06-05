@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM public.ecr.aws/docker/library/php:8.2-apache
 
 COPY php-upload.ini /usr/local/etc/php/conf.d/sgproduction-upload.ini
 COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
