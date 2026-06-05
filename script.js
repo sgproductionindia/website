@@ -445,7 +445,8 @@ function sendTrackLike(track, liked) {
     body: payload
   }).then((response) => (response.ok ? response.json() : null)).catch(() => null);
 
-  return postLike("/api/like")
+  return postLike("/?api=like")
+    .then((data) => (data?.ok ? data : postLike("/api/like")))
     .then((data) => (data?.ok ? data : postLike("/api/like.php")))
     .then((data) => {
       if (!data || !data.ok || typeof data.likes === "undefined") {

@@ -35,6 +35,240 @@ function sg_load_json_array(string $path, string $key): array {
   return [];
 }
 
+function sg_json_response(array $payload, int $status = 200): void {
+  http_response_code($status);
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+  echo json_encode($payload, JSON_UNESCAPED_SLASHES) . "\n";
+  exit;
+}
+
+function sg_clean_api_text($value, int $limit = 180): string {
+  $text = trim((string) $value);
+  $text = preg_replace('/[\x00-\x1F\x7F]/u', '', $text) ?: '';
+  return substr($text, 0, $limit);
+}
+
+function sg_read_json_file(string $path, $fallback) {
+  if (!is_readable($path)) {
+    return $fallback;
+  }
+  $decoded = json_decode((string) file_get_contents($path), true);
+  return is_array($decoded) ? $decoded : $fallback;
+}
+
+function sg_write_json_file(string $path, array $payload): bool {
+  $directory = dirname($path);
+  if (!is_dir($directory)) {
+    mkdir($directory, 0755, true);
+  }
+  return file_put_contents(
+    $path,
+    json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n",
+    LOCK_EX
+  ) !== false;
+}
+
+function sg_track_like_keys(array $track, string $inputId = ''): array {
+  $keys = [
+    $inputId,
+    (string) ($track['id'] ?? ''),
+    (string) ($track['slug'] ?? ''),
+    sg_slugify((string) ($track['slug'] ?? '')),
+    sg_slugify((string) ($track['title'] ?? '')),
+  ];
+  return array_values(array_unique(array_filter($keys, static fn (string $key): bool => $key !== '')));
+}
+
+function sg_find_like_store_entry(array $store, array $keys): ?array {
+  foreach ($store as $key => $entry) {
+    if (!is_array($entry)) {
+      continue;
+    }
+    $aliases = is_array($entry['aliases'] ?? null) ? $entry['aliases'] : [];
+    $entryKeys = array_values(array_unique(array_merge([(string) $key], array_map('strval', $aliases))));
+    if (array_intersect($keys, $entryKeys) !== []) {
+      return $entry;
+    }
+  }
+  return null;
+}
+
+function sg_stored_like_count(array $store, array $keys): int {
+  $best = 0;
+  foreach ($store as $key => $entry) {
+    if (!is_array($entry)) {
+      continue;
+    }
+    $aliases = is_array($entry['aliases'] ?? null) ? $entry['aliases'] : [];
+    $entryKeys = array_values(array_unique(array_merge([(string) $key], array_map('strval', $aliases))));
+    if (array_intersect($keys, $entryKeys) !== []) {
+      $best = max($best, (int) ($entry['likes'] ?? $entry['likeCount'] ?? 0));
+    }
+  }
+  return $best;
+}
+
+function sg_handle_likes_api(): void {
+  $tracksFile = __DIR__ . '/data/tracks.json';
+  $likesFile = __DIR__ . '/data/likes.json';
+  $tracks = sg_load_json_array($tracksFile, 'tracks');
+  $store = sg_read_json_file($likesFile, []);
+  $usedStoreKeys = [];
+  $rows = [];
+  $total = 0;
+
+  foreach ($tracks as $track) {
+    if (!is_array($track)) {
+      continue;
+    }
+    $keys = sg_track_like_keys($track);
+    $id = (string) ($track['id'] ?? ($keys[0] ?? ''));
+    if ($id === '') {
+      continue;
+    }
+    $stored = sg_stored_like_count($store, $keys);
+    $likes = max((int) ($track['likes'] ?? $track['likeCount'] ?? 0), $stored);
+    foreach ($keys as $key) {
+      $usedStoreKeys[$key] = true;
+    }
+    $rows[] = [
+      'id' => $id,
+      'slug' => (string) ($track['slug'] ?? ''),
+      'title' => (string) ($track['title'] ?? ''),
+      'likes' => $likes,
+    ];
+    $total += $likes;
+  }
+
+  foreach ($store as $key => $entry) {
+    if (!is_array($entry) || isset($usedStoreKeys[(string) $key])) {
+      continue;
+    }
+    $likes = (int) ($entry['likes'] ?? $entry['likeCount'] ?? 0);
+    $total += max(0, $likes);
+    $rows[] = [
+      'id' => (string) $key,
+      'slug' => '',
+      'title' => (string) $key,
+      'likes' => max(0, $likes),
+    ];
+  }
+
+  sg_json_response(['ok' => true, 'total' => $total, 'tracks' => $rows]);
+}
+
+function sg_handle_like_api(): void {
+  if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    sg_json_response(['ok' => false, 'error' => 'Method not allowed.'], 405);
+  }
+
+  $jsonBody = json_decode(file_get_contents('php://input') ?: '[]', true);
+  $payload = is_array($jsonBody) && $jsonBody !== [] ? $jsonBody : $_POST;
+  $trackId = sg_clean_api_text($payload['id'] ?? '');
+  if ($trackId === '') {
+    $trackId = sg_clean_api_text($payload['slug'] ?? $payload['song'] ?? '');
+  }
+  if ($trackId === '') {
+    sg_json_response(['ok' => false, 'error' => 'Song not found.'], 400);
+  }
+
+  $tracksFile = __DIR__ . '/data/tracks.json';
+  $likesFile = __DIR__ . '/data/likes.json';
+  $tracks = sg_load_json_array($tracksFile, 'tracks');
+  $store = sg_read_json_file($likesFile, []);
+  $matchedIndex = null;
+
+  foreach ($tracks as $index => $track) {
+    if (!is_array($track)) {
+      continue;
+    }
+    if (in_array($trackId, sg_track_like_keys($track, $trackId), true)) {
+      $matchedIndex = $index;
+      break;
+    }
+  }
+
+  $track = $matchedIndex !== null && is_array($tracks[$matchedIndex] ?? null) ? $tracks[$matchedIndex] : [];
+  $keys = sg_track_like_keys($track, $trackId);
+  $canonicalKey = (string) ($track['id'] ?? ($keys[0] ?? $trackId));
+  $storedEntry = sg_find_like_store_entry($store, $keys) ?? [];
+  $clientId = sg_clean_api_text($payload['client_id'] ?? '', 160);
+  $clientHash = $clientId !== '' ? hash('sha256', $clientId) : '';
+  $shouldLike = sg_clean_api_text($payload['action'] ?? 'like', 20) !== 'unlike';
+  $likes = max(
+    (int) ($track['likes'] ?? $track['likeCount'] ?? 0),
+    (int) ($storedEntry['likes'] ?? $storedEntry['likeCount'] ?? 0)
+  );
+  $clients = array_values(array_unique(array_merge(
+    is_array($track['likedClients'] ?? null) ? $track['likedClients'] : [],
+    is_array($storedEntry['likedClients'] ?? null) ? $storedEntry['likedClients'] : []
+  )));
+
+  if ($clientHash !== '') {
+    $alreadyLiked = in_array($clientHash, $clients, true);
+    if ($shouldLike && !$alreadyLiked) {
+      $likes++;
+      $clients[] = $clientHash;
+    } elseif (!$shouldLike && $alreadyLiked) {
+      $likes = max(0, $likes - 1);
+      $clients = array_values(array_filter($clients, static fn ($hash): bool => $hash !== $clientHash));
+    }
+  } else {
+    $likes = $shouldLike ? $likes + 1 : max(0, $likes - 1);
+  }
+
+  $clients = array_slice(array_values(array_unique($clients)), -10000);
+  $event = [
+    'timestamp' => gmdate('c'),
+    'action' => $shouldLike ? 'like' : 'unlike',
+    'referrer' => sg_clean_api_text($_SERVER['HTTP_REFERER'] ?? '', 600),
+    'ip_hash' => hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? '')),
+  ];
+
+  if ($matchedIndex !== null && is_array($tracks[$matchedIndex] ?? null)) {
+    $track['likes'] = $likes;
+    $track['likeCount'] = $likes;
+    $track['likedClients'] = $clients;
+    $track['lastLikedAt'] = gmdate('c');
+    $track['likeEvents'] = is_array($track['likeEvents'] ?? null) ? $track['likeEvents'] : [];
+    array_unshift($track['likeEvents'], $event);
+    $track['likeEvents'] = array_slice($track['likeEvents'], 0, 100);
+    $tracks[$matchedIndex] = $track;
+    sg_write_json_file($tracksFile, $tracks);
+  }
+
+  $storeEvents = is_array($storedEntry['events'] ?? null) ? $storedEntry['events'] : [];
+  array_unshift($storeEvents, $event);
+  $store[$canonicalKey] = [
+    'likes' => $likes,
+    'likeCount' => $likes,
+    'likedClients' => $clients,
+    'aliases' => $keys,
+    'updatedAt' => gmdate('c'),
+    'events' => array_slice($storeEvents, 0, 100),
+  ];
+  if (!sg_write_json_file($likesFile, $store)) {
+    sg_json_response(['ok' => false, 'error' => 'Could not save likes.'], 500);
+  }
+
+  sg_json_response([
+    'ok' => true,
+    'success' => true,
+    'id' => (string) ($track['id'] ?? $trackId),
+    'liked' => $shouldLike,
+    'likes' => $likes,
+  ]);
+}
+
+$apiAction = (string) ($_GET['api'] ?? '');
+if ($apiAction === 'like') {
+  sg_handle_like_api();
+}
+if ($apiAction === 'likes') {
+  sg_handle_likes_api();
+}
+
 function sg_absolute_site_url($path): string {
   $path = trim((string) $path);
   if ($path === '') {
@@ -588,7 +822,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260606-likes-route-fallback" defer></script>
+    <script src="/script.min.js?v=20260606-root-like-api" defer></script>
     <script>
       // Track page visit
       (function() {

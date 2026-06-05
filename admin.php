@@ -4859,7 +4859,7 @@ $downloadChartData = [
     .catch(function() {});
 
   function fetchAdminLikes() {
-    return fetch('/api/likes', { cache: 'no-store' })
+    return fetch('/?api=likes', { cache: 'no-store' })
       .then(function(response) { return response.ok ? response.json() : null; })
       .then(function(payload) {
         if (payload && payload.ok) return payload;
