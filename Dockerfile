@@ -4,6 +4,15 @@ COPY php-upload.ini /usr/local/etc/php/conf.d/sgproduction-upload.ini
 COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
 COPY . /var/www/html/
 
+RUN if [ -f /var/www/html/assets/icon-192.png ]; then \
+    cp /var/www/html/assets/icon-192.png \
+    /var/www/html/uploads/site/icon-192.png; \
+    fi && \
+    if [ -f /var/www/html/assets/icon-512.png ]; then \
+    cp /var/www/html/assets/icon-512.png \
+    /var/www/html/uploads/site/icon-512.png; \
+    fi
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
