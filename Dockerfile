@@ -4,7 +4,8 @@ COPY php-upload.ini /usr/local/etc/php/conf.d/sgproduction-upload.ini
 COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
 COPY . /var/www/html/
 
-RUN cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png && \
+RUN mkdir -p /var/www/html/uploads/site && \
+    cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png && \
     cp /var/www/html/icon-512.png /var/www/html/uploads/site/icon-512.png
 
 RUN apt-get update \
