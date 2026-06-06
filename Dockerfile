@@ -21,7 +21,7 @@ RUN apt-get update \
 EXPOSE 80
 
 CMD mkdir -p /var/www/html/uploads/covers /var/www/html/uploads/audio /var/www/html/uploads/ads /var/www/html/uploads/artists /var/www/html/uploads/site /var/www/html/data \
-    && cp /var/www/html/assets/icon-192.png /var/www/html/uploads/site/icon-192.png \
-    && cp /var/www/html/assets/icon-512.png /var/www/html/uploads/site/icon-512.png \
+    && { [ -f /var/www/html/icon-192.png ] && cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png || [ -f /var/www/html/assets/icon-192.png ] && cp /var/www/html/assets/icon-192.png /var/www/html/uploads/site/icon-192.png || true; } \
+    && { [ -f /var/www/html/icon-512.png ] && cp /var/www/html/icon-512.png /var/www/html/uploads/site/icon-512.png || [ -f /var/www/html/assets/icon-512.png ] && cp /var/www/html/assets/icon-512.png /var/www/html/uploads/site/icon-512.png || true; } \
     && chown -R www-data:www-data /var/www/html/uploads /var/www/html/data \
     && apache2-foreground
