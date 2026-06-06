@@ -1,4 +1,4 @@
-const SG_CACHE = "sg-production-pwa-v2";
+const SG_CACHE = "sg-production-pwa-v3";
 const CORE_ASSETS = [
   "/",
   "/index.php",
@@ -6,6 +6,7 @@ const CORE_ASSETS = [
   "/styles.min.css",
   "/script.js",
   "/script.min.js",
+  "/pwa.js",
   "/transitions.min.css",
   "/transitions.min.js",
   "/page-search.js",
@@ -40,6 +41,7 @@ function isCacheableStatic(pathname) {
     "/styles.min.css",
     "/script.js",
     "/script.min.js",
+    "/pwa.js",
     "/transitions.min.css",
     "/transitions.min.js",
     "/page-search.js"

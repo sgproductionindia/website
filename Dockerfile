@@ -5,8 +5,8 @@ COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
 COPY . /var/www/html/
 
 RUN mkdir -p /var/www/html/uploads/site && \
-    cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png && \
-    cp /var/www/html/icon-512.png /var/www/html/uploads/site/icon-512.png
+    { [ -f /var/www/html/icon-192.png ] && cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png || [ -f /var/www/html/assets/icon-192.png ] && cp /var/www/html/assets/icon-192.png /var/www/html/uploads/site/icon-192.png || true; } && \
+    { [ -f /var/www/html/icon-512.png ] && cp /var/www/html/icon-512.png /var/www/html/uploads/site/icon-512.png || [ -f /var/www/html/assets/icon-512.png ] && cp /var/www/html/assets/icon-512.png /var/www/html/uploads/site/icon-512.png || true; }
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \

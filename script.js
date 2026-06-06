@@ -1031,7 +1031,7 @@ function siteUrl(path = "/") {
 function applyFavicon() {
   const favicon = siteSettings.seo.favicon || "assets/sg-logo.svg";
   setIconLink("icon", favicon);
-  setIconLink("apple-touch-icon", favicon);
+  setIconLink("apple-touch-icon", "/assets/icon-192.png");
 }
 
 function applySiteSettings() {
@@ -3103,13 +3103,6 @@ sideNav.addEventListener("focusout", () => {
   }, 1500);
 })();
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {
-      // Service workers require HTTPS or localhost and may be blocked in file previews.
-    });
-  });
-}
 
 (function() {
   const btnShare = document.getElementById('btnShare');
