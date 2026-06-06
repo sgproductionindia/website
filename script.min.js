@@ -3103,6 +3103,14 @@ sideNav.addEventListener("focusout", () => {
   }, 1500);
 })();
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
+      // Service workers require HTTPS or localhost and may be blocked in file previews.
+    });
+  });
+}
+
 (function() {
   const btnShare = document.getElementById('btnShare');
   const sharePopup = document.getElementById('sharePopup');
