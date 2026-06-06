@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="/manifest.json?v=20260607-pwa">
+    <link rel="manifest" href="/manifest.json?v=20260607-pwa-root">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="SG Production">
@@ -40,15 +40,15 @@
     <meta name="twitter:image" content="https://sgproduction.music/assets/cover-1.jpg">
     <link rel="canonical" href="https://sgproduction.music/usage-policy">
     <link rel="icon" href="assets/sg-logo.svg" type="image/svg+xml">
-    <link rel="icon" href="/assets/icon-192.png" sizes="192x192" type="image/png">
-    <link rel="apple-touch-icon" href="/assets/icon-192.png">
+    <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=20260601-credit-box">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
-    <script src="/pwa.js?v=20260607-pwa" defer></script>
+    <script src="/pwa.js?v=20260607-pwa-root" defer></script>
     <script src="page-search.js?v=20260528-page-search" defer></script>
     <script>
       // Keep clean live URLs, but make local file:// previews navigable.

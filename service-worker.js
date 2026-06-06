@@ -1,4 +1,4 @@
-const SG_CACHE = "sg-production-pwa-v3";
+const SG_CACHE = "sg-production-pwa-v4";
 const CORE_ASSETS = [
   "/",
   "/index.php",
@@ -11,8 +11,8 @@ const CORE_ASSETS = [
   "/transitions.min.js",
   "/page-search.js",
   "/assets/sg-logo.svg",
-  "/assets/icon-192.png",
-  "/assets/icon-512.png"
+  "/icon-192.png",
+  "/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {

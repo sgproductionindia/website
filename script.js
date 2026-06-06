@@ -1031,7 +1031,7 @@ function siteUrl(path = "/") {
 function applyFavicon() {
   const favicon = siteSettings.seo.favicon || "assets/sg-logo.svg";
   setIconLink("icon", favicon);
-  setIconLink("apple-touch-icon", "/assets/icon-192.png");
+  setIconLink("apple-touch-icon", "/icon-192.png");
 }
 
 function applySiteSettings() {
