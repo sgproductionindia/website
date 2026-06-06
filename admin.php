@@ -1516,9 +1516,9 @@ $downloadChartData = [
   }
 
   .brand-avatar {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
     border-radius: var(--radius-sm);
     background: transparent;
     display: flex;
@@ -4425,7 +4425,7 @@ $downloadChartData = [
       </main>
     <?php else: ?>
       <aside class="sidebar">
-        <div class="brand"><div class="brand-avatar"><img src="assets/admin-logo.svg" alt="SG Production logo"></div><div class="brand-text"><div class="name">SG Production</div><div class="role">Admin Studio</div></div></div>
+        <div class="brand"><div class="brand-avatar"><img src="assets/sg-logo.svg" alt="SG Production logo"></div><div class="brand-text"><div class="name">SG Production</div><div class="role">Admin Studio</div></div></div>
         <nav>
           <div class="nav-section"><div class="nav-label">Overview</div><a class="nav-item active" href="#dashboard" data-section="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>Dashboard</a><a class="nav-item" href="#analytics" data-section="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 12 5 12 7 4 9 20 11 12 13 16 15 10 17 12 22 12"/></svg>Analytics</a></div>
           <div class="nav-section"><div class="nav-label">Music</div><a class="nav-item" href="#upload" data-section="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 20h16"/></svg>Upload New Song</a><a class="nav-item" href="#songs" data-section="songs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="2.5"/><circle cx="20" cy="16" r="2.5"/></svg>Uploaded Songs</a><a class="nav-item" href="#artists" data-section="artists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3"/><path d="M19 17c0-1.86-1.34-3.4-3-3.86"/><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>Artist Management</a><a class="nav-item" href="#genres" data-section="genres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8 8a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828z"/><circle cx="7.5" cy="7.5" r="1"/></svg>Genre Management</a></div>

@@ -171,7 +171,7 @@ function hidePlayer() {
 
 const PREVIEW_SECONDS = 12;
 const TRACKS_PER_PAGE = window.TRACKS_PER_PAGE || 10;
-const WAVEFORM_MAX_BARS = 80;
+const WAVEFORM_MAX_BARS = 180;
 const WAVEFORM_ANALYSIS_SECONDS = 30;
 const hasAdOnLoad = true;
 const initialTracks = hasAdOnLoad ? TRACKS_PER_PAGE - 1 : TRACKS_PER_PAGE;
@@ -2121,7 +2121,7 @@ function generatedWaveformBars(track, barCount) {
 function getSongWaveformBarCount() {
   const fallbackWidth = Math.min(window.innerWidth - 92, 820);
   const availableWidth = songWaveform.clientWidth || fallbackWidth;
-  return Math.max(42, Math.min(WAVEFORM_MAX_BARS, Math.floor(availableWidth / 5)));
+  return Math.max(64, Math.min(WAVEFORM_MAX_BARS, Math.floor(availableWidth / 5)));
 }
 
 function paintSongWaveform(bars) {

@@ -1391,11 +1391,9 @@ body.search-open {
 
 .song-wave-row {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 20px;
-  row-gap: 10px;
   width: min(100%, 820px);
   margin-top: clamp(32px, 5vh, 46px);
 }
@@ -1495,9 +1493,12 @@ body.search-open {
 }
 
 .song-duration {
-  grid-column: 2;
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
   justify-self: end;
+  min-width: 72px;
+  text-align: right;
   color: #8f99a6;
   font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
@@ -2630,9 +2631,8 @@ body.search-open {
   }
 
   .song-wave-row {
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     column-gap: 14px;
-    row-gap: 8px;
     width: 100%;
     margin-top: 34px;
   }
@@ -2644,6 +2644,7 @@ body.search-open {
 
   .song-duration {
     font-size: 0.7rem;
+    min-width: 62px;
   }
 
   .song-info-grid {
