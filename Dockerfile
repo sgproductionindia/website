@@ -1,10 +1,11 @@
 FROM public.ecr.aws/docker/library/php:8.2-apache
 
-COPY icon-192.png /var/www/html/uploads/site/icon-192.png
-COPY icon-512.png /var/www/html/uploads/site/icon-512.png
 COPY php-upload.ini /usr/local/etc/php/conf.d/sgproduction-upload.ini
 COPY apache-default.conf /etc/apache2/sites-available/000-default.conf
 COPY . /var/www/html/
+
+RUN cp /var/www/html/icon-192.png /var/www/html/uploads/site/icon-192.png && \
+    cp /var/www/html/icon-512.png /var/www/html/uploads/site/icon-512.png
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
