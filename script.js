@@ -87,6 +87,7 @@ let audioContext = null;
 let activeSource = null;
 let activeGain = null;
 let activeAudio = null;
+let activeAudioUrl = "";
 let startedAt = 0;
 let pausedAt = 0;
 let isPlaying = false;
@@ -169,6 +170,13 @@ function hidePlayer() {
   document.body.classList.remove("player-visible");
 }
 
+function setAudioLoadingState(loading) {
+  player?.classList.toggle("is-buffering", loading);
+  playerToggle?.classList.toggle("is-buffering", loading);
+  songPlay?.classList.toggle("is-buffering", loading);
+  player?.setAttribute("aria-busy", loading ? "true" : "false");
+}
+
 const PREVIEW_SECONDS = 12;
 const TRACKS_PER_PAGE = window.TRACKS_PER_PAGE || 10;
 const WAVEFORM_MAX_BARS = 180;
@@ -237,7 +245,7 @@ function downloadEndpoint(track) {
 }
 
 function isLocalAudioPath(url) {
-  return /^uploads\/audio\//.test(url);
+  return /^\/?uploads\/audio\//.test(String(url || ""));
 }
 
 function escapeHTML(value) {
@@ -276,7 +284,17 @@ function normalizeUploadedTrack(track) {
   const id = String(track.id || track.slug || slugClass(track.title));
   const slug = String(track.slug || slugClass(track.title || id));
   const rawDownloadUrl = track.downloadUrl || "";
-  const previewUrl = track.previewUrl || track.audioUrl || (isLocalAudioPath(rawDownloadUrl) ? rawDownloadUrl : "");
+  const rawAudioUrl = track.audioUrl || track.fullAudioUrl || track.fullUrl || track.fileUrl || track.file || track.audio || "";
+  const fullAudioUrl = [
+    track.fullAudioUrl,
+    track.fullUrl,
+    rawDownloadUrl,
+    rawAudioUrl,
+    track.fileUrl,
+    track.file,
+    track.audio
+  ].map((value) => String(value || "").trim()).find((value) => isLocalAudioPath(value)) || "";
+  const previewUrl = track.previewUrl || rawAudioUrl || fullAudioUrl;
   const cover = track.cover || track.coverUrl || track.coverPath || track.image || track.imageUrl || track.artwork || track.thumbnail || "";
 
   return {
@@ -289,6 +307,8 @@ function normalizeUploadedTrack(track) {
     cover: cover || "assets/cover-1.jpg",
     coverWebp: track.coverWebp || track.cover_webp || track.webp || "",
     previewUrl,
+    audioUrl: rawAudioUrl,
+    fullAudioUrl,
     downloadUrl: rawDownloadUrl,
     creditText: track.creditText || "",
     likes: Number(track.likes ?? track.likeCount ?? 0) || 0,
@@ -940,7 +960,7 @@ function updatePositionState(totalOverride = null, positionOverride = null) {
 
   const total = Number.isFinite(totalOverride) && totalOverride > 0
     ? totalOverride
-    : playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    : playableDuration(selectedTrack, Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))));
   const position = Number.isFinite(positionOverride)
     ? positionOverride
     : currentPlaybackPosition();
@@ -1004,21 +1024,21 @@ function setupMediaSessionControls() {
   setHandler("nexttrack", playNextTrack);
   setHandler("seekbackward", (details) => {
     if (!selectedTrack) return;
-    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    const total = playableDuration(selectedTrack, Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))));
     const skipTime = details?.seekOffset || 10;
     setPlayerProgress(total ? (currentPlaybackPosition() - skipTime) / total : 0);
     updatePositionState();
   });
   setHandler("seekforward", (details) => {
     if (!selectedTrack) return;
-    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    const total = playableDuration(selectedTrack, Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))));
     const skipTime = details?.seekOffset || 10;
     setPlayerProgress(total ? (currentPlaybackPosition() + skipTime) / total : 0);
     updatePositionState();
   });
   setHandler("seekto", (details) => {
     if (!selectedTrack || !details || !Number.isFinite(details.seekTime)) return;
-    const total = playableDuration(selectedTrack, Boolean(getPreviewUrl(selectedTrack)));
+    const total = playableDuration(selectedTrack, Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))));
     setPlayerProgress(total ? details.seekTime / total : 0);
     updatePositionState();
   });
@@ -1132,6 +1152,81 @@ function buildCreditText(track) {
 
 function getPreviewUrl(track) {
   return track.previewUrl || (isLocalAudioPath(track.downloadUrl || "") ? track.downloadUrl : "");
+}
+
+function getFullAudioUrl(track) {
+  if (!track) {
+    return "";
+  }
+
+  const downloadUrl = String(track.downloadUrl || "").trim();
+  if (downloadUrl) {
+    return normalizeMediaPath(downloadUrl);
+  }
+
+  const candidates = [
+    track.fullAudioUrl,
+    track.fullUrl,
+    track.audioUrl,
+    track.fileUrl,
+    track.file,
+    track.audio
+  ];
+  const audioUrl = candidates.map((value) => String(value || "").trim()).find((value) => isLocalAudioPath(value));
+
+  return normalizeMediaPath(audioUrl || "");
+}
+
+function getTrackAudioUrl(track, preferFull = false) {
+  const previewUrl = normalizeMediaPath(getPreviewUrl(track));
+  const fullUrl = getFullAudioUrl(track);
+
+  return preferFull ? (fullUrl || previewUrl) : (previewUrl || fullUrl);
+}
+
+function isSongPageActiveForTrack(track) {
+  return Boolean(track && !songPage.hidden && songPlay?.dataset?.trackId === track.id);
+}
+
+function describeAudioError(audio) {
+  const error = audio?.error;
+
+  if (!error) {
+    return "Unknown audio error";
+  }
+
+  const labels = {
+    1: "MEDIA_ERR_ABORTED",
+    2: "MEDIA_ERR_NETWORK",
+    3: "MEDIA_ERR_DECODE",
+    4: "MEDIA_ERR_SRC_NOT_SUPPORTED"
+  };
+
+  return `${labels[error.code] || "MEDIA_ERR_UNKNOWN"} (${error.code})`;
+}
+
+function createPlayableAudio(src) {
+  const audio = new Audio();
+  audio.preload = "metadata";
+  audio.setAttribute("playsinline", "");
+  audio.setAttribute("webkit-playsinline", "");
+
+  const cleanSrc = String(src || "").split("?")[0].toLowerCase();
+  const formatChecks = [
+    { test: /\.mp3$/i, type: "audio/mpeg", label: "MP3" },
+    { test: /\.wav$/i, type: "audio/wav", label: "WAV" },
+    { test: /\.m4a$/i, type: "audio/mp4", label: "M4A" },
+    { test: /\.aac$/i, type: "audio/aac", label: "AAC" }
+  ];
+  const format = formatChecks.find((item) => item.test.test(cleanSrc));
+  if (format && audio.canPlayType(format.type) === "") {
+    console.warn(`${format.label} audio may not be supported by this mobile browser:`, src);
+  }
+
+  audio.src = src;
+  audio.load();
+
+  return audio;
 }
 
 function getSearchMatches(query) {
@@ -1610,28 +1705,35 @@ async function playTrack(track) {
     return;
   }
 
-  if (selectedTrack?.id === track.id && isPlaying) {
+  const preferFullAudio = isSongPageActiveForTrack(track);
+  const audioUrl = getTrackAudioUrl(track, preferFullAudio);
+  const sameAudioSource = Boolean(audioUrl) && activeAudioUrl === audioUrl;
+
+  if (selectedTrack?.id === track.id && isPlaying && (!audioUrl || sameAudioSource)) {
     pauseCurrent();
     return;
   }
 
   const sameTrack = selectedTrack?.id === track.id;
+
+  if (sameTrack && isPlaying && activeAudio && audioUrl && !sameAudioSource) {
+    pausedAt = currentPlaybackPosition();
+  }
+
   const resumeOffset = sameTrack && !isNearPlayableEnd(track, pausedAt) ? pausedAt : 0;
 
   stopCurrent(!sameTrack);
   selectedTrack = track;
 
-  const previewUrl = getPreviewUrl(track);
-
-  if (previewUrl) {
+  if (audioUrl) {
     const token = audioPlayToken + 1;
     audioPlayToken = token;
-    const audio = new Audio(previewUrl);
-    audio.preload = "auto";
+    const audio = createPlayableAudio(audioUrl);
     audio.loop = false;
     audio.volume = isMuted ? 0 : currentVolume;
     audio.muted = isMuted;
     activeAudio = audio;
+    activeAudioUrl = audioUrl;
     window.currentAudio = audio;
     prefetchWaveform(track);
 
@@ -1645,15 +1747,41 @@ async function playTrack(track) {
       audio.addEventListener("error", resolve, { once: true });
     });
 
+    audio.addEventListener("error", () => {
+      console.error("Audio error:", describeAudioError(audio), {
+        src: audio.currentSrc || audio.src,
+        error: audio.error
+      });
+      setAudioLoadingState(false);
+    });
+
+    audio.addEventListener("stalled", () => {
+      console.warn("Audio stalled", audio.currentSrc || audio.src);
+    });
+
+    audio.addEventListener("waiting", () => {
+      setAudioLoadingState(true);
+    });
+
+    audio.addEventListener("playing", () => {
+      setAudioLoadingState(false);
+    });
+
+    audio.addEventListener("canplay", () => {
+      setAudioLoadingState(false);
+    });
+
     audio.addEventListener("ended", () => {
       if (audioPlayToken !== token || activeAudio !== audio) {
         return;
       }
+      setAudioLoadingState(false);
       const endedAt = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : playableDuration(track, true);
       track.previewDuration = endedAt;
       isPlaying = false;
       pausedAt = endedAt;
       activeAudio = null;
+      activeAudioUrl = "";
       window.currentAudio = null;
       updatePlayerTimer(endedAt, true);
       playingTrackId = null;
@@ -1667,11 +1795,15 @@ async function playTrack(track) {
     syncPlayer();
     syncPlayingCards();
     updatePlayerTimer(resumeOffset, true);
+    setAudioLoadingState(true);
 
     let playPromise;
     try {
       if (resumeOffset > 0) {
         audio.currentTime = resumeOffset;
+      }
+      if (window.location.protocol === "https:" && /^http:\/\//i.test(audioUrl)) {
+        console.warn("Audio source uses HTTP on an HTTPS page; mobile browsers may block it:", audioUrl);
       }
       playPromise = audio.play();
     } catch (error) {
@@ -1704,8 +1836,11 @@ async function playTrack(track) {
       if (audioPlayToken !== token || activeAudio !== audio) {
         return;
       }
+      console.error("Playback failed:", describeAudioError(audio), audio.error);
+      setAudioLoadingState(false);
       isPlaying = false;
       activeAudio = null;
+      activeAudioUrl = "";
       window.currentAudio = null;
       syncPlayer();
       syncPlayingCards();
@@ -1758,6 +1893,8 @@ async function playTrack(track) {
 }
 
 function pauseCurrent() {
+  setAudioLoadingState(false);
+
   if (activeAudio) {
     const audio = activeAudio;
     pausedAt = audio.currentTime;
@@ -1792,6 +1929,7 @@ function pauseCurrent() {
 
 function stopCurrent(resetPause = true) {
   audioPlayToken += 1;
+  setAudioLoadingState(false);
 
   if (activeAudio) {
     activeAudio.pause();
@@ -1807,6 +1945,7 @@ function stopCurrent(resetPause = true) {
   }
 
   activeAudio = null;
+  activeAudioUrl = "";
   activeSource = null;
   activeGain = null;
   isPlaying = false;
@@ -1879,7 +2018,7 @@ function updateProgress() {
   animationFrame = requestAnimationFrame(updateProgress);
 }
 
-function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(getPreviewUrl(selectedTrack))) {
+function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack)))) {
   const totalSeconds = playableDuration(selectedTrack, isActualAudio);
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
@@ -1954,7 +2093,7 @@ function setPlayerProgress(fraction, shouldCommit = true) {
     return;
   }
 
-  if (getPreviewUrl(selectedTrack)) {
+  if (getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))) {
     pausedAt = clamped * playableDuration(selectedTrack, true);
     updatePlayerTimer(pausedAt, true);
     return;
@@ -2130,7 +2269,7 @@ function paintSongWaveform(bars) {
   songWaveform.innerHTML = bars.join("");
 
   if (!activeAudio) {
-    updatePlayerTimer(pausedAt, Boolean(getPreviewUrl(selectedTrack)));
+    updatePlayerTimer(pausedAt, Boolean(getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack))));
   }
 }
 
@@ -2809,6 +2948,8 @@ function startSongWaveformSeek(event) {
   if (!selectedTrack) return;
   event.preventDefault();
   event.stopPropagation();
+  playerSeekActive = true;
+  songWaveform.classList.add("is-seeking");
 
   let latestFraction = progressFractionFromPointer(event, songWaveform);
   let moved = false;
@@ -2824,6 +2965,8 @@ function startSongWaveformSeek(event) {
   };
 
   const stop = () => {
+    playerSeekActive = false;
+    songWaveform.classList.remove("is-seeking");
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", stop);
     window.removeEventListener("pointercancel", stop);

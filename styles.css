@@ -4290,10 +4290,39 @@ body.search-open {
 }
 
 @media(max-width:600px){
+  #latest {
+    display: none !important;
+  }
+
   .track-grid,
   #trackGrid,
   .tracks-grid,
   #allTracksGrid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
   }
+
+  .track-card,
+  .song-card,
+  .track-item {
+    margin-bottom: 0;
+  }
+}
+
+.progress-shell,
+.song-waveform {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.progress-bar,
+.progress-bar::after,
+.waveform-progress,
+.progress-fill,
+.played-overlay,
+.song-waveform span {
+  pointer-events: none;
 }
