@@ -13,6 +13,8 @@
     "createdAt": "2026-05-30",
     "isNew": true,
     "isFeatured": true,
+    "likes": 0,
+    "likeCount": 0,
     "bpm": 128,
     "tone": 110,
     "wave": "sine"

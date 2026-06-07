@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "SG Production",
-    "tagline": "Original music • direct download • no barriers",
+    "tagline": "Official Music Website",
     "youtubeHeading": "Subscribe on YouTube",
     "youtubeText": "Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.",
     "contactEmail": ""
@@ -19,7 +19,6 @@
   },
   "catalog": {
     "latestCount": 5,
-    "tracksPerPage": 15,
     "paginationDemoPages": 12
   },
   "advertising": {
