@@ -1490,7 +1490,7 @@ function renderPagination(totalPages) {
 }
 
 function getColumnCount() {
-  const grid = document.querySelector("#trackGrid, #allTracksGrid, .tracks-grid, .track-grid");
+  const grid = trackGrid || document.querySelector("#allTracksGrid, .tracks-grid, .track-grid");
   if (!grid) return 5;
   const cols = window.getComputedStyle(grid).getPropertyValue("grid-template-columns").split(" ").filter(Boolean).length;
   return cols || 5;

@@ -4304,6 +4304,23 @@ body.search-open {
     padding: 0 !important;
     border: 0 !important;
   }
+
+  section#all-tracks,
+  #all-tracks {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  #trackGrid {
+    display: grid !important;
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
 }
 
 @media(max-width:600px){
