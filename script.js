@@ -1,7 +1,5 @@
 const tracks = [];
 
-const latestGrid = document.querySelector("#latestGrid");
-const latestSection = document.querySelector("#latest");
 const trackGrid = document.querySelector("#trackGrid");
 const trackPagination = document.querySelector("#trackPagination");
 const loadMoreButton = document.querySelector("#loadMore");
@@ -25,7 +23,7 @@ const progressTotal = document.querySelector("#progressTotal");
 const sideNav = document.querySelector(".side-nav");
 const mobileMenuToggle = document.querySelector("#mobileMenuToggle");
 const sectionNavLinks = Array.from(document.querySelectorAll(".nav-link[data-section-nav]"));
-const activeSections = ["latest", "all-tracks", "licensing", "contact"];
+const activeSections = ["all-tracks", "licensing", "contact"];
 const songPage = document.querySelector("#songPage");
 const songAd = document.querySelector("#songAd");
 const songBack = document.querySelector("#songBack");
@@ -188,7 +186,6 @@ const initialTracks = hasAdOnLoad ? TRACKS_PER_PAGE - 1 : TRACKS_PER_PAGE;
 let tracksShown = getTracksToShow(initialTracks);
 let allTracksPerPage = TRACKS_PER_PAGE;
 let demoTrackPageCount = 12;
-let latestTrackCount = 5;
 
 function setMobileMenu(open) {
   document.body.classList.toggle("menu-open", open);
@@ -806,7 +803,6 @@ function setHomeContentVisible(visible) {
   [document.querySelector(".hero"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
     if (element) element.hidden = !visible;
   });
-  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0;
 }
 
 function hideSongPageForShell() {
@@ -1059,9 +1055,6 @@ function applyFavicon() {
 function applySiteSettings() {
   const { site, links, catalog, seo } = siteSettings;
 
-  const configuredLatestCount = Number(catalog.latestCount);
-  const latestCountLimit = Math.max(1, Math.floor(TRACKS_PER_PAGE / 2));
-  latestTrackCount = Number.isFinite(configuredLatestCount) ? Math.max(0, Math.min(latestCountLimit, configuredLatestCount)) : latestCountLimit;
   allTracksPerPage = TRACKS_PER_PAGE;
   demoTrackPageCount = Math.max(1, Math.min(40, Number(catalog.paginationDemoPages) || 12));
 
@@ -1414,29 +1407,6 @@ function renderTracks(list, target) {
 
   target.replaceChildren(...list.map((track, index) => renderCard(track, index === 0)));
   syncPlayingCards();
-}
-
-function shouldHideLatestOnMobile() {
-  return window.matchMedia("(max-width: 768px)").matches;
-}
-
-function renderLatestReleases() {
-  if (!latestSection || !latestGrid) {
-    return;
-  }
-
-  const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
-
-  if (latestTrackCount <= 0) {
-    latestSection.hidden = true;
-    return;
-  }
-
-  latestSection.hidden = false;
-  if (shouldHideLatestOnMobile()) {
-    return;
-  }
-  renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
 }
 
 function buildDemoTrackPages(sourceTracks) {
@@ -2766,7 +2736,6 @@ async function initializeCatalog() {
   allTracks = tracks;
   syncAllStoredLikesWithServer();
   normalizeInitialUrl();
-  renderLatestReleases();
 
   renderAllTracksPage(1);
 
@@ -2788,7 +2757,7 @@ document.querySelector("#focusSearch").addEventListener("click", () => {
 });
 
 function setActiveNav(sectionId) {
-  const targetId = sectionId === "top" ? "latest" : sectionId;
+  const targetId = sectionId === "top" ? "all-tracks" : sectionId;
 
   sectionNavLinks.forEach((link) => {
     const href = link.getAttribute("href") || "";
@@ -3135,7 +3104,6 @@ window.addEventListener("resize", () => {
     if (nextColumnCount !== lastTrackGridColumnCount) {
       showTracks();
     }
-    renderLatestReleases();
   }, 200);
 });
 

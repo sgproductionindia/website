@@ -311,7 +311,6 @@ a {
 }
 
 body.shell-view .hero,
-body.shell-view #latest,
 body.shell-view #all-tracks,
 body.shell-view #licensing,
 body.shell-view main.page > .footer {
@@ -2269,8 +2268,7 @@ body.search-open {
     justify-self: end;
   }
 
-  .track-grid,
-  .latest-grid {
+  .track-grid {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   }
 
@@ -2569,8 +2567,7 @@ body.search-open {
     flex-direction: column;
   }
 
-  .track-grid,
-  .latest-grid {
+  .track-grid {
     grid-template-columns: 1fr;
     gap: 18px;
   }
@@ -2816,8 +2813,7 @@ body.search-open {
     font-size: 2.15rem;
   }
 
-  .track-grid,
-  .latest-grid {
+  .track-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4290,18 +4286,6 @@ body.search-open {
 }
 
 @media(max-width:768px){
-  section#latest,
-  #latest {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-  }
-
   section#all-tracks,
   #all-tracks {
     display: block !important;
@@ -4321,11 +4305,6 @@ body.search-open {
 }
 
 @media(max-width:600px){
-  section#latest,
-  #latest {
-    display: none !important;
-  }
-
   .track-grid,
   #trackGrid,
   .tracks-grid,
