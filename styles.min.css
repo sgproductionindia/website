@@ -4291,10 +4291,7 @@ body.search-open {
 
 @media(max-width:768px){
   section#latest,
-  #latest,
-  .latest-releases,
-  .latest-section,
-  .latest-grid {
+  #latest {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
@@ -4325,10 +4322,7 @@ body.search-open {
 
 @media(max-width:600px){
   section#latest,
-  #latest,
-  .latest-releases,
-  .latest-section,
-  .latest-grid {
+  #latest {
     display: none !important;
   }
 

@@ -806,7 +806,7 @@ function setHomeContentVisible(visible) {
   [document.querySelector(".hero"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
     if (element) element.hidden = !visible;
   });
-  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0 || shouldHideLatestOnMobile();
+  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0;
 }
 
 function hideSongPageForShell() {
@@ -1427,13 +1427,15 @@ function renderLatestReleases() {
 
   const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
 
-  if (shouldHideLatestOnMobile() || latestTrackCount <= 0) {
+  if (latestTrackCount <= 0) {
     latestSection.hidden = true;
-    latestGrid.replaceChildren();
     return;
   }
 
   latestSection.hidden = false;
+  if (shouldHideLatestOnMobile()) {
+    return;
+  }
   renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
 }
 
@@ -1490,10 +1492,13 @@ function renderPagination(totalPages) {
 }
 
 function getColumnCount() {
-  const grid = trackGrid || document.querySelector("#allTracksGrid, .tracks-grid, .track-grid");
-  if (!grid) return 5;
-  const cols = window.getComputedStyle(grid).getPropertyValue("grid-template-columns").split(" ").filter(Boolean).length;
-  return cols || 5;
+  const grid = trackGrid || document.querySelector("#trackGrid, #allTracksGrid, .tracks-grid");
+  if (!grid) return 2;
+
+  const template = window.getComputedStyle(grid).getPropertyValue("grid-template-columns");
+  const cols = template.split(/\s+/).filter((value) => value && value !== "none").length;
+
+  return cols > 0 ? cols : 2;
 }
 
 function getTracksToShow(baseCount) {
@@ -1528,7 +1533,8 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
   const adCard = renderGridAdCard();
   const hasAdCard = Boolean(adCard);
-  const completeRowItemCount = getTracksToShow(tracksShown);
+  const minimumTrackCount = Math.max(1, getColumnCount() * 2 - (hasAdCard ? 1 : 0));
+  const completeRowItemCount = getTracksToShow(Math.max(tracksShown, minimumTrackCount));
   const visibleTrackCount = Math.min(
     allTracks.length,
     Math.max(1, completeRowItemCount - (hasAdCard ? 1 : 0))
@@ -2704,6 +2710,10 @@ async function initializeCatalog() {
 
   if (uploadedTracks.length > 0) {
     tracks.unshift(...uploadedTracks);
+  }
+
+  if (window.location.protocol === "file:" && tracks.length === 0) {
+    tracks.unshift(...LOCAL_PREVIEW_TRACKS.map(normalizeUploadedTrack).filter(Boolean));
   }
 
   allTracks = tracks;
