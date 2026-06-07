@@ -4368,3 +4368,11 @@ body.search-open {
   height: auto !important;
   min-height: 0 !important;
 }
+
+#trackGrid .track-card {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}

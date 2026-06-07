@@ -1564,6 +1564,11 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
 
   trackGrid.replaceChildren(...cards);
+  cards.forEach((card) => {
+    card.style.opacity = "1";
+    card.style.visibility = "visible";
+    card.style.transform = "none";
+  });
   lastTrackGridColumnCount = getColumnCount();
   syncPlayingCards();
   trackPagination.replaceChildren();
