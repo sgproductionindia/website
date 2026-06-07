@@ -806,7 +806,7 @@ function setHomeContentVisible(visible) {
   [document.querySelector(".hero"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
     if (element) element.hidden = !visible;
   });
-  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0;
+  if (latestSection) latestSection.hidden = !visible || latestTrackCount <= 0 || shouldHideLatestOnMobile();
 }
 
 function hideSongPageForShell() {
@@ -1506,6 +1506,14 @@ function showTracks() {
 }
 
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
+  const allTracksSection = document.querySelector("#all-tracks");
+  if (allTracksSection) {
+    allTracksSection.hidden = false;
+  }
+  if (trackGrid) {
+    trackGrid.hidden = false;
+  }
+
   if (!allTracks.length) {
     allTracksPage = 1;
     trackGrid.innerHTML = '<p class="artist-empty">No tracks available yet. Check back soon.</p>';

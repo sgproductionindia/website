@@ -266,7 +266,28 @@
           <div class="section-heading catalog-heading">
             <h2 id="tracks-title">All Tracks</h2>
           </div>
-          <div class="track-grid" id="trackGrid"></div>
+          <div class="track-grid" id="trackGrid">
+            <article class="track-card" tabindex="0" data-id="banger" data-genre="Original Mix">
+              <button class="cover-link" type="button" aria-label="Open Banger">
+                <img src="assets/cover-1.jpg" alt="Banger cover art" loading="eager" fetchpriority="high" width="300" height="300" decoding="async">
+                <span class="badge">New</span>
+                <span class="duration">2:07</span>
+              </button>
+              <div class="track-body">
+                <div class="track-copy">
+                  <strong class="track-title">Banger</strong>
+                  <span class="artist-name">SG Production</span>
+                  <span class="genre-pill original-mix">Original Mix</span>
+                </div>
+                <div class="card-actions">
+                  <button class="round-button" type="button" data-action="play" aria-label="Play Banger" title="Play">
+                    <svg class="play-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"></path></svg>
+                    <svg class="pause-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14"></path><path d="M16 5v14"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
           <button class="load-more-btn" id="loadMore" type="button">Load More Tracks</button>
           <nav class="track-pagination" id="trackPagination" aria-label="All tracks pages"></nav>
         </section>
