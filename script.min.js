@@ -1510,6 +1510,49 @@ function showTracks() {
   renderAllTracksPage(1, false);
 }
 
+function setupFilePreviewFallbackCard() {
+  if (window.location.protocol !== "file:" || !trackGrid) {
+    return false;
+  }
+
+  const fallbackCard = trackGrid.querySelector("[data-preview-fallback]");
+  if (!fallbackCard) {
+    return false;
+  }
+
+  const fallbackTrack = tracks.find((track) => track.id === fallbackCard.dataset.id) || tracks[0];
+  if (!fallbackTrack) {
+    return false;
+  }
+
+  fallbackCard.hidden = false;
+  fallbackCard.style.display = "";
+  fallbackCard.style.visibility = "visible";
+
+  if (fallbackCard.dataset.previewBound !== "true") {
+    fallbackCard.dataset.previewBound = "true";
+    fallbackCard.addEventListener("click", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      openSongPage(fallbackTrack);
+    });
+    fallbackCard.querySelector(".cover-link")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openSongPage(fallbackTrack);
+    });
+    fallbackCard.querySelector('[data-action="play"]')?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      playTrack(fallbackTrack);
+    });
+  }
+  if (loadMoreButton) loadMoreButton.style.display = "none";
+  trackPagination.replaceChildren();
+  syncPlayingCards();
+
+  return true;
+}
+
 function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   const allTracksSection = document.querySelector("#all-tracks");
   if (allTracksSection) {
@@ -1517,6 +1560,10 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
   if (trackGrid) {
     trackGrid.hidden = false;
+  }
+
+  if (setupFilePreviewFallbackCard()) {
+    return;
   }
 
   if (!allTracks.length) {
