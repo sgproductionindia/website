@@ -1,4 +1,4 @@
-const SG_CACHE = "sg-production-pwa-v4";
+const SG_CACHE = "sg-production-pwa-v5";
 const CORE_ASSETS = [
   "/",
   "/index.php",

@@ -361,8 +361,8 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="/styles.min.css?v=20260606-wave-width" as="style">
-    <link rel="stylesheet" href="/styles.min.css?v=20260606-wave-width">
+    <link rel="preload" href="/styles.min.css?v=20260607-mobile-player-latest" as="style">
+    <link rel="stylesheet" href="/styles.min.css?v=20260607-mobile-player-latest">
     <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="/pwa.js?v=20260607-pwa-root" defer></script>
@@ -828,7 +828,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260607-pwa" defer></script>
+    <script src="/script.min.js?v=20260607-mobile-player-latest" defer></script>
     <script>
       // Track page visit
       (function() {

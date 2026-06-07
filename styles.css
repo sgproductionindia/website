@@ -4289,8 +4289,29 @@ body.search-open {
   }
 }
 
+@media(max-width:768px){
+  section#latest,
+  #latest,
+  .latest-releases,
+  .latest-section,
+  .latest-grid {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+}
+
 @media(max-width:600px){
-  #latest {
+  section#latest,
+  #latest,
+  .latest-releases,
+  .latest-section,
+  .latest-grid {
     display: none !important;
   }
 
@@ -4308,6 +4329,29 @@ body.search-open {
   .song-card,
   .track-item {
     margin-bottom: 0;
+  }
+
+  .track-card,
+  .song-card,
+  .track-item,
+  .cover-link,
+  .cover-link img {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .track-card,
+  .song-card,
+  .track-item {
+    contain: layout paint;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cover-link img {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: auto;
   }
 }
 

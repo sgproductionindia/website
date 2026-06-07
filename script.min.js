@@ -108,6 +108,8 @@ let allTracks = [];
 let allTracksPage = 1;
 let shellArtists = [];
 let shellPolicyObserver = null;
+let lastTrackGridColumnCount = 0;
+let trackGridResizeTimer = 0;
 let siteSettings = {
   site: {
     title: "SG Production",
@@ -1414,6 +1416,27 @@ function renderTracks(list, target) {
   syncPlayingCards();
 }
 
+function shouldHideLatestOnMobile() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function renderLatestReleases() {
+  if (!latestSection || !latestGrid) {
+    return;
+  }
+
+  const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
+
+  if (shouldHideLatestOnMobile() || latestTrackCount <= 0) {
+    latestSection.hidden = true;
+    latestGrid.replaceChildren();
+    return;
+  }
+
+  latestSection.hidden = false;
+  renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
+}
+
 function buildDemoTrackPages(sourceTracks) {
   if (!sourceTracks.length) {
     return [];
@@ -1510,6 +1533,7 @@ function renderAllTracksPage(page = allTracksPage, shouldScroll = false) {
   }
 
   trackGrid.replaceChildren(...cards);
+  lastTrackGridColumnCount = getColumnCount();
   syncPlayingCards();
   trackPagination.replaceChildren();
   if (loadMoreButton) {
@@ -2677,15 +2701,7 @@ async function initializeCatalog() {
   allTracks = tracks;
   syncAllStoredLikesWithServer();
   normalizeInitialUrl();
-  const featuredTracks = tracks.filter((track) => track.isFeatured || track.isNew);
-
-  if (latestTrackCount <= 0) {
-    latestSection.hidden = true;
-    latestGrid.replaceChildren();
-  } else {
-    latestSection.hidden = false;
-    renderTracks((featuredTracks.length > 0 ? featuredTracks : tracks).slice(0, latestTrackCount), latestGrid);
-  }
+  renderLatestReleases();
 
   renderAllTracksPage(1);
 
@@ -3045,11 +3061,17 @@ loadMoreButton?.addEventListener("click", () => {
   const increment = hasAdCard ? cols * 2 - 1 : cols * 2;
   tracksShown += increment;
   showTracks();
-  setTimeout(showTracks, 150);
 });
 
 window.addEventListener("resize", () => {
-  setTimeout(showTracks, 200);
+  window.clearTimeout(trackGridResizeTimer);
+  trackGridResizeTimer = window.setTimeout(() => {
+    const nextColumnCount = getColumnCount();
+    if (nextColumnCount !== lastTrackGridColumnCount) {
+      showTracks();
+    }
+    renderLatestReleases();
+  }, 200);
 });
 
 document.addEventListener("click", (event) => {
