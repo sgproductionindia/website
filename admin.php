@@ -14,6 +14,7 @@ define('GENRES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/genres
 define('AD_STATS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/ad-stats.json');
 define('LIKES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/likes.json');
 define('BANNER_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/banner.json');
+define('VISITS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/visits.json');
 define('COVER_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/covers');
 define('AUDIO_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/audio');
 define('AD_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/ads');
@@ -733,6 +734,76 @@ function uploadArrayFile(array $file, array $extensions, array $mimeTypes, int $
     return '/' . ltrim(str_replace($baseRoot, '', $target), '/');
 }
 
+function uploadBannerImageAsWebp(array $file, string $baseName, int $quality = 86): string
+{
+    if (!function_exists('imagewebp')) {
+        throw new RuntimeException('WebP conversion is not available on this server.');
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(uploadErrorMessage((int) ($file['error'] ?? UPLOAD_ERR_NO_FILE)));
+    }
+
+    $size = (int) ($file['size'] ?? 0);
+    if ($size <= 0 || $size > MAX_BANNER_BYTES) {
+        throw new RuntimeException('File is too large for this upload. Maximum allowed here is 3 MB.');
+    }
+
+    $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+    if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+        throw new RuntimeException('This file type is not allowed.');
+    }
+
+    $tmpPath = (string) ($file['tmp_name'] ?? '');
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($tmpPath);
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/octet-stream', 'binary/octet-stream'];
+    if ($mime !== false && !in_array($mime, $allowedMimes, true)) {
+        throw new RuntimeException('The uploaded file does not match the expected format.');
+    }
+
+    $image = null;
+
+    try {
+        if (in_array($extension, ['jpg', 'jpeg'], true) && function_exists('imagecreatefromjpeg')) {
+            $image = @imagecreatefromjpeg($tmpPath);
+        } elseif ($extension === 'png' && function_exists('imagecreatefrompng')) {
+            $image = @imagecreatefrompng($tmpPath);
+            if ($image !== false && function_exists('imagepalettetotruecolor')) {
+                imagepalettetotruecolor($image);
+            }
+            if ($image !== false) {
+                imagealphablending($image, true);
+                imagesavealpha($image, true);
+            }
+        } elseif ($extension === 'webp' && function_exists('imagecreatefromwebp')) {
+            $image = @imagecreatefromwebp($tmpPath);
+        }
+
+        if (!$image) {
+            throw new RuntimeException('Could not read the uploaded banner image.');
+        }
+
+        if (!is_writable(BANNER_DIR)) {
+            throw new RuntimeException('Upload folder is not writable: banner. Check the Coolify volume permissions.');
+        }
+
+        $target = uniqueTargetPath(BANNER_DIR, $baseName, 'webp');
+        if (@imagewebp($image, $target, $quality) !== true) {
+            throw new RuntimeException('Could not convert the banner image to WebP.');
+        }
+
+        @chmod($target, 0664);
+
+        $baseRoot = defined('ROOT_DIR') ? ROOT_DIR : __DIR__;
+        return '/' . ltrim(str_replace($baseRoot, '', $target), '/');
+    } finally {
+        if ($image instanceof GdImage) {
+            imagedestroy($image);
+        }
+    }
+}
+
 function uploadedArrayAt(string $field, int $index): ?array
 {
     if (!isset($_FILES[$field]) || !is_array($_FILES[$field])) {
@@ -1069,12 +1140,8 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 
             $image = $existingImage;
             if ($file !== null) {
-                $uploadedImage = uploadArrayFile(
+                $uploadedImage = uploadBannerImageAsWebp(
                     $file,
-                    ['jpg', 'jpeg', 'png', 'webp'],
-                    ['image/jpeg', 'image/png', 'image/webp'],
-                    MAX_BANNER_BYTES,
-                    BANNER_DIR,
                     'banner-' . $id . '-' . date('YmdHis')
                 );
                 if ($uploadedImage !== '') {
@@ -1529,6 +1596,11 @@ $adImpressions = (int) ($adTotals['impressions'] ?? 0);
 $adClicks = (int) ($adTotals['clicks'] ?? 0);
 $hasAdData = $adImpressions > 0 || $adClicks > 0 || count($adEvents) > 0;
 $ctr = $adImpressions > 0 ? round(($adClicks / $adImpressions) * 100, 2) : null;
+$visitsData = [];
+if (file_exists(VISITS_FILE)) {
+    $decodedVisits = json_decode(file_get_contents(VISITS_FILE) ?: '{}', true);
+    $visitsData = is_array($decodedVisits) ? $decodedVisits : [];
+}
 $downloadCountFor = static function (array $track): int {
     $downloads = (int) ($track['downloads'] ?? 0);
     $downloadCount = (int) ($track['downloadCount'] ?? 0);
@@ -2810,6 +2882,7 @@ $downloadChartData = [
     width:132px; aspect-ratio:16/9; object-fit:cover;
     border-radius:var(--radius-sm); background:var(--bg-tertiary);
   }
+  .banner-admin-preview img:not([src]) { display:block; }
   .banner-admin-preview strong { display:block; font-size:16px; margin:var(--sp-2) 0 var(--sp-1); color:var(--label); }
   .banner-admin-preview small { display:block; color:var(--label-secondary); font-size:12px; line-height:1.45; }
   .banner-badge-preview {
@@ -4481,7 +4554,7 @@ $downloadChartData = [
     white-space: nowrap;
   }
   .nsdp-trigger:hover { background: var(--bg-tertiary); color: var(--label); }
-  .nsdp-trigger.open  { border-color: var(--tint-border); color: var(--tint); background: var(--tint-bg); }
+  .nsdp-trigger.open, .nsdp-trigger.active  { border-color: var(--tint-border); color: var(--tint); background: var(--tint-bg); }
   .nsdp-trigger svg   { flex-shrink: 0; }
 
   /* Popup container */
@@ -4828,7 +4901,7 @@ $downloadChartData = [
               <div class="panel"><div class="panel-header"><span class="panel-title">Advertiser Report</span></div><div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">Share this report with brands to show your ad performance. Includes impressions, clicks, CTR, and top songs.</div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;"><div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">Report Preview</div><div style="font-size:11px;color:var(--text-dim);display:flex;flex-direction:column;gap:5px;"><div style="display:flex;justify-content:space-between"><span>Period</span><span class="mono" style="color:var(--text)">N/A</span></div><div style="display:flex;justify-content:space-between"><span>Impressions</span><span class="mono" style="color:var(--cyan)"><?= e($statText($adImpressions,$hasAdData)) ?></span></div><div style="display:flex;justify-content:space-between"><span>Clicks</span><span class="mono" style="color:var(--orange)"><?= e($statText($adClicks,$hasAdData)) ?></span></div><div style="display:flex;justify-content:space-between"><span>CTR</span><span class="mono" style="color:var(--green)"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></span></div></div></div><div style="display:flex;flex-direction:column;gap:6px;"><button class="btn btn-primary" style="width:100%;text-align:center;padding:9px;" type="button" id="advertiserDownloadPdf">Download PDF Report</button><button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;" type="button" id="advertiserExportCsv">Export as CSV</button><button class="btn btn-outline" style="width:100%;text-align:center;padding:9px;color:var(--cyan);border-color:var(--cyan-dim);" type="button">Copy Shareable Link</button></div></div></div>
           </section>
 
-          <section class="view-section" id="analytics-section" data-title="Analytics" data-subtitle="Performance overview"><div class="management-toolbar"><div><h2>Analytics</h2><p>Measure downloads, song views, ads, and engagement</p></div><button class="btn btn-primary" type="button" id="analyticsExportCsv">Export CSV</button></div><div class="analytics-filter-bar"><div class="date-chip-group"><button class="date-chip active" type="button" data-analytics-range="7D">7D</button><button class="date-chip" type="button" data-analytics-range="30D">30D</button><button class="date-chip" type="button" data-analytics-range="90D">90D</button><button class="date-chip" type="button" data-analytics-range="all">All Time</button></div><div class="custom-date-range" aria-label="Custom analytics date range"><input id="analyticsStartDate" type="hidden" value="<?= e($weekAgoIso) ?>"><input id="analyticsEndDate" type="hidden" value="<?= e($todayIso) ?>"><button type="button" class="nsdp-trigger" id="nsdpTrigger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span id="nsdpTriggerLabel"><?= e(date('M j', strtotime($weekAgoIso))) ?> – <?= e(date('M j', strtotime($todayIso))) ?></span></button><div class="nsdp-popup" id="nsdpPopup" style="display:none;"><div class="nsdp-inputs-row"><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputFrom" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($weekAgoIso))) ?>" aria-label="Start date" maxlength="10" oninput="nsdpParseInput('from',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('from',this.value,true)"></div><span class="nsdp-input-sep">–</span><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputTo" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($todayIso))) ?>" aria-label="End date" maxlength="10" oninput="nsdpParseInput('to',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('to',this.value,true)"></div></div><div class="nsdp-summary" id="nsdpSummary">7 days selected</div><div class="nsdp-cal-header"><button type="button" class="nsdp-nav" onclick="miniCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="15 18 9 12 15 6"/></svg></button><span class="nsdp-month-label" id="miniMonthLabel"><?= e(date('F Y')) ?></span><button type="button" class="nsdp-nav" onclick="miniCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="9 18 15 12 9 6"/></svg></button></div><div class="nsdp-dow-row"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="nsdp-grid" id="miniCalGrid"></div><div class="nsdp-actions"><button type="button" class="btn btn-ghost" onclick="nsdpCancel()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Cancel</button><button type="button" class="btn btn-primary" id="analyticsApplyRange" onclick="nsdpApply()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Apply</button></div></div></div></div><div class="analytics-kpis"><div class="stat-card cyan"><div class="stat-label">Total Downloads</div><div class="stat-value cyan"><?= e(number_format($totalDownloads)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card likes"><div class="stat-label">TOTAL LIKES</div><div class="stat-value likes" id="totalLikesCount"><?= e(number_format($totalLikes)) ?></div><div class="stat-change up">Live</div></div><div class="stat-card orange"><div class="stat-label">Ad Impressions</div><div class="stat-value orange"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card purple"><div class="stat-label">Ad Clicks</div><div class="stat-value purple"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">CTR Percentage</div><div class="stat-value cyan"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change down">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">Today&apos;s Visits</div><div class="stat-value cyan" id="visitToday">—</div><div class="stat-change up">Live</div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Downloads Over Time</span><div class="chart-toggle" id="analyticsChartToggle"><button class="active" type="button" data-chart="Downloads">Downloads</button><button type="button" data-chart="Page Views">Page Views</button><button type="button" data-chart="Ad Clicks">Ad Clicks</button></div></div><div class="line-chart-shell"><div class="chart-summary"><span><strong id="analyticsChartTotal">N/A</strong> total downloads</span><span id="analyticsChartPeak">Peak: N/A</span></div><div class="chart-visual"><div class="chart-y-axis" aria-hidden="true"><span style="top:11.5%">1,000</span><span style="top:32.7%">750</span><span style="top:53.8%">500</span><span style="top:75%">250</span><span style="top:91.5%">0</span></div><svg viewBox="0 0 900 260" preserveAspectRatio="none"><g stroke="rgba(255,255,255,.08)" stroke-width="1"><line x1="70" y1="30" x2="880" y2="30"></line><line x1="70" y1="85" x2="880" y2="85"></line><line x1="70" y1="140" x2="880" y2="140"></line><line x1="70" y1="195" x2="880" y2="195"></line><line x1="70" y1="238" x2="880" y2="238"></line></g><polyline id="analyticsLine" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="80,238 215,238 350,238 485,238 620,238 755,238 875,238"></polyline></svg><div class="chart-point-layer" id="analyticsPointLayer"></div></div><div class="chart-axis"><span>Day 1</span><span>Day 2</span><span>Day 3</span><span>Day 4</span><span>Day 5</span><span>Day 6</span><span>Today</span></div></div></div><div class="two-col"><div class="panel"><div class="panel-header"><span class="panel-title">Top 5 Songs by Downloads</span></div><div class="horizontal-bars"><?php if ($topTracks === []): ?><div class="hbar-row"><div class="hbar-label">N/A</div><div class="hbar-track"><div class="hbar-fill" style="width:0%"></div></div><div class="hbar-value">N/A</div></div><?php else: ?><?php foreach ($topTracks as $track): ?><div class="hbar-row"><div class="hbar-label"><?= e((string) ($track['title'] ?? 'N/A')) ?></div><div class="hbar-track"><div class="hbar-fill" style="width:<?= $hasDownloadData ? '40' : '0' ?>%"></div></div><div class="hbar-value"><?= e($hasDownloadData ? number_format($downloadCountFor($track)) : 'N/A') ?></div></div><?php endforeach; ?><?php endif; ?></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Traffic by Genre</span></div><div class="donut-wrap"><div class="donut-chart"></div><div class="donut-legend"><?php $colors = ['cyan','green','orange','purple']; $i=0; foreach (array_slice($genreUsage,0,4,true) as $genreName=>$count): $percent = $genreTotal > 0 ? round(($count / $genreTotal) * 100) : null; ?><div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--<?= e($colors[$i] ?? 'cyan') ?>)"></span><?= e((string) $genreName) ?></span><strong><?= e($percent !== null ? $percent . '%' : 'N/A') ?></strong></div><?php $i++; endforeach; ?></div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Per-Song Analytics</span></div><div class="analytics-table-wrap"><table class="analytics-table" id="analyticsTable"><thead><tr><th data-sort="index">#</th><th>Cover</th><th data-sort="title">Song Title</th><th data-sort="artist">Artist</th><th data-sort="genre">Genre</th><th data-sort="views">Page Views</th><th data-sort="downloads">Downloads</th><th data-sort="impressions">Ad Impressions</th><th data-sort="clicks">Ad Clicks</th><th data-sort="ctr">CTR</th><th data-sort="time">Avg Time on Page</th></tr></thead><tbody><?php if ($trackCount === 0): ?><tr data-index="0" data-title="N/A" data-artist="N/A" data-genre="N/A" data-views="0" data-downloads="0" data-impressions="0" data-clicks="0" data-ctr="0" data-time="0"><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr><?php else: ?><?php foreach ($tracks as $index => $track): if (!is_array($track)) continue; $trackId=(string)($track['id']??''); $songStats=is_array($adSongs[$trackId]??null)?$adSongs[$trackId]:[]; $rowImpressions=(int)($songStats['impressions']??0); $rowClicks=(int)($songStats['clicks']??0); $rowCtr=$rowImpressions>0?round(($rowClicks/$rowImpressions)*100,2):null; $rowDownloads=$downloadCountFor($track); ?><tr data-index="<?= e((string)($index+1)) ?>" data-title="<?= e((string)($track['title']??'N/A')) ?>" data-artist="<?= e((string)($track['artist']??'N/A')) ?>" data-genre="<?= e((string)($track['genre']??'N/A')) ?>" data-views="0" data-downloads="<?= e((string)$rowDownloads) ?>" data-impressions="<?= e((string)$rowImpressions) ?>" data-clicks="<?= e((string)$rowClicks) ?>" data-ctr="<?= e((string)($rowCtr??0)) ?>" data-time="0"><td><?= e(str_pad((string)($index+1),2,'0',STR_PAD_LEFT)) ?></td><td><div class="table-cover"><img loading="lazy" src="<?= e((string)($track['cover']??'assets/cover-1.jpg')) ?>" alt=""></div></td><td><?= e((string)($track['title']??'N/A')) ?></td><td><?= e((string)($track['artist']??'N/A')) ?></td><td><?= e((string)($track['genre']??'N/A')) ?></td><td>N/A</td><td><?= e($hasDownloadData ? number_format($rowDownloads) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowImpressions) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowClicks) : 'N/A') ?></td><td><?= e($hasAdData && $rowCtr !== null ? $rowCtr . '%' : 'N/A') ?></td><td>N/A</td></tr><?php endforeach; ?><?php endif; ?></tbody></table></div><div class="pagination" id="analyticsPagination"></div></div></section>
+          <section class="view-section" id="analytics-section" data-title="Analytics" data-subtitle="Performance overview"><div class="management-toolbar"><div><h2>Analytics</h2><p>Measure downloads, song views, ads, and engagement</p></div><button class="btn btn-primary" type="button" id="analyticsExportCsv">Export CSV</button></div><div class="analytics-filter-bar"><div class="date-chip-group"><button class="date-chip active" type="button" data-analytics-range="7D">7D</button><button class="date-chip" type="button" data-analytics-range="30D">30D</button><button class="date-chip" type="button" data-analytics-range="90D">90D</button><button class="date-chip" type="button" data-analytics-range="all">All Time</button></div><div class="custom-date-range" aria-label="Custom analytics date range"><input id="analyticsStartDate" type="hidden" value="<?= e($weekAgoIso) ?>"><input id="analyticsEndDate" type="hidden" value="<?= e($todayIso) ?>"><button type="button" class="nsdp-trigger" id="nsdpTrigger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span id="nsdpTriggerLabel"><?= e(date('M j', strtotime($weekAgoIso))) ?> – <?= e(date('M j', strtotime($todayIso))) ?></span></button><div class="nsdp-popup" id="nsdpPopup" style="display:none;"><div class="nsdp-inputs-row"><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputFrom" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($weekAgoIso))) ?>" aria-label="Start date" maxlength="10" oninput="nsdpParseInput('from',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('from',this.value,true)"></div><span class="nsdp-input-sep">–</span><div class="nsdp-input-wrap"><input class="nsdp-text-input" id="nsdpInputTo" type="text" placeholder="DD/MM/YYYY" value="<?= e(date('d/m/Y', strtotime($todayIso))) ?>" aria-label="End date" maxlength="10" oninput="nsdpParseInput('to',this.value)" onkeydown="if(event.key==='Enter')nsdpParseInput('to',this.value,true)"></div></div><div class="nsdp-summary" id="nsdpSummary">7 days selected</div><div class="nsdp-cal-header"><button type="button" class="nsdp-nav" onclick="miniCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="15 18 9 12 15 6"/></svg></button><span class="nsdp-month-label" id="miniMonthLabel"><?= e(date('F Y')) ?></span><button type="button" class="nsdp-nav" onclick="miniCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="9 18 15 12 9 6"/></svg></button></div><div class="nsdp-dow-row"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="nsdp-grid" id="miniCalGrid"></div><div class="nsdp-actions"><button type="button" class="btn btn-ghost" onclick="nsdpCancel()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Cancel</button><button type="button" class="btn btn-primary" id="analyticsApplyRange" onclick="nsdpApply()" style="min-height:36px;border-radius:var(--radius-md);font-size:13px;flex:1;">Apply</button></div></div></div></div><div class="analytics-kpis"><div class="stat-card cyan"><div class="stat-label">Total Downloads</div><div class="stat-value cyan" id="analyticsTotalDownloads"><?= e(number_format($totalDownloads)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card likes"><div class="stat-label">TOTAL LIKES</div><div class="stat-value likes" id="totalLikesCount"><?= e(number_format($totalLikes)) ?></div><div class="stat-change up">Live</div></div><div class="stat-card orange"><div class="stat-label">Ad Impressions</div><div class="stat-value orange" id="analyticsAdImpressions"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card purple"><div class="stat-label">Ad Clicks</div><div class="stat-value purple" id="analyticsAdClicks"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">CTR Percentage</div><div class="stat-value cyan" id="analyticsCtr"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change down">N/A vs previous period</div></div><div class="stat-card cyan"><div class="stat-label">Today&apos;s Visits</div><div class="stat-value cyan" id="visitToday">—</div><div class="stat-change up">Live</div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Downloads Over Time</span><div class="chart-toggle" id="analyticsChartToggle"><button class="active" type="button" data-chart="Downloads">Downloads</button><button type="button" data-chart="Page Views">Page Views</button><button type="button" data-chart="Ad Clicks">Ad Clicks</button></div></div><div class="line-chart-shell"><div class="chart-summary"><span><strong id="analyticsChartTotal">N/A</strong> total downloads</span><span id="analyticsChartPeak">Peak: N/A</span></div><div class="chart-visual"><div class="chart-y-axis" aria-hidden="true"><span style="top:11.5%">1,000</span><span style="top:32.7%">750</span><span style="top:53.8%">500</span><span style="top:75%">250</span><span style="top:91.5%">0</span></div><svg viewBox="0 0 900 260" preserveAspectRatio="none"><g stroke="rgba(255,255,255,.08)" stroke-width="1"><line x1="70" y1="30" x2="880" y2="30"></line><line x1="70" y1="85" x2="880" y2="85"></line><line x1="70" y1="140" x2="880" y2="140"></line><line x1="70" y1="195" x2="880" y2="195"></line><line x1="70" y1="238" x2="880" y2="238"></line></g><polyline id="analyticsLine" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="80,238 215,238 350,238 485,238 620,238 755,238 875,238"></polyline></svg><div class="chart-point-layer" id="analyticsPointLayer"></div></div><div class="chart-axis"><span>Day 1</span><span>Day 2</span><span>Day 3</span><span>Day 4</span><span>Day 5</span><span>Day 6</span><span>Today</span></div></div></div><div class="two-col"><div class="panel"><div class="panel-header"><span class="panel-title">Top 5 Songs by Downloads</span></div><div class="horizontal-bars"><?php if ($topTracks === []): ?><div class="hbar-row"><div class="hbar-label">N/A</div><div class="hbar-track"><div class="hbar-fill" style="width:0%"></div></div><div class="hbar-value">N/A</div></div><?php else: ?><?php foreach ($topTracks as $track): ?><div class="hbar-row"><div class="hbar-label"><?= e((string) ($track['title'] ?? 'N/A')) ?></div><div class="hbar-track"><div class="hbar-fill" style="width:<?= $hasDownloadData ? '40' : '0' ?>%"></div></div><div class="hbar-value"><?= e($hasDownloadData ? number_format($downloadCountFor($track)) : 'N/A') ?></div></div><?php endforeach; ?><?php endif; ?></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Traffic by Genre</span></div><div class="donut-wrap"><div class="donut-chart"></div><div class="donut-legend"><?php $colors = ['cyan','green','orange','purple']; $i=0; foreach (array_slice($genreUsage,0,4,true) as $genreName=>$count): $percent = $genreTotal > 0 ? round(($count / $genreTotal) * 100) : null; ?><div class="legend-row"><span class="legend-label"><span class="legend-dot" style="background:var(--<?= e($colors[$i] ?? 'cyan') ?>)"></span><?= e((string) $genreName) ?></span><strong><?= e($percent !== null ? $percent . '%' : 'N/A') ?></strong></div><?php $i++; endforeach; ?></div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Per-Song Analytics</span></div><div class="analytics-table-wrap"><table class="analytics-table" id="analyticsTable"><thead><tr><th data-sort="index">#</th><th>Cover</th><th data-sort="title">Song Title</th><th data-sort="artist">Artist</th><th data-sort="genre">Genre</th><th data-sort="views">Page Views</th><th data-sort="downloads">Downloads</th><th data-sort="impressions">Ad Impressions</th><th data-sort="clicks">Ad Clicks</th><th data-sort="ctr">CTR</th><th data-sort="time">Avg Time on Page</th></tr></thead><tbody><?php if ($trackCount === 0): ?><tr data-index="0" data-title="N/A" data-artist="N/A" data-genre="N/A" data-views="0" data-downloads="0" data-impressions="0" data-clicks="0" data-ctr="0" data-time="0"><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr><?php else: ?><?php foreach ($tracks as $index => $track): if (!is_array($track)) continue; $trackId=(string)($track['id']??''); $songStats=is_array($adSongs[$trackId]??null)?$adSongs[$trackId]:[]; $rowImpressions=(int)($songStats['impressions']??0); $rowClicks=(int)($songStats['clicks']??0); $rowCtr=$rowImpressions>0?round(($rowClicks/$rowImpressions)*100,2):null; $rowDownloads=$downloadCountFor($track); ?><tr data-id="<?= e($trackId) ?>" data-index="<?= e((string)($index+1)) ?>" data-title="<?= e((string)($track['title']??'N/A')) ?>" data-artist="<?= e((string)($track['artist']??'N/A')) ?>" data-genre="<?= e((string)($track['genre']??'N/A')) ?>" data-views="0" data-downloads="<?= e((string)$rowDownloads) ?>" data-impressions="<?= e((string)$rowImpressions) ?>" data-clicks="<?= e((string)$rowClicks) ?>" data-ctr="<?= e((string)($rowCtr??0)) ?>" data-time="0"><td><?= e(str_pad((string)($index+1),2,'0',STR_PAD_LEFT)) ?></td><td><div class="table-cover"><img loading="lazy" src="<?= e((string)($track['cover']??'assets/cover-1.jpg')) ?>" alt=""></div></td><td><?= e((string)($track['title']??'N/A')) ?></td><td><?= e((string)($track['artist']??'N/A')) ?></td><td><?= e((string)($track['genre']??'N/A')) ?></td><td>N/A</td><td><?= e($hasDownloadData ? number_format($rowDownloads) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowImpressions) : 'N/A') ?></td><td><?= e($hasAdData ? number_format($rowClicks) : 'N/A') ?></td><td><?= e($hasAdData && $rowCtr !== null ? $rowCtr . '%' : 'N/A') ?></td><td>N/A</td></tr><?php endforeach; ?><?php endif; ?></tbody></table></div><div class="pagination" id="analyticsPagination"></div></div></section>
 
           <section class="view-section" id="upload-section" data-title="Upload New Song" data-subtitle="Add the public preview file and the WAV download link separately"><div class="management-toolbar"><div><h2>Upload New Song</h2><p>Add the public preview file and the WAV download link separately</p></div></div><div class="upload-layout"><div class="panel upload-main-card"><div class="panel-header"><span class="panel-title">Song Details</span></div><form class="admin-form" id="uploadSongForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="upload"><div class="form-grid"><label class="form-field">Song Title<input type="text" name="title" placeholder="Nagin Theme" required></label><label class="form-field">Artist<input type="text" name="artist" value="SG Production"></label><label class="form-field">Artist Profile<select name="artistId"><?php foreach ($artists as $artistOption): if (!is_array($artistOption)) continue; ?><option value="<?= e((string) ($artistOption['id'] ?? '')) ?>"><?= e((string) ($artistOption['name'] ?? 'Artist')) ?></option><?php endforeach; ?></select></label><label class="form-field">Genre<select name="genre"><?php foreach ($genreNames as $genreName): ?><option><?= e($genreName) ?></option><?php endforeach; ?></select></label><label class="form-field full">Preview Song File<input id="uploadPreviewFile" type="file" name="audio" accept=".mp3,audio/mpeg" required><span class="form-help">Accepts MP3 only. Duration will be detected from this file.</span><div class="file-meta" id="previewFileMeta"><span id="previewFileName">No file selected</span><span id="previewFileSize">0 MB</span></div></label><label class="form-field">Duration<input id="uploadDurationInput" type="text" name="duration" placeholder="0:0"></label><label class="form-field">Wave Style<select name="wave"><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Sawtooth</option><option value="triangle">Triangle</option></select></label><label class="form-field"><span>BPM <span id="bpmDetectStatus" style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35)"></span></span><input id="uploadBpmInput" type="number" name="bpm" value="124" min="40" max="240"></label><label class="form-field full">WAV Download URL<input type="url" name="downloadUrl" placeholder="Direct WAV download URL" required><span class="form-help">Direct URL for the full-quality WAV download.</span></label><label class="form-field full">Cover Image<div class="cover-upload-row"><div class="cover-preview-thumb" id="uploadCoverPreview">Cover</div><div><input id="uploadCoverInput" type="file" name="cover" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required><span class="form-help">Image preview appears after selection.</span></div></div></label><label class="form-field full">Credit Text<textarea name="creditText" rows="3" placeholder="Optional credit text shown on song page."></textarea></label></div><div class="check-grid"><label class="check-card toggle-card"><span>Show in Latest Releases</span><input type="checkbox" name="isNew" checked></label><label class="check-card toggle-card"><span>Mark as Featured</span><input type="checkbox" name="isFeatured"></label></div><div class="upload-progress" id="uploadProgress"><div class="progress-head"><span>Uploading song</span><span id="uploadProgressValue">0%</span></div><div class="progress-track"><div class="progress-fill" id="uploadProgressFill"></div></div></div><div class="form-actions"><button class="btn btn-outline" type="button" id="saveDraftButton">Save as Draft</button><button class="btn btn-primary" type="submit">Upload Song</button></div></form></div><aside class="panel tips-card"><div class="panel-header"><span class="panel-title">Upload Tips</span></div><ul><li><strong>Cover image:</strong> recommended 1:1 ratio, minimum 500x500px.</li><li><strong>Preview file:</strong> MP3, maximum 10MB for fast public playback.</li><li><strong>WAV link:</strong> should be a direct downloadable URL.</li><li><strong>Wave style:</strong> affects how the waveform looks on the public song page.</li></ul></aside></div></section>
 
@@ -4993,7 +5066,7 @@ $downloadChartData = [
                       </div>
                       <div class="banner-admin-preview" style="--banner-admin-bg:<?= e($slideBg) ?>">
                         <?php if ($slideImage !== 'assets/sg-logo.svg'): ?>
-                          <img loading="lazy" src="/<?= e($slideImage) ?>" alt="">
+                          <img loading="lazy" decoding="async" width="132" height="74" data-banner-preview-src="/<?= e($slideImage) ?>" alt="">
                         <?php else: ?>
                           <div class="settings-preview">No image</div>
                         <?php endif; ?>
@@ -5014,7 +5087,7 @@ $downloadChartData = [
                         <label class="form-field">Button Link<input type="text" name="buttonLink[]" value="<?= e((string) ($slide['buttonLink'] ?? '#')) ?>" placeholder="/song/track-slug"></label>
                         <label class="form-field">Background Color<input type="color" name="bgColor[]" value="<?= e($slideBg) ?>"></label>
                         <label class="form-field">Order<input type="number" name="slideOrder[]" min="1" max="50" value="<?= e((string) ($slide['order'] ?? ($bannerIndex + 1))) ?>"></label>
-                        <label class="form-field full">Image Upload<input type="file" name="bannerImage[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Maximum 3 MB. Current: <?= e($slideImage !== 'assets/sg-logo.svg' ? $slideImage : 'N/A') ?></span></label>
+                        <label class="form-field full">Image Upload<input type="file" name="bannerImage[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Maximum 3 MB. Saved automatically as WebP. Current: <?= e($slideImage !== 'assets/sg-logo.svg' ? $slideImage : 'N/A') ?></span></label>
                       </div>
                     </article>
                   <?php endforeach; ?>
@@ -5281,8 +5354,9 @@ $downloadChartData = [
         visitChange.className = 'stat-change ' + (change >= 0 ? 'up' : 'down');
       }
 
-      const todayEl = document.querySelector('#visitToday');
-      if (todayEl) todayEl.textContent = Number(data.today || 0).toLocaleString();
+      if (typeof window.applyCurrentAnalyticsRange === 'function') {
+        window.applyCurrentAnalyticsRange();
+      }
     })
     .catch(function() {});
 
@@ -5317,8 +5391,9 @@ $downloadChartData = [
         var row = document.getElementById('track-' + id);
         if (row) row.dataset.likes = String(count);
       });
-      var totalEl = document.getElementById('totalLikesCount');
-      if (totalEl) totalEl.textContent = Number(payload.total || total).toLocaleString();
+      if (typeof window.applyCurrentAnalyticsRange === 'function') {
+        window.applyCurrentAnalyticsRange();
+      }
     })
     .catch(function() {});
 
@@ -5366,6 +5441,14 @@ $downloadChartData = [
     window.setTimeout(() => input?.focus(), 180);
   }
 
+  function loadBannerPreviewImages() {
+    document.querySelectorAll('img[data-banner-preview-src]').forEach((img) => {
+      if (img.getAttribute('src')) return;
+      img.setAttribute('src', img.dataset.bannerPreviewSrc || '');
+      img.removeAttribute('data-banner-preview-src');
+    });
+  }
+
   function openSection(rawSectionName) {
     const sectionName = normalizeSection(rawSectionName);
     const target = document.querySelector('#' + sectionName + '-section');
@@ -5394,6 +5477,7 @@ $downloadChartData = [
       target.style.display = '';
       target.style.opacity = '';
       target.classList.add('active');
+      if (sectionName === 'banner') loadBannerPreviewImages();
       document.querySelector('.content')?.scrollTo({ top: 0 });
     };
 
@@ -5868,18 +5952,213 @@ $downloadChartData = [
   });
   renderSongs();
 
+  const analyticsSource = {
+    tracks: <?= json_encode($tracks, JSON_UNESCAPED_SLASHES) ?>,
+    adTotals: <?= json_encode($adTotals, JSON_UNESCAPED_SLASHES) ?>,
+    adEvents: <?= json_encode($adEvents, JSON_UNESCAPED_SLASHES) ?>,
+    visits: <?= json_encode($visitsData, JSON_UNESCAPED_SLASHES) ?>,
+    likesStore: <?= json_encode($likesStore, JSON_UNESCAPED_SLASHES) ?>,
+    today: <?= json_encode($todayIso, JSON_UNESCAPED_SLASHES) ?>
+  };
+  let currentAnalyticsRange = { mode: 'preset', preset: '7D', from: <?= json_encode($weekAgoIso) ?>, to: <?= json_encode($todayIso) ?> };
+  let currentAnalyticsChart = 'Downloads';
   const chartData = {
     Downloads: <?= json_encode($downloadChartData, JSON_UNESCAPED_SLASHES) ?>,
-    'Page Views': { points: '80,238 215,238 350,238 485,238 620,238 755,238 875,238', values: ['N/A','N/A','N/A','N/A','N/A','N/A','N/A'], total: 'N/A', label: 'total page views', peak: 'Peak: N/A', suggestedMin: 0, suggestedMax: 10 },
-    'Ad Clicks': { points: '80,238 215,238 350,238 485,238 620,238 755,238 875,238', values: ['N/A','N/A','N/A','N/A','N/A','N/A','N/A'], total: <?= json_encode($hasAdData ? number_format($adClicks) : 'N/A') ?>, label: 'total ad clicks', peak: 'Peak: N/A', suggestedMin: 0, suggestedMax: 10 }
+    'Page Views': { points: '80,238 215,238 350,238 485,238 620,238 755,238 875,238', values: ['0','0','0','0','0','0','0'], total: '0', label: 'total page views', peak: 'Peak: N/A', suggestedMin: 0, suggestedMax: 10, labels: [] },
+    'Ad Clicks': { points: '80,238 215,238 350,238 485,238 620,238 755,238 875,238', values: ['0','0','0','0','0','0','0'], total: '0', label: 'total ad clicks', peak: 'Peak: N/A', suggestedMin: 0, suggestedMax: 10, labels: [] }
   };
-  console.log('Graph data:', chartData);
+
+  function analyticsNumber(value) {
+    return Number(value || 0);
+  }
+
+  function analyticsFormat(value) {
+    return Number(value || 0).toLocaleString();
+  }
+
+  function analyticsDateKey(value) {
+    if (!value) return '';
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value.getFullYear() + '-' + String(value.getMonth() + 1).padStart(2, '0') + '-' + String(value.getDate()).padStart(2, '0');
+    }
+    const raw = String(value);
+    const direct = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (direct) return direct[1];
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.getFullYear() + '-' + String(parsed.getMonth() + 1).padStart(2, '0') + '-' + String(parsed.getDate()).padStart(2, '0');
+  }
+
+  function analyticsDateFromKey(key) {
+    const parts = String(key || '').split('-').map(Number);
+    return parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+  }
+
+  function analyticsShiftDate(key, days) {
+    const date = analyticsDateFromKey(key);
+    date.setDate(date.getDate() + days);
+    return analyticsDateKey(date);
+  }
+
+  function analyticsRangeFromPreset(preset) {
+    const today = analyticsSource.today || analyticsDateKey(new Date());
+    if (preset === 'all') return { mode: 'preset', preset, from: '', to: today };
+    const days = preset === '90D' ? 90 : preset === '30D' ? 30 : 7;
+    return { mode: 'preset', preset, from: analyticsShiftDate(today, -(days - 1)), to: today };
+  }
+
+  function analyticsInRange(dateKey, range) {
+    if (!dateKey) return false;
+    if (range.preset === 'all') return true;
+    return dateKey >= range.from && dateKey <= range.to;
+  }
+
+  function analyticsEventKind(event) {
+    return String(event?.type || event?.action || event?.event || event?.name || '').toLowerCase();
+  }
+
+  function analyticsEventTrackId(event) {
+    return String(event?.trackId || event?.track_id || event?.songId || event?.song_id || event?.id || event?.slug || '').trim();
+  }
+
+  function analyticsTrackKeys(track) {
+    return [track?.id, track?.slug, track?.title]
+      .map(value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+      .filter(Boolean);
+  }
+
+  function analyticsDownloadEvents(track) {
+    return Array.isArray(track?.downloadEvents) ? track.downloadEvents : [];
+  }
+
+  function analyticsLikeEvents(track) {
+    const keys = analyticsTrackKeys(track);
+    const events = Array.isArray(track?.likeEvents) ? track.likeEvents.slice() : [];
+    Object.entries(analyticsSource.likesStore || {}).forEach(([key, entry]) => {
+      if (!entry || typeof entry !== 'object') return;
+      const aliases = Array.isArray(entry.aliases) ? entry.aliases : [];
+      const entryKeys = [key].concat(aliases).map(item => String(item || '').toLowerCase());
+      if (entryKeys.some(item => keys.includes(item)) && Array.isArray(entry.events)) {
+        events.push(...entry.events);
+      }
+    });
+    const seen = new Set();
+    return events.filter(event => {
+      const signature = [event.timestamp || event.createdAt || event.date || '', event.action || '', event.ip_hash || ''].join('|');
+      if (seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    });
+  }
+
+  function analyticsCountTrackDownloads(track, range) {
+    const events = analyticsDownloadEvents(track);
+    if (events.length > 0) {
+      return events.filter(event => analyticsInRange(analyticsDateKey(event.timestamp || event.createdAt || event.date), range)).length;
+    }
+    return range.preset === 'all' ? Math.max(analyticsNumber(track?.downloads), analyticsNumber(track?.downloadCount)) : 0;
+  }
+
+  function analyticsCountTrackLikes(track, range) {
+    const events = analyticsLikeEvents(track);
+    if (events.length > 0) {
+      return Math.max(0, events.reduce((total, event) => {
+        if (!analyticsInRange(analyticsDateKey(event.timestamp || event.createdAt || event.date), range)) return total;
+        return total + (String(event.action || '').toLowerCase() === 'unlike' ? -1 : 1);
+      }, 0));
+    }
+    return range.preset === 'all' ? Math.max(analyticsNumber(track?.likes), analyticsNumber(track?.likeCount)) : 0;
+  }
+
+  function analyticsAdCounts(range) {
+    const counts = { impressions: 0, clicks: 0, byTrack: {} };
+    const events = Array.isArray(analyticsSource.adEvents) ? analyticsSource.adEvents : [];
+    events.forEach(event => {
+      if (!analyticsInRange(analyticsDateKey(event.timestamp || event.createdAt || event.date), range)) return;
+      const kind = analyticsEventKind(event);
+      const trackId = analyticsEventTrackId(event);
+      if (kind.includes('click')) {
+        counts.clicks += 1;
+        if (trackId) counts.byTrack[trackId] = { ...(counts.byTrack[trackId] || {}), clicks: analyticsNumber(counts.byTrack[trackId]?.clicks) + 1, impressions: analyticsNumber(counts.byTrack[trackId]?.impressions) };
+      } else if (kind.includes('impression') || kind.includes('view')) {
+        counts.impressions += 1;
+        if (trackId) counts.byTrack[trackId] = { ...(counts.byTrack[trackId] || {}), impressions: analyticsNumber(counts.byTrack[trackId]?.impressions) + 1, clicks: analyticsNumber(counts.byTrack[trackId]?.clicks) };
+      }
+    });
+    if (events.length === 0 && range.preset === 'all') {
+      counts.impressions = analyticsNumber(analyticsSource.adTotals?.impressions);
+      counts.clicks = analyticsNumber(analyticsSource.adTotals?.clicks);
+    }
+    return counts;
+  }
+
+  function analyticsVisitTotal(range) {
+    const daily = analyticsSource.visits?.daily || {};
+    return Object.entries(daily).reduce((total, [dateKey, entry]) => {
+      return analyticsInRange(dateKey, range) ? total + analyticsNumber(entry?.total) : total;
+    }, 0);
+  }
+
+  function analyticsDateKeysForRange(range) {
+    if (range.preset === 'all') {
+      const keys = new Set();
+      (analyticsSource.tracks || []).forEach(track => {
+        analyticsDownloadEvents(track).forEach(event => keys.add(analyticsDateKey(event.timestamp || event.createdAt || event.date)));
+        analyticsLikeEvents(track).forEach(event => keys.add(analyticsDateKey(event.timestamp || event.createdAt || event.date)));
+      });
+      (analyticsSource.adEvents || []).forEach(event => keys.add(analyticsDateKey(event.timestamp || event.createdAt || event.date)));
+      Object.keys(analyticsSource.visits?.daily || {}).forEach(key => keys.add(key));
+      return Array.from(keys).filter(Boolean).sort();
+    }
+    const keys = [];
+    for (let key = range.from; key <= range.to; key = analyticsShiftDate(key, 1)) {
+      keys.push(key);
+      if (keys.length > 370) break;
+    }
+    return keys;
+  }
+
+  function analyticsChartFor(metric, range) {
+    const labels = analyticsDateKeysForRange(range);
+    const safeLabels = labels.length ? labels : [analyticsSource.today || analyticsDateKey(new Date())];
+    const values = safeLabels.map(dateKey => {
+      if (metric === 'Downloads') {
+        return (analyticsSource.tracks || []).reduce((sum, track) => sum + analyticsDownloadEvents(track).filter(event => analyticsDateKey(event.timestamp || event.createdAt || event.date) === dateKey).length, 0);
+      }
+      if (metric === 'Page Views') {
+        return analyticsNumber(analyticsSource.visits?.daily?.[dateKey]?.total);
+      }
+      return (analyticsSource.adEvents || []).filter(event => analyticsDateKey(event.timestamp || event.createdAt || event.date) === dateKey && analyticsEventKind(event).includes('click')).length;
+    });
+    const maxValue = Math.max(10, ...values);
+    const points = values.map((value, index) => {
+      const x = safeLabels.length === 1 ? 80 : 80 + Math.round((795 * index) / (safeLabels.length - 1));
+      const y = 238 - Math.round((Math.min(value, maxValue) / maxValue) * 184);
+      return x + ',' + y;
+    }).join(' ');
+    const total = values.reduce((sum, value) => sum + value, 0);
+    const peakValue = Math.max(...values);
+    const peakIndex = values.indexOf(peakValue);
+    const label = metric === 'Downloads' ? 'total downloads' : metric === 'Page Views' ? 'total page views' : 'total ad clicks';
+    const peakLabel = peakValue > 0 ? 'Peak: ' + shortDate(analyticsDateFromKey(safeLabels[peakIndex])) + ' · ' + analyticsFormat(peakValue) : 'Peak: N/A';
+    return {
+      points,
+      values: values.map(analyticsFormat),
+      total: analyticsFormat(total),
+      label,
+      peak: peakLabel,
+      suggestedMin: 0,
+      suggestedMax: maxValue,
+      labels: safeLabels.map(key => shortDate(analyticsDateFromKey(key)))
+    };
+  }
   function renderAnalyticsChart(type) {
     const data = chartData[type] || chartData.Downloads;
     const line = document.querySelector('#analyticsLine');
     const pointLayer = document.querySelector('#analyticsPointLayer');
     const total = document.querySelector('#analyticsChartTotal');
     const peak = document.querySelector('#analyticsChartPeak');
+    const axis = document.querySelector('#analytics-section .chart-axis');
     const summaryLabel = total?.parentElement;
     line?.setAttribute('points', data.points);
     if (pointLayer) {
@@ -5891,18 +6170,94 @@ $downloadChartData = [
     if (total) total.textContent = data.total;
     if (summaryLabel) summaryLabel.lastChild.textContent = ' ' + data.label;
     if (peak) peak.textContent = data.peak;
+    if (axis && Array.isArray(data.labels) && data.labels.length) {
+      const visibleLabels = data.labels.length > 12
+        ? data.labels.filter((_, index) => index === 0 || index === data.labels.length - 1 || index % Math.ceil(data.labels.length / 6) === 0)
+        : data.labels;
+      axis.innerHTML = visibleLabels.map(label => '<span>' + label + '</span>').join('');
+    }
   }
+
+  function updateAnalyticsTableForRange(range) {
+    getAnalyticsRows().forEach(row => {
+      const id = String(row.dataset.id || '').toLowerCase();
+      const titleKey = String(row.dataset.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const track = (analyticsSource.tracks || []).find(item => {
+        const keys = analyticsTrackKeys(item);
+        return keys.includes(id) || keys.includes(titleKey);
+      });
+      if (!track) return;
+      const downloads = analyticsCountTrackDownloads(track, range);
+      const adCounts = analyticsAdCounts(range);
+      const trackAd = adCounts.byTrack[id] || adCounts.byTrack[titleKey] || { impressions: 0, clicks: 0 };
+      const impressions = analyticsNumber(trackAd.impressions);
+      const clicks = analyticsNumber(trackAd.clicks);
+      const ctr = impressions > 0 ? ((clicks / impressions) * 100) : 0;
+      row.dataset.downloads = String(downloads);
+      row.dataset.impressions = String(impressions);
+      row.dataset.clicks = String(clicks);
+      row.dataset.ctr = String(ctr);
+      const cells = row.querySelectorAll('td');
+      if (cells[6]) cells[6].textContent = analyticsFormat(downloads);
+      if (cells[7]) cells[7].textContent = analyticsFormat(impressions);
+      if (cells[8]) cells[8].textContent = analyticsFormat(clicks);
+      if (cells[9]) cells[9].textContent = impressions > 0 ? (Math.round(ctr * 100) / 100) + '%' : '0%';
+    });
+    analyticsPage = 1;
+    renderAnalyticsTable();
+  }
+
+  function applyAnalyticsRange(range) {
+    currentAnalyticsRange = range;
+    const tracks = Array.isArray(analyticsSource.tracks) ? analyticsSource.tracks : [];
+    const downloads = tracks.reduce((sum, track) => sum + analyticsCountTrackDownloads(track, range), 0);
+    const likes = tracks.reduce((sum, track) => sum + analyticsCountTrackLikes(track, range), 0);
+    const adCounts = analyticsAdCounts(range);
+    const ctr = adCounts.impressions > 0 ? (adCounts.clicks / adCounts.impressions) * 100 : 0;
+    const visits = analyticsVisitTotal(range);
+
+    const downloadsEl = document.querySelector('#analyticsTotalDownloads');
+    const likesEl = document.querySelector('#totalLikesCount');
+    const impressionsEl = document.querySelector('#analyticsAdImpressions');
+    const clicksEl = document.querySelector('#analyticsAdClicks');
+    const ctrEl = document.querySelector('#analyticsCtr');
+    const visitsEl = document.querySelector('#visitToday');
+
+    if (downloadsEl) downloadsEl.textContent = analyticsFormat(downloads);
+    if (likesEl) likesEl.textContent = analyticsFormat(likes);
+    if (impressionsEl) impressionsEl.textContent = analyticsFormat(adCounts.impressions);
+    if (clicksEl) clicksEl.textContent = analyticsFormat(adCounts.clicks);
+    if (ctrEl) ctrEl.textContent = adCounts.impressions > 0 ? (Math.round(ctr * 100) / 100) + '%' : '0%';
+    if (visitsEl) visitsEl.textContent = analyticsFormat(visits);
+
+    chartData.Downloads = analyticsChartFor('Downloads', range);
+    chartData['Page Views'] = analyticsChartFor('Page Views', range);
+    chartData['Ad Clicks'] = analyticsChartFor('Ad Clicks', range);
+    renderAnalyticsChart(currentAnalyticsChart);
+    updateAnalyticsTableForRange(range);
+  }
+
+  function applyAnalyticsPreset(preset) {
+    document.querySelectorAll('[data-analytics-range]').forEach(item => item.classList.toggle('active', item.dataset.analyticsRange === preset));
+    nsdpTrigger?.classList.remove('active');
+    applyAnalyticsRange(analyticsRangeFromPreset(preset));
+  }
+
+  window.applyCurrentAnalyticsRange = function () {
+    applyAnalyticsRange(currentAnalyticsRange);
+  };
+
   document.querySelectorAll('#analyticsChartToggle button').forEach(button => {
     button.addEventListener('click', () => {
       document.querySelectorAll('#analyticsChartToggle button').forEach(item => item.classList.remove('active'));
       button.classList.add('active');
-      renderAnalyticsChart(button.dataset.chart);
+      currentAnalyticsChart = button.dataset.chart;
+      renderAnalyticsChart(currentAnalyticsChart);
     });
   });
   document.querySelectorAll('[data-analytics-range]').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.querySelectorAll('[data-analytics-range]').forEach(item => item.classList.remove('active'));
-      chip.classList.add('active');
+      applyAnalyticsPreset(chip.dataset.analyticsRange);
     });
   });
 
@@ -5919,7 +6274,9 @@ $downloadChartData = [
 
   const parseIsoDate = value => {
     const parts = String(value || '').split('-').map(Number);
-    return parts.length === 3 && parts.every(Number.isFinite) ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+    if (parts.length !== 3 || !parts.every(Number.isFinite)) return null;
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return Number.isNaN(d.getTime()) ? null : d;
   };
   const parseDisplayDate = value => {
     const match = String(value || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -5932,22 +6289,32 @@ $downloadChartData = [
   const shortDate = date => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const monthLabel = date => date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const dayKey = date => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const _initFrom = parseIsoDate(nsdpStart?.value) ?? new Date();
+  const _initTo   = parseIsoDate(nsdpEnd?.value) ?? null;
   const nsdpState = {
-    from: parseIsoDate(nsdpStart?.value),
-    to: parseIsoDate(nsdpEnd?.value),
-    view: new Date(parseIsoDate(nsdpStart?.value).getFullYear(), parseIsoDate(nsdpStart?.value).getMonth(), 1),
-    previousFrom: parseIsoDate(nsdpStart?.value),
-    previousTo: parseIsoDate(nsdpEnd?.value)
+    from: _initFrom,
+    to: _initTo,
+    view: new Date(_initFrom.getFullYear(), _initFrom.getMonth(), 1),
+    previousFrom: new Date(_initFrom),
+    previousTo: _initTo ? new Date(_initTo) : null,
+    hover: null
   };
+  let sgPickStep = 'start';
 
   function updateNsdpLabels() {
-    if (nsdpTriggerLabel) nsdpTriggerLabel.textContent = `${shortDate(nsdpState.from)} – ${shortDate(nsdpState.to)}`;
+    if (nsdpTriggerLabel) nsdpTriggerLabel.textContent = nsdpState.to ? `${shortDate(nsdpState.from)} – ${shortDate(nsdpState.to)}` : `${shortDate(nsdpState.from)} –`;
     if (nsdpSummary) {
-      const days = Math.max(1, Math.round((dayKey(nsdpState.to) - dayKey(nsdpState.from)) / 86400000) + 1);
-      nsdpSummary.textContent = `${days} day${days === 1 ? '' : 's'} selected`;
+      if (!nsdpState.to) {
+        nsdpSummary.textContent = 'Select end date';
+      } else {
+        const days = Math.max(1, Math.round((dayKey(nsdpState.to) - dayKey(nsdpState.from)) / 86400000) + 1);
+        nsdpSummary.textContent = `${days} day${days === 1 ? '' : 's'} selected`;
+      }
     }
     if (nsdpInputFrom) nsdpInputFrom.value = displayDate(nsdpState.from);
-    if (nsdpInputTo) nsdpInputTo.value = displayDate(nsdpState.to);
+    if (nsdpInputTo) nsdpInputTo.value = nsdpState.to ? displayDate(nsdpState.to) : '';
+    const hint = document.querySelector('#nsdpPickHint');
+    if (hint) hint.style.display = sgPickStep === 'end' ? 'block' : 'none';
   }
 
   function renderMiniCalendar() {
@@ -5965,28 +6332,58 @@ $downloadChartData = [
       const date = new Date(year, month, day);
       const key = dayKey(date);
       const start = dayKey(nsdpState.from);
-      const end = dayKey(nsdpState.to);
+      const previewEnd = nsdpState.to ? nsdpState.to : (sgPickStep === 'end' ? (nsdpState.hover || nsdpState.from) : nsdpState.from);
+      const end = dayKey(previewEnd);
+      const rangeStart = Math.min(start, end);
+      const rangeEnd = Math.max(start, end);
+      const hasRange = Boolean(nsdpState.to || sgPickStep === 'end');
       const classes = ['hig-mini-day'];
       if (key === todayKey) classes.push('mini-today');
-      if (key >= start && key <= end) classes.push('mini-in-range');
-      if (key === start) classes.push('mini-selected', 'mini-range-start');
-      if (key === end) classes.push('mini-selected', 'mini-range-end');
+      if (hasRange && key >= rangeStart && key <= rangeEnd) classes.push('mini-in-range');
+      if (key === start) classes.push('mini-selected', key === rangeStart ? 'mini-range-start' : 'mini-range-end');
+      if (hasRange && key === end && end !== start) classes.push('mini-selected', key === rangeEnd ? 'mini-range-end' : 'mini-range-start');
       html += `<button class="${classes.join(' ')}" type="button" data-date="${isoDate(date)}">${day}</button>`;
     }
     miniCalGrid.innerHTML = html;
+    let pickHint = document.querySelector('#nsdpPickHint');
+    if (!pickHint) {
+      pickHint = document.createElement('div');
+      pickHint.id = 'nsdpPickHint';
+      pickHint.textContent = 'Select end date';
+      pickHint.style.cssText = 'display:none;padding:0 12px 8px;font-size:11px;font-weight:600;color:var(--label-tertiary);';
+      miniCalGrid.parentNode?.insertBefore(pickHint, miniCalGrid.nextSibling);
+    }
     miniCalGrid.querySelectorAll('[data-date]').forEach(button => {
       button.addEventListener('click', () => {
         const selected = parseIsoDate(button.dataset.date);
-        if (dayKey(selected) < dayKey(nsdpState.from) || dayKey(nsdpState.from) === dayKey(nsdpState.to)) {
+        if (sgPickStep === 'start') {
           nsdpState.from = selected;
-          nsdpState.to = selected;
-        } else {
-          nsdpState.to = selected;
+          nsdpState.to = null;
+          nsdpState.hover = null;
+          sgPickStep = 'end';
+          updateNsdpLabels();
+          renderMiniCalendar();
+          return;
         }
+        nsdpState.to = selected;
+        if (dayKey(nsdpState.to) < dayKey(nsdpState.from)) {
+          const temp = nsdpState.from;
+          nsdpState.from = nsdpState.to;
+          nsdpState.to = temp;
+        }
+        nsdpState.hover = null;
+        sgPickStep = 'start';
         updateNsdpLabels();
+        renderMiniCalendar();
+        window.nsdpApply();
+      });
+      button.addEventListener('mouseover', () => {
+        if (sgPickStep !== 'end') return;
+        nsdpState.hover = parseIsoDate(button.dataset.date);
         renderMiniCalendar();
       });
     });
+    updateNsdpLabels();
   }
 
 
@@ -5997,11 +6394,14 @@ $downloadChartData = [
     if (!parsed) return;
     if (mode === 'from') nsdpState.from = parsed;
     if (mode === 'to') nsdpState.to = parsed;
+    if (!nsdpState.to) nsdpState.to = nsdpState.from;
     if (dayKey(nsdpState.from) > dayKey(nsdpState.to)) {
       const temp = nsdpState.from;
       nsdpState.from = nsdpState.to;
       nsdpState.to = temp;
     }
+    sgPickStep = 'start';
+    nsdpState.hover = null;
     nsdpState.view = new Date(nsdpState.from.getFullYear(), nsdpState.from.getMonth(), 1);
     updateNsdpLabels();
     renderMiniCalendar();
@@ -6013,13 +6413,16 @@ $downloadChartData = [
   };
   window.nsdpCancel = function () {
     nsdpState.from = new Date(nsdpState.previousFrom);
-    nsdpState.to = new Date(nsdpState.previousTo);
+    nsdpState.to = nsdpState.previousTo ? new Date(nsdpState.previousTo) : null;
+    nsdpState.hover = null;
+    sgPickStep = 'start';
     updateNsdpLabels();
     renderMiniCalendar();
     nsdpPopup && (nsdpPopup.style.display = 'none');
     nsdpTrigger?.classList.remove('open');
   };
   window.nsdpApply = function () {
+    if (!nsdpState.to) return showToast('Select end date');
     if (dayKey(nsdpState.from) > dayKey(nsdpState.to)) return showToast('Start date must be before end date');
     nsdpState.previousFrom = new Date(nsdpState.from);
     nsdpState.previousTo = new Date(nsdpState.to);
@@ -6028,6 +6431,9 @@ $downloadChartData = [
     updateNsdpLabels();
     nsdpPopup && (nsdpPopup.style.display = 'none');
     nsdpTrigger?.classList.remove('open');
+    nsdpTrigger?.classList.add('active');
+    document.querySelectorAll('[data-analytics-range]').forEach(item => item.classList.remove('active'));
+    applyAnalyticsRange({ mode: 'custom', preset: 'custom', from: nsdpStart?.value || isoDate(nsdpState.from), to: nsdpEnd?.value || isoDate(nsdpState.to) });
     showToast('Analytics range applied: ' + nsdpStart?.value + ' to ' + nsdpEnd?.value);
   };
   nsdpTrigger?.addEventListener('click', event => {
@@ -6036,7 +6442,11 @@ $downloadChartData = [
     const open = nsdpPopup.style.display !== 'none';
     nsdpPopup.style.display = open ? 'none' : 'block';
     nsdpTrigger.classList.toggle('open', !open);
-    if (!open) renderMiniCalendar();
+    if (!open) {
+      sgPickStep = 'start';
+      nsdpState.hover = null;
+      renderMiniCalendar();
+    }
   });
   nsdpPopup?.addEventListener('click', event => event.stopPropagation());
   document.addEventListener('click', () => {
@@ -6106,6 +6516,7 @@ $downloadChartData = [
     button.addEventListener('click', exportPDF);
   });
   renderAnalyticsTable();
+  applyAnalyticsRange(currentAnalyticsRange);
 
   const notificationFeed = document.querySelector('#notificationFeed');
 

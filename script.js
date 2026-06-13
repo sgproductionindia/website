@@ -1284,6 +1284,10 @@ function goToSearchResult(target) {
   }
 }
 
+function navigateToSongPage(track) {
+  window.location.href = trackUrl(track);
+}
+
 function renderCard(track, isPriority = false) {
   const card = document.createElement("article");
   card.className = "track-card";
@@ -1316,16 +1320,16 @@ function renderCard(track, isPriority = false) {
       return;
     }
 
-    openSongPage(track);
+    navigateToSongPage(track);
   });
   card.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-      openSongPage(track);
+      navigateToSongPage(track);
     }
   });
   card.querySelector(".cover-link").addEventListener("click", (event) => {
     event.stopPropagation();
-    openSongPage(track);
+    navigateToSongPage(track);
   });
   card.querySelector('[data-action="play"]').addEventListener("click", (event) => {
     event.stopPropagation();
