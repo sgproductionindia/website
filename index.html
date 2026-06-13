@@ -40,8 +40,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="styles.min.css?v=20260607-track-visible" as="style">
-    <link rel="stylesheet" href="styles.min.css?v=20260607-track-visible">
+    <link rel="preload" href="styles.min.css?v=20260608-banner-no-shadow" as="style">
+    <link rel="stylesheet" href="styles.min.css?v=20260608-banner-no-shadow">
     <link rel="stylesheet" href="transitions.min.css?v=20260607-track-visible">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <style>
@@ -246,14 +246,57 @@
       </nav>
 
       <main class="page" id="top">
-        <header class="hero" aria-labelledby="site-title">
-          <div class="hero-inner">
-            <div class="brand-block">
-              <h1 id="site-title">SG Production</h1>
-              <p class="tagline" id="siteTagline">Original music <span></span> direct download <span></span> no barriers</p>
+        <div class="banner-carousel" id="bannerCarousel">
+          <div class="banner-track" id="bannerTrack">
+            <div class="banner-slide" style="--slide-bg:#0d2847">
+              <div class="banner-bg" style="background:linear-gradient(135deg,#0d2847,#06121f)"></div>
+              <div class="banner-content">
+                <span class="banner-badge new">New Release</span>
+                <div class="banner-title">House of My Dreams</div>
+                <div class="banner-sub">Our latest original mix is out now — free direct download, no sign up needed.</div>
+                <a class="banner-btn" href="/song/house-of-my-dreams"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg> Listen Now</a>
+              </div>
+              <div class="banner-image">
+                <img src="assets/cover-3.jpg" alt="House of My Dreams cover art" loading="eager" fetchpriority="high" style="border-radius:16px;height:78%;width:auto;aspect-ratio:1/1;object-fit:cover;transform:translateX(8%)">
+              </div>
+            </div>
+
+            <div class="banner-slide" style="--slide-bg:#0a2a17">
+              <div class="banner-bg" style="background:linear-gradient(135deg,#0a2a17,#04130a)"></div>
+              <div class="banner-content">
+                <span class="banner-badge news">Milestone</span>
+                <div class="banner-title">10,000 Subscribers!</div>
+                <div class="banner-sub">Thank you for the love. New soundcheck tracks dropping every week to celebrate.</div>
+                <a class="banner-btn" href="https://www.youtube.com/@sgproductionindia"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8z"></path></svg> Subscribe</a>
+              </div>
+              <div class="banner-image">
+                <img src="assets/cover-1.jpg" alt="SG Production milestone artwork" loading="lazy" style="border-radius:50%;height:80%;width:auto;aspect-ratio:1/1;object-fit:cover;transform:translateX(8%)">
+              </div>
+            </div>
+
+            <div class="banner-slide" style="--slide-bg:#2a1a0a">
+              <div class="banner-bg" style="background:linear-gradient(135deg,#2a1a0a,#130c04)"></div>
+              <div class="banner-content">
+                <span class="banner-badge event">Coming Soon</span>
+                <div class="banner-title">Festival Halgi 2026</div>
+                <div class="banner-sub">A brand new Halgi bass collection drops this Friday. Turn up the volume.</div>
+                <a class="banner-btn" href="#"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-2V7h2z"></path></svg> Set Reminder</a>
+              </div>
+              <div class="banner-image">
+                <img src="assets/cover-5.jpg" alt="Festival Halgi 2026 artwork" loading="lazy" style="border-radius:16px;height:78%;width:auto;aspect-ratio:1/1;object-fit:cover;transform:translateX(8%)">
+              </div>
             </div>
           </div>
-        </header>
+
+          <button class="banner-arrow prev" id="bannerPrev" type="button" aria-label="Previous">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button class="banner-arrow next" id="bannerNext" type="button" aria-label="Next">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+
+          <div class="banner-dots" id="bannerDots"></div>
+        </div>
 
         <section class="section catalog-section" id="all-tracks" aria-labelledby="tracks-title">
           <div class="section-heading catalog-heading">
@@ -520,7 +563,7 @@
       </div>
     </aside>
 
-    <script src="script.min.js?v=20260607-track-visible" defer></script>
+    <script src="script.min.js?v=20260608-banner-carousel" defer></script>
     <script>
       // Track page visit
       (function() {

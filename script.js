@@ -800,7 +800,7 @@ function setShellNavActive(path) {
 }
 
 function setHomeContentVisible(visible) {
-  [document.querySelector(".hero"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
+  [document.querySelector(".hero"), document.querySelector(".banner-carousel"), document.querySelector("#all-tracks"), document.querySelector("#licensing"), document.querySelector("main.page > .footer")].forEach((element) => {
     if (element) element.hidden = !visible;
   });
 }
@@ -2590,6 +2590,7 @@ function openSongPage(track, updateUrl = true) {
 
   selectedTrack = track;
   closeShellView();
+  setHomeContentVisible(false);
   songPage.hidden = false;
   document.body.classList.add("song-view");
   songPlay.dataset.trackId = track.id;
@@ -2617,6 +2618,7 @@ function openSongPage(track, updateUrl = true) {
 function closeSongPage(updateUrl = true) {
   document.body.classList.remove("song-view");
   songPage.hidden = true;
+  setHomeContentVisible(true);
   applyRouteMeta("/tracks");
 
   if (updateUrl) {
@@ -2763,6 +2765,10 @@ document.querySelector("#focusSearch").addEventListener("click", () => {
 
 function setActiveNav(sectionId) {
   const targetId = sectionId === "top" ? "all-tracks" : sectionId;
+  document.querySelectorAll(".side-nav .nav-link[href], .mobile-brand[href]").forEach((link) => {
+    link.classList.remove("active-line");
+    link.setAttribute("aria-current", "false");
+  });
 
   sectionNavLinks.forEach((link) => {
     const href = link.getAttribute("href") || "";
@@ -2775,7 +2781,7 @@ function setActiveNav(sectionId) {
 }
 
 function clearActiveNav() {
-  sectionNavLinks.forEach((link) => {
+  document.querySelectorAll(".side-nav .nav-link[href], .mobile-brand[href]").forEach((link) => {
     link.classList.remove("active-line");
     link.setAttribute("aria-current", "false");
   });
@@ -3429,4 +3435,52 @@ sideNav.addEventListener("focusout", () => {
       toast.classList.remove('show');
     }, 2500);
   }
+})();
+
+(function(){
+  const carousel=document.getElementById('bannerCarousel');
+  if(!carousel)return;
+  const track=document.getElementById('bannerTrack');
+  if(!track)return;
+  const slides=track.querySelectorAll('.banner-slide');
+  const dotsWrap=document.getElementById('bannerDots');
+  const prevBtn=document.getElementById('bannerPrev');
+  const nextBtn=document.getElementById('bannerNext');
+  if(!slides.length||!dotsWrap||!prevBtn||!nextBtn)return;
+  let current=0,autoTimer=null;
+  const AUTO_MS=5000;
+
+  slides.forEach((_,i)=>{
+    const dot=document.createElement('button');
+    dot.className='banner-dot'+(i===0?' active':'');
+    dot.type='button';
+    dot.setAttribute('aria-label','Go to banner '+(i+1));
+    dot.addEventListener('click',()=>goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+  const dots=dotsWrap.querySelectorAll('.banner-dot');
+
+  function goTo(i){
+    current=(i+slides.length)%slides.length;
+    track.style.transform='translateX(-'+(current*100)+'%)';
+    dots.forEach((d,j)=>d.classList.toggle('active',j===current));
+    restartAuto();
+  }
+  function next(){goTo(current+1)}
+  function prev(){goTo(current-1)}
+  nextBtn.addEventListener('click',next);
+  prevBtn.addEventListener('click',prev);
+  function startAuto(){autoTimer=setInterval(next,AUTO_MS)}
+  function restartAuto(){clearInterval(autoTimer);startAuto()}
+  carousel.addEventListener('mouseenter',()=>clearInterval(autoTimer));
+  carousel.addEventListener('mouseleave',startAuto);
+
+  let startX=0;
+  track.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;clearInterval(autoTimer)},{passive:true});
+  track.addEventListener('touchend',e=>{
+    const diff=e.changedTouches[0].clientX-startX;
+    if(diff>50)prev();else if(diff<-50)next();else startAuto();
+  });
+
+  startAuto();
 })();

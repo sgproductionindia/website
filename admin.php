@@ -13,15 +13,18 @@ define('ARTISTS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/artis
 define('GENRES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/genres.json');
 define('AD_STATS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/ad-stats.json');
 define('LIKES_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/likes.json');
+define('BANNER_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/banner.json');
 define('COVER_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/covers');
 define('AUDIO_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/audio');
 define('AD_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/ads');
 define('ARTIST_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/artists');
 define('SITE_MEDIA_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/site');
+define('BANNER_DIR', (defined('UPLOADS_DIR') ? UPLOADS_DIR : (__DIR__ . '/uploads')) . '/banner');
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 120 * 1024 * 1024;
 const MAX_AD_BYTES = 60 * 1024 * 1024;
 const MAX_SITE_MEDIA_BYTES = 8 * 1024 * 1024;
+const MAX_BANNER_BYTES = 3 * 1024 * 1024;
 
 $errors = [];
 $success = '';
@@ -33,7 +36,7 @@ function e(string $value): string
 
 function ensureStorage(): void
 {
-    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR, ARTIST_DIR, SITE_MEDIA_DIR] as $directory) {
+    foreach ([dirname(TRACKS_FILE), COVER_DIR, AUDIO_DIR, AD_DIR, ARTIST_DIR, SITE_MEDIA_DIR, BANNER_DIR] as $directory) {
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
@@ -61,6 +64,10 @@ function ensureStorage(): void
 
     if (!file_exists(AD_STATS_FILE)) {
         file_put_contents(AD_STATS_FILE, json_encode(defaultAdStats(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
+    }
+
+    if (!file_exists(BANNER_FILE)) {
+        file_put_contents(BANNER_FILE, json_encode(defaultBanner(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
 }
 
@@ -213,6 +220,159 @@ function defaultGenres(): array
             'color' => '#f6b73c',
         ],
     ];
+}
+
+function defaultBanner(): array
+{
+    return [
+        'enabled' => true,
+        'slides' => [
+            [
+                'id' => 'slide1',
+                'badgeType' => 'new',
+                'badgeText' => 'New Release',
+                'title' => 'House of My Dreams',
+                'description' => 'Our latest original mix is out now - free direct download, no sign up needed.',
+                'buttonText' => 'Listen Now',
+                'buttonLink' => '/song/house-of-my-dreams',
+                'bgColor' => '#0d2847',
+                'image' => 'assets/cover-3.jpg',
+                'order' => 1,
+            ],
+            [
+                'id' => 'slide2',
+                'badgeType' => 'news',
+                'badgeText' => 'Milestone',
+                'title' => '10,000 Subscribers!',
+                'description' => 'Thank you for the love. New soundcheck tracks dropping every week to celebrate.',
+                'buttonText' => 'Subscribe',
+                'buttonLink' => 'https://www.youtube.com/@sgproductionindia',
+                'bgColor' => '#0a2a17',
+                'image' => 'assets/cover-1.jpg',
+                'order' => 2,
+            ],
+            [
+                'id' => 'slide3',
+                'badgeType' => 'event',
+                'badgeText' => 'Coming Soon',
+                'title' => 'Festival Halgi 2026',
+                'description' => 'A brand new Halgi bass collection drops this Friday. Turn up the volume.',
+                'buttonText' => 'Set Reminder',
+                'buttonLink' => '#',
+                'bgColor' => '#2a1a0a',
+                'image' => 'assets/cover-5.jpg',
+                'order' => 3,
+            ],
+        ],
+    ];
+}
+
+function bannerBadgeTypes(): array
+{
+    return [
+        'new' => 'New Release',
+        'news' => 'Milestone',
+        'event' => 'Coming Soon',
+    ];
+}
+
+function normalizeBannerColor(string $value): string
+{
+    $value = trim($value);
+
+    return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#0d2847';
+}
+
+function normalizeBannerLink(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '#';
+    }
+
+    if ($value === '#' || str_starts_with($value, '/') || isHttpUrl($value)) {
+        return $value;
+    }
+
+    return '#';
+}
+
+function normalizeBannerImagePath(string $value): string
+{
+    $value = trim($value);
+    $value = ltrim($value, '/');
+
+    if ($value === '') {
+        return 'assets/sg-logo.svg';
+    }
+
+    if (!preg_match('#^(uploads/banner/|uploads/covers/|assets/)#', $value)) {
+        return 'assets/sg-logo.svg';
+    }
+
+    return $value;
+}
+
+function normalizeBannerSlide(array $slide, int $fallbackOrder): array
+{
+    $badgeTypes = bannerBadgeTypes();
+    $badgeType = (string) ($slide['badgeType'] ?? 'new');
+    if (!array_key_exists($badgeType, $badgeTypes)) {
+        $badgeType = 'new';
+    }
+
+    $title = substr(trim((string) ($slide['title'] ?? '')), 0, 90);
+    $id = trim((string) ($slide['id'] ?? ''));
+    if ($id === '') {
+        $id = 'slide-' . slugify($title !== '' ? $title : ('banner-' . $fallbackOrder));
+    }
+
+    return [
+        'id' => preg_replace('/[^a-zA-Z0-9_-]/', '', $id) ?: ('slide-' . $fallbackOrder),
+        'badgeType' => $badgeType,
+        'badgeText' => substr(trim((string) ($slide['badgeText'] ?? $badgeTypes[$badgeType])), 0, 40) ?: $badgeTypes[$badgeType],
+        'title' => $title !== '' ? $title : 'Homepage Banner',
+        'description' => substr(trim((string) ($slide['description'] ?? '')), 0, 220),
+        'buttonText' => substr(trim((string) ($slide['buttonText'] ?? 'Learn More')), 0, 40) ?: 'Learn More',
+        'buttonLink' => normalizeBannerLink((string) ($slide['buttonLink'] ?? '#')),
+        'bgColor' => normalizeBannerColor((string) ($slide['bgColor'] ?? '#0d2847')),
+        'image' => normalizeBannerImagePath((string) ($slide['image'] ?? 'assets/sg-logo.svg')),
+        'order' => max(1, (int) ($slide['order'] ?? $fallbackOrder)),
+    ];
+}
+
+function readBanner(): array
+{
+    ensureStorage();
+    $json = file_get_contents(BANNER_FILE);
+    $banner = json_decode($json ?: '{}', true);
+    if (!is_array($banner)) {
+        $banner = defaultBanner();
+    }
+
+    $slides = is_array($banner['slides'] ?? null) ? $banner['slides'] : [];
+    $normalizedSlides = [];
+    foreach ($slides as $index => $slide) {
+        if (is_array($slide)) {
+            $normalizedSlides[] = normalizeBannerSlide($slide, $index + 1);
+        }
+    }
+
+    usort($normalizedSlides, static fn (array $a, array $b): int => ((int) $a['order']) <=> ((int) $b['order']));
+
+    return [
+        'enabled' => (bool) ($banner['enabled'] ?? true),
+        'slides' => $normalizedSlides,
+    ];
+}
+
+function writeBanner(array $banner): void
+{
+    ensureStorage();
+    $json = json_encode($banner, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    if ($json === false || file_put_contents(BANNER_FILE, $json . "\n", LOCK_EX) === false) {
+        throw new RuntimeException('Could not save homepage banner.');
+    }
 }
 
 function defaultArtists(): array
@@ -535,6 +695,65 @@ function uploadOptionalFile(string $field, array $extensions, array $mimeTypes, 
     return uploadFile($field, $extensions, $mimeTypes, $maxBytes, $directory, $baseName);
 }
 
+function uploadArrayFile(array $file, array $extensions, array $mimeTypes, int $maxBytes, string $directory, string $baseName): string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(uploadErrorMessage((int) ($file['error'] ?? UPLOAD_ERR_NO_FILE)));
+    }
+
+    $size = (int) ($file['size'] ?? 0);
+    if ($size <= 0 || $size > $maxBytes) {
+        throw new RuntimeException('File is too large for this upload. Maximum allowed here is ' . (int) floor($maxBytes / 1024 / 1024) . ' MB.');
+    }
+
+    $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+    if (!in_array($extension, $extensions, true)) {
+        throw new RuntimeException('This file type is not allowed.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file((string) ($file['tmp_name'] ?? ''));
+    $genericUploadMimes = ['application/octet-stream', 'binary/octet-stream'];
+
+    if ($mime !== false && !in_array($mime, $mimeTypes, true) && !in_array($mime, $genericUploadMimes, true)) {
+        throw new RuntimeException('The uploaded file does not match the expected format.');
+    }
+
+    $target = uniqueTargetPath($directory, $baseName, $extension);
+
+    if (!is_writable($directory)) {
+        throw new RuntimeException('Upload folder is not writable: ' . basename($directory) . '. Check the Coolify volume permissions.');
+    }
+
+    if (!move_uploaded_file((string) ($file['tmp_name'] ?? ''), $target)) {
+        throw new RuntimeException('Could not save the uploaded file. Check that the Coolify volume for uploads is writable by PHP.');
+    }
+
+    $baseRoot = defined('ROOT_DIR') ? ROOT_DIR : __DIR__;
+    return '/' . ltrim(str_replace($baseRoot, '', $target), '/');
+}
+
+function uploadedArrayAt(string $field, int $index): ?array
+{
+    if (!isset($_FILES[$field]) || !is_array($_FILES[$field])) {
+        return null;
+    }
+
+    $files = $_FILES[$field];
+    $error = is_array($files['error'] ?? null) ? (int) ($files['error'][$index] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
+    if ($error === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    return [
+        'name' => is_array($files['name'] ?? null) ? (string) ($files['name'][$index] ?? '') : '',
+        'type' => is_array($files['type'] ?? null) ? (string) ($files['type'][$index] ?? '') : '',
+        'tmp_name' => is_array($files['tmp_name'] ?? null) ? (string) ($files['tmp_name'][$index] ?? '') : '',
+        'error' => $error,
+        'size' => is_array($files['size'] ?? null) ? (int) ($files['size'][$index] ?? 0) : 0,
+    ];
+}
+
 function formatDurationSeconds(float $seconds): string
 {
     $totalSeconds = max(0, (int) round($seconds));
@@ -795,6 +1014,104 @@ if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '
 }
 
 $settings = readSettings();
+
+if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_banner') {
+    try {
+        $banner = readBanner();
+        $deleteSlideId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['deleteSlide'] ?? ''));
+
+        if ($deleteSlideId !== '') {
+            $remainingSlides = [];
+            foreach ($banner['slides'] as $slide) {
+                if ((string) ($slide['id'] ?? '') === $deleteSlideId) {
+                    safeDeleteUpload((string) ($slide['image'] ?? ''));
+                    continue;
+                }
+                $remainingSlides[] = $slide;
+            }
+
+            writeBanner([
+                'enabled' => (bool) ($banner['enabled'] ?? true),
+                'slides' => array_values($remainingSlides),
+            ]);
+            $_SESSION['flash_success'] = 'Banner slide deleted.';
+            header('Location: admin.php#banner');
+            exit;
+        }
+
+        $ids = is_array($_POST['slideId'] ?? null) ? $_POST['slideId'] : [];
+        $existingImages = is_array($_POST['existingImage'] ?? null) ? $_POST['existingImage'] : [];
+        $badgeTypes = is_array($_POST['badgeType'] ?? null) ? $_POST['badgeType'] : [];
+        $badgeTexts = is_array($_POST['badgeText'] ?? null) ? $_POST['badgeText'] : [];
+        $titles = is_array($_POST['bannerTitle'] ?? null) ? $_POST['bannerTitle'] : [];
+        $descriptions = is_array($_POST['bannerDescription'] ?? null) ? $_POST['bannerDescription'] : [];
+        $buttonTexts = is_array($_POST['buttonText'] ?? null) ? $_POST['buttonText'] : [];
+        $buttonLinks = is_array($_POST['buttonLink'] ?? null) ? $_POST['buttonLink'] : [];
+        $bgColors = is_array($_POST['bgColor'] ?? null) ? $_POST['bgColor'] : [];
+        $orders = is_array($_POST['slideOrder'] ?? null) ? $_POST['slideOrder'] : [];
+
+        $slides = [];
+        $rowCount = max(count($titles), count($ids));
+        for ($index = 0; $index < $rowCount; $index++) {
+            $title = trim((string) ($titles[$index] ?? ''));
+            $description = trim((string) ($descriptions[$index] ?? ''));
+            $existingImage = normalizeBannerImagePath((string) ($existingImages[$index] ?? ''));
+            $file = uploadedArrayAt('bannerImage', $index);
+
+            if ($title === '' && $description === '' && $file === null) {
+                continue;
+            }
+
+            $id = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($ids[$index] ?? ''));
+            if ($id === '') {
+                $id = 'slide-' . slugify($title !== '' ? $title : ('banner-' . ($index + 1))) . '-' . date('His');
+            }
+
+            $image = $existingImage;
+            if ($file !== null) {
+                $uploadedImage = uploadArrayFile(
+                    $file,
+                    ['jpg', 'jpeg', 'png', 'webp'],
+                    ['image/jpeg', 'image/png', 'image/webp'],
+                    MAX_BANNER_BYTES,
+                    BANNER_DIR,
+                    'banner-' . $id . '-' . date('YmdHis')
+                );
+                if ($uploadedImage !== '') {
+                    if ($image !== '' && str_starts_with(ltrim($image, '/'), 'uploads/banner/')) {
+                        safeDeleteUpload($image);
+                    }
+                    $image = ltrim($uploadedImage, '/');
+                }
+            }
+
+            $slides[] = normalizeBannerSlide([
+                'id' => $id,
+                'badgeType' => (string) ($badgeTypes[$index] ?? 'new'),
+                'badgeText' => (string) ($badgeTexts[$index] ?? ''),
+                'title' => $title,
+                'description' => $description,
+                'buttonText' => (string) ($buttonTexts[$index] ?? ''),
+                'buttonLink' => (string) ($buttonLinks[$index] ?? '#'),
+                'bgColor' => (string) ($bgColors[$index] ?? '#0d2847'),
+                'image' => $image,
+                'order' => (int) ($orders[$index] ?? ($index + 1)),
+            ], $index + 1);
+        }
+
+        usort($slides, static fn (array $a, array $b): int => ((int) $a['order']) <=> ((int) $b['order']));
+
+        writeBanner([
+            'enabled' => isset($_POST['bannerEnabled']),
+            'slides' => array_values($slides),
+        ]);
+        $_SESSION['flash_success'] = 'Homepage banner saved.';
+        header('Location: admin.php#banner');
+        exit;
+    } catch (Throwable $error) {
+        $errors[] = $error->getMessage();
+    }
+}
 
 if ($isAuthed && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_ad') {
     try {
@@ -1200,6 +1517,10 @@ $links = is_array($settings['links'] ?? null) ? $settings['links'] : [];
 $seo = is_array($settings['seo'] ?? null) ? $settings['seo'] : defaultSettings()['seo'];
 $catalog = is_array($settings['catalog'] ?? null) ? $settings['catalog'] : [];
 $advertising = is_array($settings['advertising'] ?? null) ? $settings['advertising'] : defaultSettings()['advertising'];
+$banner = readBanner();
+$bannerSlides = is_array($banner['slides'] ?? null) ? $banner['slides'] : [];
+$bannerEnabled = (bool) ($banner['enabled'] ?? true);
+$bannerBadgeTypes = bannerBadgeTypes();
 $adStats = readAdStats();
 $adTotals = is_array($adStats['totals'] ?? null) ? $adStats['totals'] : [];
 $adSongs = is_array($adStats['songs'] ?? null) ? $adStats['songs'] : [];
@@ -2471,6 +2792,39 @@ $downloadChartData = [
   .settings-preview.square { width:64px; aspect-ratio:1; border-radius:var(--radius-md); }
   .settings-preview img { width:100%; height:100%; object-fit:cover; display:block; }
   .settings-upload-row { display:flex; align-items:center; gap:var(--sp-4); }
+
+  .banner-admin-list { display:flex; flex-direction:column; gap:var(--sp-4); }
+  .banner-admin-card {
+    display:flex; flex-direction:column; gap:var(--sp-4);
+    border:1px solid var(--separator); border-radius:var(--radius-lg);
+    background:var(--bg-secondary); padding:var(--sp-4);
+  }
+  .banner-admin-head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); }
+  .banner-admin-preview {
+    display:grid; grid-template-columns:132px 1fr; gap:var(--sp-4); align-items:center;
+    min-height:96px; border:1px solid var(--separator); border-radius:var(--radius-md);
+    background:linear-gradient(135deg,var(--banner-admin-bg),#050505);
+    overflow:hidden; padding:var(--sp-3);
+  }
+  .banner-admin-preview img {
+    width:132px; aspect-ratio:16/9; object-fit:cover;
+    border-radius:var(--radius-sm); background:var(--bg-tertiary);
+  }
+  .banner-admin-preview strong { display:block; font-size:16px; margin:var(--sp-2) 0 var(--sp-1); color:var(--label); }
+  .banner-admin-preview small { display:block; color:var(--label-secondary); font-size:12px; line-height:1.45; }
+  .banner-badge-preview {
+    display:inline-flex; align-items:center; border-radius:var(--radius-pill);
+    padding:4px 10px; color:#fff; font-size:10px; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  .banner-badge-preview.new { background:#0a84ff; }
+  .banner-badge-preview.news { background:#30d158; }
+  .banner-badge-preview.event { background:#ff9f0a; color:#000; }
+  .banner-empty-state {
+    border:1px dashed var(--separator-strong); border-radius:var(--radius-lg);
+    background:var(--bg-secondary); padding:var(--sp-5);
+    color:var(--label-secondary); text-align:center; font-size:14px;
+  }
 
   /* Compact colour picker */
   input[type="color"] {
@@ -4430,7 +4784,7 @@ $downloadChartData = [
           <div class="nav-section"><div class="nav-label">Overview</div><a class="nav-item active" href="#dashboard" data-section="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>Dashboard</a><a class="nav-item" href="#analytics" data-section="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 12 5 12 7 4 9 20 11 12 13 16 15 10 17 12 22 12"/></svg>Analytics</a></div>
           <div class="nav-section"><div class="nav-label">Music</div><a class="nav-item" href="#upload" data-section="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 20h16"/></svg>Upload New Song</a><a class="nav-item" href="#songs" data-section="songs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="2.5"/><circle cx="20" cy="16" r="2.5"/></svg>Uploaded Songs</a><a class="nav-item" href="#artists" data-section="artists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3"/><path d="M19 17c0-1.86-1.34-3.4-3-3.86"/><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>Artist Management</a><a class="nav-item" href="#genres" data-section="genres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8 8a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828z"/><circle cx="7.5" cy="7.5" r="1"/></svg>Genre Management</a></div>
           <div class="nav-section"><div class="nav-label">Monetization</div><a class="nav-item" href="#advertising" data-section="advertising"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-miterlimit="10"><polygon points="6,19 3,19 3,13 6,13 29,6 29,26"/><path d="M15,21.8l-0.3,1c-0.5,1.7-2.3,2.6-3.9,2.1l0,0c-1.7-0.5-2.6-2.3-2.1-3.9L9,20"/></svg>Advertising</a></div>
-          <div class="nav-section"><div class="nav-label">Site</div><a class="nav-item" href="#settings" data-section="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Website Settings</a><a class="nav-item notif" href="#notifications" data-section="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 6-3 8-3 8h18s-3-2-3-8"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a></div>
+          <div class="nav-section"><div class="nav-label">Site</div><a class="nav-item" href="#banner" data-section="banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6"/><path d="M7 13h4"/><path d="M15 13l2 2 3-4"/></svg>Homepage Banner</a><a class="nav-item" href="#settings" data-section="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Website Settings</a><a class="nav-item notif" href="#notifications" data-section="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 6-3 8-3 8h18s-3-2-3-8"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a></div>
         </nav>
         <div class="sidebar-footer">
           <a class="nav-item" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>View Live Site</a>
@@ -4595,6 +4949,80 @@ $downloadChartData = [
           <section class="view-section" id="genres-section" data-title="Genre Management" data-subtitle="Add and manage genres for your songs and artists"><div class="management-toolbar"><div><h2>Genre Management</h2><p>Add and manage genres for your songs and artists</p></div></div><div class="panel" id="genreFormPanel"><div class="panel-header"><span class="panel-title">Add New Genre</span></div><form class="admin-form" id="genreForm" method="post"><input type="hidden" name="action" value="save_genre"><div class="form-grid"><label class="form-field">Genre Name<input id="genreNameInput" name="genreName" placeholder="Original Mix" required></label><label class="form-field">Genre Slug<input id="genreSlugInput" name="genreSlug" placeholder="original-mix"></label><label class="form-field full"><span class="char-row"><span>Genre Description</span><span class="char-count"><span id="genreDescriptionCount">0</span>/150</span></span><textarea id="genreDescriptionInput" name="genreDescription" maxlength="150" rows="3"></textarea></label><label class="form-field">Genre Color<input type="color" name="genreColor" value="#0a84ff"></label></div><div class="form-actions"><button class="btn btn-outline" type="reset" data-clear-genre>Clear</button><button class="btn btn-primary" id="genreSubmitButton" type="submit">Save Genre</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Existing Genres</span><input class="admin-control" id="genreSearchInput" type="search" placeholder="Search genres"></div><div class="genre-grid" id="genreGrid"><?php foreach ($genres as $genre): if (!is_array($genre)) continue; $genreName=(string)($genre['name']??'Genre'); $counts=genreUsageCounts($genreName,$tracks,$artists); ?><article class="genre-card" style="--genre-color:<?= e((string)($genre['color']??'#0a84ff')) ?>" data-name="<?= e($genreName) ?>"><div class="genre-card-head"><div><div class="genre-card-title"><?= e($genreName) ?></div><div class="genre-slug"><?= e((string)($genre['slug']??'')) ?></div></div><div class="genre-card-actions"><details class="editor"><summary class="icon-btn" aria-label="Edit genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></summary><form class="admin-form" method="post"><input type="hidden" name="action" value="save_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><label class="form-field">Genre Name<input name="genreName" value="<?= e($genreName) ?>" required></label><label class="form-field">Genre Slug<input name="genreSlug" value="<?= e((string)($genre['slug']??'')) ?>"></label><label class="form-field">Color<input type="color" name="genreColor" value="<?= e((string)($genre['color']??'#0a84ff')) ?>"></label><label class="form-field full">Description<textarea name="genreDescription" rows="3"><?= e((string)($genre['description']??'')) ?></textarea></label><button class="btn btn-primary" type="submit">Update Genre</button></form></details><form method="post" onsubmit="return confirm('Deleting this genre will unassign it from all songs and artists. Continue?');"><input type="hidden" name="action" value="delete_genre"><input type="hidden" name="genreId" value="<?= e((string)($genre['id']??'')) ?>"><button class="icon-btn" type="submit" aria-label="Delete genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></form></div></div><div class="genre-description"><?= e((string)($genre['description']??'')) ?></div><div class="genre-counts"><span class="metric-badge cyan"><?= e((string)$counts['songs']) ?> songs</span><span class="metric-badge orange"><?= e((string)$counts['artists']) ?> artists</span></div></article><?php endforeach; ?></div></div></section>
 
           <section class="view-section" id="advertising-section" data-title="Advertising" data-subtitle="Manage ads shown on song pages"><div class="management-toolbar"><div><h2>Advertising</h2><p>Manage ads shown on song pages</p></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Current Ad Status</span><span class="status-pill <?= $adEnabled ? 'published' : 'unlisted' ?>" id="adStatusPill"><?= $adEnabled ? 'Active' : 'Inactive' ?></span></div><div class="ad-status-layout"><div class="ad-preview-thumb"><?php if ($adMediaUrl !== ''): ?><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img loading="lazy" src="<?= e($adMediaUrl) ?>" alt="Current advertisement preview"><?php endif; ?><?php else: ?>N/A<?php endif; ?></div><div class="ad-detail-list"><div><strong>File:</strong> <?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></div><div><strong>Type:</strong> <?= e($adMediaType !== '' ? $adMediaType : 'N/A') ?></div><div><strong>Click URL:</strong> <?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></div><div><strong>Last updated:</strong> N/A</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Update Ad</span></div><form class="admin-form" id="adUpdateForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_ad"><div class="ad-update-layout"><div class="ad-update-fields"><label class="form-field">Advertising Media</label><input id="adMediaInput" class="ad-file-input" type="file" name="adMedia" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm"><button type="button" class="ad-upload-btn" id="adUploadButton">Choose media file</button><span class="form-help">Accepts JPG, PNG, WEBP, MP4, WEBM, or MOV. 9:16 ratio recommended.</span><div class="ad-media-meta" id="adMediaMeta"><span id="adFileName">No file selected</span><span id="adFileSize">0 MB</span><span id="adDimensions">Dimensions pending</span></div><div class="ratio-warning" id="adRatioWarning">For best results use 9:16 aspect ratio</div><label class="form-field">Advertisement Click URL<input id="adClickUrlInput" type="url" name="adLinkUrl" value="<?= e($adLinkUrl) ?>"></label><div class="ad-toggles"><label class="check-card toggle-card"><span>Show advertisement on single song pages</span><input id="sitewideAdToggle" type="checkbox" name="adEnabled" <?= $adEnabled ? 'checked' : '' ?>></label></div></div><div class="ad-update-preview"><div class="ad-preview-label">Preview</div><div class="ad-preview-frame" id="adSelectedPreview">Preview</div><div class="ad-preview-hint">Upload a portrait file to match song page ad display.</div></div></div><div class="panel-header" style="margin-top:24px"><span class="panel-title">Grid Ad (Music Library Card)</span><span class="status-pill <?= $gridAdEnabled ? 'published' : 'unlisted' ?>"><?= $gridAdEnabled ? 'Active' : 'Inactive' ?></span></div><p style="font-size:0.82rem;color:var(--label-secondary);margin:0 0 16px">Square 1:1 ad card inserted into the track grid on the homepage.</p><div class="form-grid"><div class="form-field full"><label style="display:block;margin-bottom:6px;font-weight:600">Ad Image (1:1 square)</label><?php if ($gridAdImageUrl !== ''): ?><img loading="lazy" src="<?= e($gridAdImageUrl) ?>" alt="Grid ad preview" style="width:100px;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block"><?php endif; ?><input type="file" name="gridAdImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Use 1:1 ratio for best results.</span></div><label class="form-field">Advertiser Name<input type="text" name="gridAdName" value="<?= e($gridAdName) ?>" placeholder="e.g. Acme Corp"></label><label class="form-field">Subtext<input type="text" name="gridAdSubtext" value="<?= e($gridAdSubtext) ?>" placeholder="e.g. Premium Sponsor"></label><label class="form-field">Button Text<input type="text" name="gridAdButtonText" value="<?= e($gridAdButtonText) ?>" placeholder="Learn more"></label><label class="form-field">Button Background Color<input type="color" name="gridAdButtonColor" value="<?= e($gridAdButtonColor ?: '#ffffff') ?>"></label><label class="form-field">Button Text Color<input type="color" name="gridAdButtonTextColor" value="<?= e($gridAdButtonTextColor ?: '#000000') ?>"></label><label class="form-field full">Click URL<input type="url" name="gridAdLinkUrl" value="<?= e($gridAdLinkUrl) ?>" placeholder="https://advertiser.com"></label><label class="form-field">Grid Position (1 = first card)<input type="number" name="gridAdPosition" min="1" max="50" value="<?= e((string)$gridAdPosition) ?>"></label><div class="form-field full"><label class="check-card toggle-card"><span>Show grid ad on homepage</span><input type="checkbox" name="gridAdEnabled" <?= $gridAdEnabled ? 'checked' : '' ?>></label></div></div><div class="form-actions"><button class="btn btn-primary" type="submit">Save Advertising</button></div></form></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad Performance Summary</span><button class="panel-action" type="button" data-action-section="analytics">View Full Ad Report →</button></div><div class="ad-summary-grid"><div class="stat-card cyan"><div class="stat-label">Total Impressions</div><div class="stat-value cyan"><?= e($statText($adImpressions,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card orange"><div class="stat-label">Total Clicks</div><div class="stat-value orange"><?= e($statText($adClicks,$hasAdData)) ?></div><div class="stat-change up">This month</div></div><div class="stat-card purple"><div class="stat-label">CTR</div><div class="stat-value purple"><?= e($statSmallText($ctr,$hasAdData,'%')) ?></div><div class="stat-change up">Campaign average</div></div><div class="stat-card green"><div class="stat-label">Top Song</div><div class="stat-value green" style="font-size:24px;">N/A</div><div class="stat-change up">N/A ad clicks</div></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">Ad History</span></div><div class="analytics-table-wrap"><table class="history-table"><thead><tr><th>Thumbnail</th><th>File Name</th><th>Period Active</th><th>Total Impressions</th><th>Total Clicks</th><th>CTR</th><th>Click URL</th></tr></thead><tbody><tr><td><?php if ($adMediaUrl !== ''): ?><div class="table-cover"><?php if ($adMediaType === 'video'): ?><video src="<?= e($adMediaUrl) ?>" muted loop playsinline></video><?php else: ?><img loading="lazy" src="<?= e($adMediaUrl) ?>" alt=""><?php endif; ?></div><?php else: ?>N/A<?php endif; ?></td><td><?= e($adMediaUrl !== '' ? basename($adMediaUrl) : 'N/A') ?></td><td>N/A</td><td><?= e($statText($adImpressions,$hasAdData)) ?></td><td><?= e($statText($adClicks,$hasAdData)) ?></td><td><?= e($statSmallText($ctr,$hasAdData,'%')) ?></td><td><?= e($adLinkUrl !== '' ? $adLinkUrl : 'N/A') ?></td></tr></tbody></table></div></div></section>
+
+          <section class="view-section" id="banner-section" data-title="Homepage Banner" data-subtitle="Manage homepage carousel slides">
+            <div class="management-toolbar">
+              <div><h2>Homepage Banner</h2><p>Control the rotating carousel shown at the top of the homepage.</p></div>
+              <button class="btn btn-primary" type="button" onclick="document.getElementById('newBannerSlide')?.scrollIntoView({behavior:'smooth',block:'center'});">Add New Slide</button>
+            </div>
+            <form class="settings-stack" method="post" enctype="multipart/form-data">
+              <input type="hidden" name="action" value="save_banner">
+              <div class="panel">
+                <div class="panel-header"><span class="panel-title">Banner Status</span><span class="status-pill <?= $bannerEnabled ? 'published' : 'unlisted' ?>"><?= $bannerEnabled ? 'Active' : 'Inactive' ?></span></div>
+                <label class="check-card toggle-card"><span>Show homepage banner</span><input type="checkbox" name="bannerEnabled" <?= $bannerEnabled ? 'checked' : '' ?>></label>
+              </div>
+              <div class="panel">
+                <div class="panel-header"><span class="panel-title">Slides</span><span class="metric-badge cyan"><?= e((string) count($bannerSlides)) ?> active</span></div>
+                <div class="banner-admin-list">
+                  <?php foreach (array_merge($bannerSlides, [[
+                      'id' => '',
+                      'badgeType' => 'new',
+                      'badgeText' => 'New Release',
+                      'title' => '',
+                      'description' => '',
+                      'buttonText' => 'Listen Now',
+                      'buttonLink' => '#',
+                      'bgColor' => '#0d2847',
+                      'image' => '',
+                      'order' => count($bannerSlides) + 1,
+                  ]]) as $bannerIndex => $slide): ?>
+                    <?php
+                      $isNewSlide = (string) ($slide['id'] ?? '') === '';
+                      $slideId = (string) ($slide['id'] ?? '');
+                      $slideImage = normalizeBannerImagePath((string) ($slide['image'] ?? ''));
+                      $slideBadgeType = (string) ($slide['badgeType'] ?? 'new');
+                      $slideBg = normalizeBannerColor((string) ($slide['bgColor'] ?? '#0d2847'));
+                      $cardId = $isNewSlide ? 'newBannerSlide' : 'bannerSlide-' . $slideId;
+                    ?>
+                    <article class="banner-admin-card" id="<?= e($cardId) ?>">
+                      <div class="banner-admin-head">
+                        <strong><?= $isNewSlide ? 'Add New Slide' : 'Edit Slide' ?></strong>
+                        <?php if (!$isNewSlide): ?>
+                          <button class="btn btn-destructive" type="submit" name="deleteSlide" value="<?= e($slideId) ?>" formnovalidate onclick="return confirm('Delete this banner slide?');">Delete</button>
+                        <?php endif; ?>
+                      </div>
+                      <div class="banner-admin-preview" style="--banner-admin-bg:<?= e($slideBg) ?>">
+                        <?php if ($slideImage !== 'assets/sg-logo.svg'): ?>
+                          <img loading="lazy" src="/<?= e($slideImage) ?>" alt="">
+                        <?php else: ?>
+                          <div class="settings-preview">No image</div>
+                        <?php endif; ?>
+                        <div>
+                          <span class="banner-badge-preview <?= e($slideBadgeType) ?>"><?= e((string) ($slide['badgeText'] ?? 'New Release')) ?></span>
+                          <strong><?= e((string) ($slide['title'] ?? 'New banner slide')) ?></strong>
+                          <small><?= e((string) ($slide['description'] ?? '')) ?></small>
+                        </div>
+                      </div>
+                      <input type="hidden" name="slideId[]" value="<?= e($slideId) ?>">
+                      <input type="hidden" name="existingImage[]" value="<?= e($slideImage) ?>">
+                      <div class="form-grid">
+                        <label class="form-field">Badge Type<select name="badgeType[]"><?php foreach ($bannerBadgeTypes as $type => $label): ?><option value="<?= e($type) ?>" <?= $slideBadgeType === $type ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label>
+                        <label class="form-field">Badge Text<input type="text" name="badgeText[]" value="<?= e((string) ($slide['badgeText'] ?? '')) ?>" maxlength="40"></label>
+                        <label class="form-field">Title<input type="text" name="bannerTitle[]" value="<?= e((string) ($slide['title'] ?? '')) ?>" maxlength="90"></label>
+                        <label class="form-field">Button Text<input type="text" name="buttonText[]" value="<?= e((string) ($slide['buttonText'] ?? '')) ?>" maxlength="40"></label>
+                        <label class="form-field full">Description<textarea name="bannerDescription[]" rows="3" maxlength="220"><?= e((string) ($slide['description'] ?? '')) ?></textarea></label>
+                        <label class="form-field">Button Link<input type="text" name="buttonLink[]" value="<?= e((string) ($slide['buttonLink'] ?? '#')) ?>" placeholder="/song/track-slug"></label>
+                        <label class="form-field">Background Color<input type="color" name="bgColor[]" value="<?= e($slideBg) ?>"></label>
+                        <label class="form-field">Order<input type="number" name="slideOrder[]" min="1" max="50" value="<?= e((string) ($slide['order'] ?? ($bannerIndex + 1))) ?>"></label>
+                        <label class="form-field full">Image Upload<input type="file" name="bannerImage[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">JPG, PNG or WEBP. Maximum 3 MB. Current: <?= e($slideImage !== 'assets/sg-logo.svg' ? $slideImage : 'N/A') ?></span></label>
+                      </div>
+                    </article>
+                  <?php endforeach; ?>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary" type="submit">Save Homepage Banner</button></div>
+              </div>
+            </form>
+          </section>
 
           <section class="view-section" id="settings-section" data-title="Website Settings" data-subtitle="Site controls"><div class="management-toolbar"><div><h2>Website Settings</h2><p>Control public content, SEO, downloads, layout, and social links</p></div></div><form class="settings-stack" id="websiteSettingsForm" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="save_site"><div class="settings-card-grid"><div class="panel"><div class="panel-header"><span class="panel-title">Website Content</span></div><div class="admin-form"><label class="form-field">Website Title<input type="text" name="siteTitle" value="<?= e((string)($site['title']??'SG Production')) ?>"></label><label class="form-field">Tagline<input type="text" name="tagline" value="<?= e((string)($site['tagline']??'')) ?>"></label><label class="form-field">YouTube Subscribe Link<input type="url" name="youtube" value="<?= e((string)($links['youtube']??'')) ?>"></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SEO</span></div><div class="admin-form"><label class="form-field">Default Page Title<input type="text" value="SG Production - Original Music Downloads" disabled></label><label class="form-field">Clean URL Format<input type="text" value="https://sgproduction.music/song-name" disabled></label><label class="form-field">Default Share Title<input type="text" value="Download music from SG Production" disabled></label></div></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SEO & META</span></div><div class="form-grid"><label class="form-field full"><span class="char-row"><span>Meta Description</span><span class="char-count"><span id="metaDescriptionCount">0</span>/160</span></span><textarea id="metaDescriptionInput" name="metaDescription" rows="3" maxlength="160"><?= e((string)($seo['metaDescription']??'')) ?></textarea></label><label class="form-field">OG Image<input id="ogImageInput" type="file" name="ogImage" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span class="form-help">Current: <?= e((string)($seo['ogImage']??'N/A')) ?></span></label><label class="form-field">Favicon<input id="faviconInput" type="file" name="favicon" accept=".ico,.png,.svg,image/png,image/svg+xml"><span class="form-help">Current: <?= e((string)($seo['favicon']??'N/A')) ?></span></label><label class="form-field full">Google Analytics ID<input type="text" placeholder="G-XXXXXXXXXX" disabled></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">HOMEPAGE LAYOUT</span></div><div class="form-grid"><label class="form-field">Homepage Hero Text<input type="text" name="youtubeHeading" value="<?= e((string)($site['youtubeHeading']??'')) ?>"></label><label class="form-field">Homepage Sub-text<input type="text" name="youtubeText" value="<?= e((string)($site['youtubeText']??'')) ?>"></label><label class="form-field">Latest Count<input type="number" name="latestCount" min="0" max="12" value="<?= e((string)($catalog['latestCount']??5)) ?>"></label><label class="form-field">Demo Page Count<input type="number" name="paginationDemoPages" min="1" max="40" value="<?= e((string)($catalog['paginationDemoPages']??12)) ?>"></label></div></div><div class="panel"><div class="panel-header"><span class="panel-title">SOCIAL LINKS</span></div><div class="form-grid"><label class="form-field">Instagram<input type="url" name="instagram" value="<?= e((string)($links['instagram']??'')) ?>"></label><label class="form-field">YouTube<input type="url" name="youtube" value="<?= e((string)($links['youtube']??'')) ?>"></label><label class="form-field">Spotify<input type="url" name="spotify" value="<?= e((string)($links['spotify']??'')) ?>"></label><label class="form-field">Apple Music<input type="url" name="appleMusic" value="<?= e((string)($links['appleMusic']??'')) ?>"></label><label class="form-field">Contact Email<input type="email" name="contactEmail" value="<?= e((string)($site['contactEmail']??'')) ?>"></label></div></div><div class="sticky-save-bar"><div><strong>Website Settings</strong><div class="save-copy">Save layout, SEO, download, and social changes together.</div></div><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-ghost" type="button" id="convertCoversButton">Convert existing covers to WebP</button><button class="btn btn-primary" type="submit">Save All Settings</button></div></div></form></section>
 
@@ -4910,6 +5338,7 @@ $downloadChartData = [
       'uploaded-songs': 'songs',
       'upload-song': 'upload',
       'global-settings': 'advertising',
+      'homepage-banner': 'banner',
       'website-settings': 'settings'
     };
     if (legacy[sectionName]) return legacy[sectionName];

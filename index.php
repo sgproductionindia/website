@@ -291,6 +291,31 @@ function sg_song_cover_url($cover): string {
   return sg_absolute_site_url('uploads/covers/' . $cover);
 }
 
+function sg_banner_color($value): string {
+  $value = trim((string) $value);
+  return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#0d2847';
+}
+
+function sg_banner_path($value): string {
+  $value = ltrim(trim((string) $value), '/');
+  if ($value === '') {
+    return 'assets/sg-logo.svg';
+  }
+  return $value;
+}
+
+function sg_load_banner(): array {
+  $banner = sg_read_json_file(__DIR__ . '/data/banner.json', ['enabled' => false, 'slides' => []]);
+  $slides = is_array($banner['slides'] ?? null) ? $banner['slides'] : [];
+  $slides = array_values(array_filter($slides, static fn ($slide): bool => is_array($slide)));
+  usort($slides, static fn (array $a, array $b): int => ((int) ($a['order'] ?? 0)) <=> ((int) ($b['order'] ?? 0)));
+
+  return [
+    'enabled' => (bool) ($banner['enabled'] ?? false),
+    'slides' => $slides,
+  ];
+}
+
 $pageTitle = (string) ($siteSettings['title'] ?? 'SG Production');
 $metaDescription = 'Original music, DJ soundcheck tracks, Marathi Halgi beats, Hindi remixes and bass music from India. Free direct download. No sign up needed.';
 $ogImage = sg_absolute_site_url($seoSettings['ogImage'] ?? $seoSettings['og_image'] ?? $settings['og_image'] ?? 'assets/sg-logo.svg');
@@ -316,6 +341,8 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     break;
   }
 }
+$homepageBanner = sg_load_banner();
+$homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepageBanner['slides'] : [];
 ?>
 <!doctype html>
 <html lang="en">
@@ -361,8 +388,8 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="/styles.min.css?v=20260607-track-visible" as="style">
-    <link rel="stylesheet" href="/styles.min.css?v=20260607-track-visible">
+    <link rel="preload" href="/styles.min.css?v=20260613-song-view" as="style">
+    <link rel="stylesheet" href="/styles.min.css?v=20260613-song-view">
     <link rel="stylesheet" href="transitions.min.css?v=20260607-track-visible">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="/pwa.js?v=20260607-pwa-root" defer></script>
@@ -568,14 +595,44 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </nav>
 
       <main class="page" id="top">
-        <header class="hero" aria-labelledby="site-title">
-          <div class="hero-inner">
-            <div class="brand-block">
-              <h1 id="site-title">SG Production</h1>
-              <p class="tagline" id="siteTagline">Original music <span></span> direct download <span></span> no barriers</p>
+        <?php if ($homepageBannerSlides !== []): ?>
+          <div class="banner-carousel" id="bannerCarousel">
+            <div class="banner-track" id="bannerTrack">
+              <?php foreach ($homepageBannerSlides as $bannerIndex => $slide): ?>
+                <?php
+                  $slideBg = sg_banner_color($slide['bgColor'] ?? '#0d2847');
+                  $badgeType = in_array((string) ($slide['badgeType'] ?? 'new'), ['new', 'news', 'event'], true) ? (string) ($slide['badgeType'] ?? 'new') : 'new';
+                  $imagePath = sg_banner_path($slide['image'] ?? '');
+                  $loading = $bannerIndex === 0 ? 'eager' : 'lazy';
+                  $fetchPriority = $bannerIndex === 0 ? ' fetchpriority="high"' : '';
+                ?>
+                <div class="banner-slide" style="--slide-bg:<?= sg_meta_e($slideBg) ?>">
+                  <div class="banner-bg" style="background:linear-gradient(135deg,<?= sg_meta_e($slideBg) ?>,#000)"></div>
+                  <div class="banner-content">
+                    <span class="banner-badge <?= sg_meta_e($badgeType) ?>"><?= sg_meta_e($slide['badgeText'] ?? 'New Release') ?></span>
+                    <div class="banner-title"><?= sg_meta_e($slide['title'] ?? '') ?></div>
+                    <div class="banner-sub"><?= sg_meta_e($slide['description'] ?? '') ?></div>
+                    <a class="banner-btn" href="<?= sg_meta_e($slide['buttonLink'] ?? '#') ?>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg> <?= sg_meta_e($slide['buttonText'] ?? 'Learn More') ?></a>
+                  </div>
+                  <div class="banner-image">
+                    <img src="/<?= sg_meta_e($imagePath) ?>" alt="" loading="<?= sg_meta_e($loading) ?>"<?= $fetchPriority ?> style="border-radius:16px;height:78%;width:auto;aspect-ratio:1/1;object-fit:cover;transform:translateX(8%)">
+                  </div>
+                </div>
+              <?php endforeach; ?>
             </div>
+
+            <?php if (count($homepageBannerSlides) > 1): ?>
+              <button class="banner-arrow prev" id="bannerPrev" type="button" aria-label="Previous">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <button class="banner-arrow next" id="bannerNext" type="button" aria-label="Next">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+
+              <div class="banner-dots" id="bannerDots"></div>
+            <?php endif; ?>
           </div>
-        </header>
+        <?php endif; ?>
 
         <section class="section catalog-section" id="all-tracks" aria-labelledby="tracks-title">
           <div class="section-heading catalog-heading">
@@ -821,7 +878,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260607-track-visible" defer></script>
+    <script src="/script.min.js?v=20260613-song-view" defer></script>
     <script>
       // Track page visit
       (function() {
