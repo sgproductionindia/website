@@ -1320,16 +1320,16 @@ function renderCard(track, isPriority = false) {
       return;
     }
 
-    navigateToSongPage(track);
+    openSongPage(track);
   });
   card.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-      navigateToSongPage(track);
+      openSongPage(track);
     }
   });
   card.querySelector(".cover-link").addEventListener("click", (event) => {
     event.stopPropagation();
-    navigateToSongPage(track);
+    openSongPage(track);
   });
   card.querySelector('[data-action="play"]').addEventListener("click", (event) => {
     event.stopPropagation();
