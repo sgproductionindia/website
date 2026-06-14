@@ -4206,9 +4206,9 @@ body.search-open {
 
 .banner-carousel{
   position:relative;
-  width:auto;
+  width:calc(100% - 48px);
   max-width:calc(1840px - 48px);
-  margin:38px 24px 0;
+  margin:38px auto 0;
   border-radius:20px;
   overflow:hidden;
   background:#0a0a0a;
@@ -4346,6 +4346,7 @@ body.search-open {
 
 @media (max-width: 768px) {
   .banner-carousel {
+    width:calc(100% - 32px);
     aspect-ratio: 16/6;
     max-height: 280px;
     border-radius: 14px;

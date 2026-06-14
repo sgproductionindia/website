@@ -397,8 +397,8 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="/styles.min.css?v=20260614-mobile-topbar-scroll" as="style">
-    <link rel="stylesheet" href="/styles.min.css?v=20260614-mobile-topbar-scroll">
+    <link rel="preload" href="/styles.min.css?v=20260614-banner-align" as="style">
+    <link rel="stylesheet" href="/styles.min.css?v=20260614-banner-align">
     <link rel="stylesheet" href="transitions.min.css?v=20260607-track-visible">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="/pwa.js?v=20260607-pwa-root" defer></script>
