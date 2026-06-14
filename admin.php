@@ -6,7 +6,7 @@ session_start();
 // Load central config (defines ROOT_DIR and UPLOADS_DIR and $pdo)
 require_once rtrim($_SERVER['DOCUMENT_ROOT'] ?? __DIR__, '/') . '/config.php';
 
-define('ADMIN_PASSWORD', (string) (getenv('ADMIN_PASSWORD') ?: 'hyqhyp-viKfa3-timfaw'));
+define('ADMIN_PASSWORD', (string) getenv('ADMIN_PASSWORD'));
 define('TRACKS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/tracks.json');
 define('SETTINGS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/settings.json');
 define('ARTISTS_FILE', (defined('ROOT_DIR') ? ROOT_DIR : __DIR__) . '/data/artists.json');

@@ -296,6 +296,15 @@ function sg_banner_color($value): string {
   return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#0d2847';
 }
 
+function sg_banner_gradient_end(string $color): string {
+  return match (strtolower($color)) {
+    '#0d2847' => '#06121f',
+    '#0a2a17' => '#04130a',
+    '#2a1a0a' => '#130c04',
+    default => '#06121f',
+  };
+}
+
 function sg_banner_path($value): string {
   $value = ltrim(trim((string) $value), '/');
   if ($value === '') {
@@ -388,8 +397,8 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="preload" href="/styles.min.css?v=20260613-song-view" as="style">
-    <link rel="stylesheet" href="/styles.min.css?v=20260613-song-view">
+    <link rel="preload" href="/styles.min.css?v=20260614-mobile-topbar-scroll" as="style">
+    <link rel="stylesheet" href="/styles.min.css?v=20260614-mobile-topbar-scroll">
     <link rel="stylesheet" href="transitions.min.css?v=20260607-track-visible">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="/pwa.js?v=20260607-pwa-root" defer></script>
@@ -601,13 +610,14 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
               <?php foreach ($homepageBannerSlides as $bannerIndex => $slide): ?>
                 <?php
                   $slideBg = sg_banner_color($slide['bgColor'] ?? '#0d2847');
+                  $slideBgEnd = sg_banner_gradient_end($slideBg);
                   $badgeType = in_array((string) ($slide['badgeType'] ?? 'new'), ['new', 'news', 'event'], true) ? (string) ($slide['badgeType'] ?? 'new') : 'new';
                   $imagePath = sg_banner_path($slide['image'] ?? '');
                   $loading = $bannerIndex === 0 ? 'eager' : 'lazy';
                   $fetchPriority = $bannerIndex === 0 ? ' fetchpriority="high"' : '';
                 ?>
                 <div class="banner-slide" style="--slide-bg:<?= sg_meta_e($slideBg) ?>">
-                  <div class="banner-bg" style="background:linear-gradient(135deg,<?= sg_meta_e($slideBg) ?>,#000)"></div>
+                  <div class="banner-bg" style="background:linear-gradient(135deg,<?= sg_meta_e($slideBg) ?>,<?= sg_meta_e($slideBgEnd) ?>)"></div>
                   <div class="banner-content">
                     <span class="banner-badge <?= sg_meta_e($badgeType) ?>"><?= sg_meta_e($slide['badgeText'] ?? 'New Release') ?></span>
                     <div class="banner-title"><?= sg_meta_e($slide['title'] ?? '') ?></div>
@@ -650,7 +660,7 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
               Watch latest music releases, behind-the-scenes clips, and official SG Production updates on the YouTube channel.
             </p>
           </div>
-          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer" aria-label="Subscribe to SG Production on YouTube">Subscribe on YouTube</a>
+          <a class="youtube-subscribe compact" id="youtubeSubscribe" href="https://www.youtube.com/@sgproductionindia" target="_blank" rel="noreferrer" aria-label="Subscribe to SG Production on YouTube">Subsribe on Youtube</a>
         </section>
 
         <section class="song-page" id="songPage" aria-labelledby="songPageTitle" hidden>
@@ -878,7 +888,7 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260613-song-view" defer></script>
+    <script src="/script.min.js?v=20260614-mobile-topbar-scroll" defer></script>
     <script>
       // Track page visit
       (function() {

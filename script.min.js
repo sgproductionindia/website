@@ -1,5 +1,9 @@
 const tracks = [];
 
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
 const trackGrid = document.querySelector("#trackGrid");
 const trackPagination = document.querySelector("#trackPagination");
 const loadMoreButton = document.querySelector("#loadMore");
@@ -21,6 +25,7 @@ const progressTime = document.querySelector("#progressTime");
 const progressElapsed = document.querySelector("#progressElapsed");
 const progressTotal = document.querySelector("#progressTotal");
 const sideNav = document.querySelector(".side-nav");
+const mobileTopbar = document.querySelector(".mobile-topbar");
 const mobileMenuToggle = document.querySelector("#mobileMenuToggle");
 const sectionNavLinks = Array.from(document.querySelectorAll(".nav-link[data-section-nav]"));
 const activeSections = ["all-tracks", "licensing", "contact"];
@@ -186,11 +191,15 @@ const initialTracks = hasAdOnLoad ? TRACKS_PER_PAGE - 1 : TRACKS_PER_PAGE;
 let tracksShown = getTracksToShow(initialTracks);
 let allTracksPerPage = TRACKS_PER_PAGE;
 let demoTrackPageCount = 12;
+let lastMobileTopbarScrollY = window.scrollY || 0;
 
 function setMobileMenu(open) {
   document.body.classList.toggle("menu-open", open);
   mobileMenuToggle.setAttribute("aria-expanded", String(open));
   mobileMenuToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  if (open) {
+    mobileTopbar?.classList.remove("is-scroll-hidden");
+  }
 }
 
 function slugClass(value) {
@@ -207,6 +216,16 @@ function trackSlug(track) {
 
 function trackUrl(track) {
   return canUseCleanUrls() ? `/song/${trackSlug(track)}` : `index.html?song=${encodeURIComponent(trackSlug(track))}`;
+}
+
+function forceScrollTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  });
+  window.setTimeout(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, 80);
 }
 
 function normalizeLocalPreviewLinks() {
@@ -2612,7 +2631,7 @@ function openSongPage(track, updateUrl = true) {
   renderSongAd(track);
   syncPlayer();
   clearActiveNav();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  forceScrollTop();
 
   if (updateUrl) {
     history.pushState({ type: "song", slug: trackSlug(track) }, "", trackUrl(track));
@@ -2881,9 +2900,33 @@ function updateActiveNav() {
   setActiveNav(currentSection);
 }
 
+function updateMobileTopbarOnScroll() {
+  if (!mobileTopbar) return;
+
+  if (window.innerWidth > 780 || document.body.classList.contains("menu-open")) {
+    mobileTopbar.classList.remove("is-scroll-hidden");
+    lastMobileTopbarScrollY = window.scrollY || 0;
+    return;
+  }
+
+  const currentY = Math.max(0, window.scrollY || 0);
+  const delta = currentY - lastMobileTopbarScrollY;
+
+  if (currentY <= 20 || delta < -6) {
+    mobileTopbar.classList.remove("is-scroll-hidden");
+  } else if (currentY > 80 && delta > 6) {
+    mobileTopbar.classList.add("is-scroll-hidden");
+  }
+
+  lastMobileTopbarScrollY = currentY;
+}
+
 window.addEventListener("scroll", updateActiveNav, { passive: true });
+window.addEventListener("scroll", updateMobileTopbarOnScroll, { passive: true });
 window.addEventListener("resize", updateActiveNav);
+window.addEventListener("resize", updateMobileTopbarOnScroll);
 updateActiveNav();
+updateMobileTopbarOnScroll();
 
 playerToggle?.addEventListener("click", () => {
   if (!selectedTrack) return;

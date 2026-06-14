@@ -45,8 +45,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260601-credit-box">
-    <link rel="stylesheet" href="transitions.min.css?v=20260524-prod">
+    <link rel="stylesheet" href="/styles.min.css?v=20260614-mobile-topbar-scroll">
+    <link rel="stylesheet" href="transitions.min.css?v=20260607-track-visible">
     <script src="transitions.min.js?v=20260530-external-links" defer></script>
     <script src="/pwa.js?v=20260607-pwa-root" defer></script>
     <script src="page-search.js?v=20260528-page-search" defer></script>

@@ -1,5 +1,5 @@
 {
-    "allTime": 43,
+    "allTime": 212,
     "daily": {
         "2026-06-04": {
             "total": 9,
@@ -29,6 +29,17 @@
             "pages": {
                 "indexphp": 18,
                 "index": 12
+            }
+        },
+        "2026-06-14": {
+            "total": 169,
+            "pages": {
+                "indexphp": 76,
+                "index": 65,
+                "usage-policy": 7,
+                "about": 11,
+                "contact": 4,
+                "artistsphp": 6
             }
         }
     }

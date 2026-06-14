@@ -2,6 +2,10 @@
 
 Music download platform built with PHP and Apache.
 
+## Design Lock
+
+The current UI/layout is locked. Read `DESIGN_LOCK.md` before making changes that could affect visual design, spacing, layout, or responsive behavior.
+
 ## Environment Variables Required
 
 SMTP_USERNAME=

@@ -9,7 +9,7 @@
             "description": "Our latest original mix is out now - free direct download, no sign up needed.",
             "buttonText": "Listen Now",
             "buttonLink": "/song/house-of-my-dreams",
-            "bgColor": "#3a88fe",
+            "bgColor": "#0d2847",
             "image": "assets/cover-3.jpg",
             "order": 1
         }
