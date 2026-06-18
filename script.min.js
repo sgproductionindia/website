@@ -91,6 +91,8 @@ let activeSource = null;
 let activeGain = null;
 let activeAudio = null;
 let activeAudioUrl = "";
+let activeSourceDuration = PREVIEW_SECONDS;
+let activeSourceIsFullTrack = false;
 let startedAt = 0;
 let pausedAt = 0;
 let isPlaying = false;
@@ -1146,12 +1148,14 @@ function durationToSeconds(duration) {
 
 function playableDuration(track, usePreviewDuration = false) {
   const previewDuration = Number(track?.previewDuration);
+  const declaredDuration = durationToSeconds(track?.duration || "0:0");
+  const safeDeclaredDuration = Number.isFinite(declaredDuration) ? declaredDuration : 0;
 
   if (usePreviewDuration && Number.isFinite(previewDuration) && previewDuration > 0) {
-    return previewDuration;
+    return Math.max(previewDuration, safeDeclaredDuration);
   }
 
-  return durationToSeconds(track?.duration || "0:0");
+  return safeDeclaredDuration;
 }
 
 function isNearPlayableEnd(track, seconds) {
@@ -1781,9 +1785,9 @@ function oscillator(type, frequency, t) {
   return Math.sin(2 * Math.PI * frequency * t);
 }
 
-function createBuffer(track) {
+function createBuffer(track, seconds = PREVIEW_SECONDS) {
   setupAudio();
-  const samples = synthSample(track);
+  const samples = synthSample(track, seconds);
   const buffer = audioContext.createBuffer(1, samples.length, 44100);
   buffer.copyToChannel(samples, 0);
   return buffer;
@@ -1821,6 +1825,8 @@ async function playTrack(track) {
     audio.loop = false;
     audio.volume = isMuted ? 0 : currentVolume;
     audio.muted = isMuted;
+    let lastAudioTime = Math.max(0, resumeOffset);
+    let earlyEndRecoveries = 0;
     activeAudio = audio;
     activeAudioUrl = audioUrl;
     window.currentAudio = audio;
@@ -1860,19 +1866,78 @@ async function playTrack(track) {
       setAudioLoadingState(false);
     });
 
+    audio.addEventListener("seeking", () => {
+      lastAudioTime = Math.max(0, audio.currentTime || 0);
+    });
+
+    audio.addEventListener("timeupdate", () => {
+      if (audioPlayToken !== token || activeAudio !== audio) {
+        return;
+      }
+
+      const currentTime = Math.max(0, audio.currentTime || 0);
+      const expectedDuration = playableDuration(track, true);
+
+      if (
+        !playerSeekActive &&
+        currentTime < lastAudioTime - 0.75 &&
+        lastAudioTime < expectedDuration - 2
+      ) {
+        audio.currentTime = lastAudioTime;
+        return;
+      }
+
+      lastAudioTime = Math.max(lastAudioTime, currentTime);
+      pausedAt = currentTime;
+    });
+
     audio.addEventListener("ended", () => {
       if (audioPlayToken !== token || activeAudio !== audio) {
         return;
       }
       setAudioLoadingState(false);
       const endedAt = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : playableDuration(track, true);
-      track.previewDuration = endedAt;
+      const expectedDuration = playableDuration(track, true);
+
+      if (expectedDuration > 0 && Math.max(endedAt, lastAudioTime) < expectedDuration - 2) {
+        pausedAt = Math.max(endedAt, lastAudioTime);
+
+        if (earlyEndRecoveries < 2) {
+          earlyEndRecoveries += 1;
+          try {
+            audio.currentTime = pausedAt;
+            const resumePromise = audio.play();
+            if (resumePromise && typeof resumePromise.catch === "function") {
+              resumePromise.catch(() => undefined);
+            }
+            isPlaying = true;
+            playingTrackId = track.id;
+            updatePlayerTimer(pausedAt, true);
+            syncPlayer();
+            syncPlayingCards();
+          } catch {
+            isPlaying = false;
+            updatePlayerTimer(pausedAt, true);
+            syncPlayer();
+            syncPlayingCards();
+          }
+          return;
+        }
+
+        isPlaying = false;
+        updatePlayerTimer(pausedAt, true);
+        syncPlayer();
+        syncPlayingCards();
+        return;
+      }
+
+      track.previewDuration = Math.max(endedAt, expectedDuration);
       isPlaying = false;
-      pausedAt = endedAt;
+      pausedAt = Math.max(endedAt, expectedDuration);
       activeAudio = null;
       activeAudioUrl = "";
       window.currentAudio = null;
-      updatePlayerTimer(endedAt, true);
+      updatePlayerTimer(pausedAt, true);
       playingTrackId = null;
       syncPlayer();
       syncPlayingCards();
@@ -1905,7 +1970,10 @@ async function playTrack(track) {
       return;
     }
 
-    const total = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : playableDuration(track);
+    const total = Math.max(
+      Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0,
+      playableDuration(track)
+    );
     if (Number.isFinite(total) && total > 0) {
       track.previewDuration = total;
     }
@@ -1916,7 +1984,7 @@ async function playTrack(track) {
 
     try {
       await playPromise;
-      pausedAt = 0;
+      pausedAt = audio.currentTime || resumeOffset || 0;
       updateMediaSession(track);
       updatePlayPauseUI(true);
       updatePositionState();
@@ -1945,28 +2013,36 @@ async function playTrack(track) {
 
   const source = audioContext.createBufferSource();
   const gain = audioContext.createGain();
-  source.buffer = createBuffer(track);
+  const fallbackDuration = preferFullAudio ? Math.max(PREVIEW_SECONDS, playableDuration(track)) : PREVIEW_SECONDS;
+  const sourceOffset = Math.min(Math.max(resumeOffset, 0), Math.max(fallbackDuration - 0.01, 0));
+  source.buffer = createBuffer(track, fallbackDuration);
   source.loop = false;
   gain.gain.value = 0.82 * (isMuted ? 0 : currentVolume);
   source.connect(gain);
   gain.connect(audioContext.destination);
-  source.start(0, resumeOffset);
+  source.start(0, sourceOffset);
 
   activeSource = source;
   activeGain = gain;
+  activeSourceDuration = fallbackDuration;
+  activeSourceIsFullTrack = preferFullAudio && fallbackDuration > PREVIEW_SECONDS;
   isPlaying = true;
   playingTrackId = track.id;
-  startedAt = audioContext.currentTime - resumeOffset;
-  pausedAt = 0;
+  startedAt = audioContext.currentTime - sourceOffset;
+  pausedAt = sourceOffset;
 
   source.onended = () => {
     if (activeSource === source) {
+      const endedAt = activeSourceIsFullTrack ? activeSourceDuration : 0;
+      const endedAsFullTrack = activeSourceIsFullTrack;
       isPlaying = false;
-      pausedAt = 0;
-      updatePlayerTimer(0, false);
+      pausedAt = endedAt;
+      updatePlayerTimer(endedAt, endedAsFullTrack);
       playingTrackId = null;
       activeSource = null;
       activeGain = null;
+      activeSourceDuration = PREVIEW_SECONDS;
+      activeSourceIsFullTrack = false;
       syncPlayer();
       syncPlayingCards();
     }
@@ -2001,8 +2077,7 @@ function pauseCurrent() {
     return;
   }
 
-  // Synthetic fallback audio is only PREVIEW_SECONDS long; uploaded files are handled above.
-  pausedAt = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
+  pausedAt = Math.min(activeSourceDuration || PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
   try {
     activeSource.stop();
   } catch {
@@ -2010,6 +2085,8 @@ function pauseCurrent() {
   }
   activeSource = null;
   activeGain = null;
+  activeSourceDuration = PREVIEW_SECONDS;
+  activeSourceIsFullTrack = false;
   isPlaying = false;
   cancelAnimationFrame(animationFrame);
   syncPlayer();
@@ -2037,6 +2114,8 @@ function stopCurrent(resetPause = true) {
   activeAudioUrl = "";
   activeSource = null;
   activeGain = null;
+  activeSourceDuration = PREVIEW_SECONDS;
+  activeSourceIsFullTrack = false;
   isPlaying = false;
   playingTrackId = null;
   window.currentAudio = null;
@@ -2070,7 +2149,7 @@ function syncPlayer() {
   syncStoredLikeWithServer(selectedTrack);
   applyPlayerVolume();
   updateMediaSession(selectedTrack);
-  updatePlayerTimer(pausedAt);
+  updatePlayerTimer(isPlaying && selectedTrack.id === playingTrackId ? currentPlaybackPosition() : pausedAt);
 }
 
 function syncPlayingCards() {
@@ -2086,8 +2165,12 @@ function updateProgress() {
 
   if (activeAudio) {
     if (!playerSeekActive) {
-      const total = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : playableDuration(selectedTrack, true);
+      const total = Math.max(
+        Number.isFinite(activeAudio.duration) && activeAudio.duration > 0 ? activeAudio.duration : 0,
+        playableDuration(selectedTrack, true)
+      );
       const elapsed = activeAudio.currentTime;
+      pausedAt = elapsed;
       progressBar.style.width = `${total ? Math.min(100, (elapsed / total) * 100) : 0}%`;
       updatePlayerTimer(elapsed, true);
     }
@@ -2100,14 +2183,16 @@ function updateProgress() {
   }
 
   if (!playerSeekActive) {
-    const elapsed = Math.min(PREVIEW_SECONDS, Math.max(0, audioContext.currentTime - startedAt));
-    progressBar.style.width = `${(elapsed / PREVIEW_SECONDS) * 100}%`;
-    updatePlayerTimer(elapsed, false);
+    const sourceDuration = Math.max(PREVIEW_SECONDS, activeSourceDuration || PREVIEW_SECONDS);
+    const elapsed = Math.min(sourceDuration, Math.max(0, audioContext.currentTime - startedAt));
+    pausedAt = elapsed;
+    progressBar.style.width = `${(elapsed / sourceDuration) * 100}%`;
+    updatePlayerTimer(elapsed, activeSourceIsFullTrack);
   }
   animationFrame = requestAnimationFrame(updateProgress);
 }
 
-function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack)))) {
+function updatePlayerTimer(elapsed = 0, isActualAudio = Boolean(activeAudio || getTrackAudioUrl(selectedTrack, isSongPageActiveForTrack(selectedTrack)) || isSongPageActiveForTrack(selectedTrack))) {
   const totalSeconds = playableDuration(selectedTrack, isActualAudio);
   const scaledElapsed = isActualAudio ? Math.min(totalSeconds, elapsed) : Math.min(totalSeconds, (elapsed / PREVIEW_SECONDS) * totalSeconds);
   const percent = totalSeconds ? Math.min(100, (scaledElapsed / totalSeconds) * 100) : 0;
@@ -2188,13 +2273,16 @@ function setPlayerProgress(fraction, shouldCommit = true) {
     return;
   }
 
-  const previewOffset = Math.min(PREVIEW_SECONDS - 0.01, clamped * PREVIEW_SECONDS);
+  const fallbackDuration = activeSource
+    ? Math.max(PREVIEW_SECONDS, activeSourceDuration || PREVIEW_SECONDS)
+    : (isSongPageActiveForTrack(selectedTrack) ? Math.max(PREVIEW_SECONDS, playableDuration(selectedTrack)) : PREVIEW_SECONDS);
+  const previewOffset = Math.min(fallbackDuration - 0.01, clamped * fallbackDuration);
 
   if (isPlaying && activeSource && audioContext) {
     if (!shouldCommit || progressShell.classList.contains("is-seeking")) {
       // During drag: only update position, defer the restart to when drag ends
       pausedAt = previewOffset;
-      updatePlayerTimer(pausedAt, false);
+      updatePlayerTimer(pausedAt, activeSourceIsFullTrack);
       return;
     }
     activeSource.onended = null;
@@ -2208,7 +2296,7 @@ function setPlayerProgress(fraction, shouldCommit = true) {
   }
 
   pausedAt = previewOffset;
-  updatePlayerTimer(pausedAt, false);
+  updatePlayerTimer(pausedAt, isSongPageActiveForTrack(selectedTrack));
 }
 
 function startPlayerSeek(event) {
