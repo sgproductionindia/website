@@ -888,7 +888,7 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260614-mobile-topbar-scroll" defer></script>
+    <script src="/script.min.js?v=20260618-song-play-fix" defer></script>
     <script>
       // Track page visit
       (function() {

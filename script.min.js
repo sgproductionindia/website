@@ -266,6 +266,12 @@ function isLocalAudioPath(url) {
   return /^\/?uploads\/audio\//.test(String(url || ""));
 }
 
+function isStreamableAudioPath(url) {
+  const path = String(url || "").trim();
+
+  return isLocalAudioPath(path) || /\.(mp3|m4a|aac|ogg|oga|opus|webm)(?:[?#]|$)/i.test(path);
+}
+
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -1174,7 +1180,7 @@ function getFullAudioUrl(track) {
   }
 
   const downloadUrl = String(track.downloadUrl || "").trim();
-  if (downloadUrl) {
+  if (downloadUrl && isStreamableAudioPath(downloadUrl)) {
     return normalizeMediaPath(downloadUrl);
   }
 
@@ -1186,7 +1192,7 @@ function getFullAudioUrl(track) {
     track.file,
     track.audio
   ];
-  const audioUrl = candidates.map((value) => String(value || "").trim()).find((value) => isLocalAudioPath(value));
+  const audioUrl = candidates.map((value) => String(value || "").trim()).find((value) => isStreamableAudioPath(value));
 
   return normalizeMediaPath(audioUrl || "");
 }
