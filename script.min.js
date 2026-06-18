@@ -570,11 +570,27 @@ function shouldShowNewBadge(track) {
   return age >= 0 && age < NEW_BADGE_MS;
 }
 
+function getBootstrapTracks() {
+  const bootstrapTracks = window.SG_BOOTSTRAP_TRACKS;
+
+  if (!Array.isArray(bootstrapTracks)) {
+    return [];
+  }
+
+  return bootstrapTracks.map(normalizeUploadedTrack).filter(Boolean);
+}
+
 async function loadUploadedTracks() {
+  const bootstrapTracks = getBootstrapTracks();
+
   try {
     const response = await fetch("data/tracks.json", { cache: "no-store" });
 
     if (!response.ok) {
+      if (bootstrapTracks.length > 0) {
+        return bootstrapTracks;
+      }
+
       return window.location.protocol === "file:" ? LOCAL_PREVIEW_TRACKS.map(normalizeUploadedTrack).filter(Boolean) : [];
     }
 
@@ -582,11 +598,16 @@ async function loadUploadedTracks() {
     const uploadedTracks = Array.isArray(data) ? data : data.tracks;
 
     if (!Array.isArray(uploadedTracks)) {
-      return [];
+      return bootstrapTracks;
     }
 
-    return uploadedTracks.map(normalizeUploadedTrack).filter(Boolean);
+    const normalizedTracks = uploadedTracks.map(normalizeUploadedTrack).filter(Boolean);
+    return normalizedTracks.length > 0 ? normalizedTracks : bootstrapTracks;
   } catch {
+    if (bootstrapTracks.length > 0) {
+      return bootstrapTracks;
+    }
+
     return window.location.protocol === "file:" ? LOCAL_PREVIEW_TRACKS.map(normalizeUploadedTrack).filter(Boolean) : [];
   }
 }

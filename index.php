@@ -352,6 +352,7 @@ if (preg_match('#^/song/([^/]+)#', $requestPath, $songMatch)) {
 }
 $homepageBanner = sg_load_banner();
 $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepageBanner['slides'] : [];
+$bootstrapTracks = sg_load_json_array(__DIR__ . '/data/tracks.json', 'tracks');
 ?>
 <!doctype html>
 <html lang="en">
@@ -888,7 +889,10 @@ $homepageBannerSlides = (bool) ($homepageBanner['enabled'] ?? false) ? $homepage
       </div>
     </aside>
 
-    <script src="/script.min.js?v=20260618-full-audio-end-fix-2" defer></script>
+    <script>
+      window.SG_BOOTSTRAP_TRACKS = <?= json_encode($bootstrapTracks, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '[]' ?>;
+    </script>
+    <script src="/script.min.js?v=20260619-tracks-bootstrap-fallback" defer></script>
     <script>
       // Track page visit
       (function() {
