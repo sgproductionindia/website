@@ -892,7 +892,7 @@ $bootstrapTracks = sg_load_json_array(__DIR__ . '/data/tracks.json', 'tracks');
     <script>
       window.SG_BOOTSTRAP_TRACKS = <?= json_encode($bootstrapTracks, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '[]' ?>;
     </script>
-    <script src="/script.min.js?v=20260619-tracks-bootstrap-fallback" defer></script>
+    <script src="/script.min.js?v=20260619-public-render-fix" defer></script>
     <script>
       // Track page visit
       (function() {
