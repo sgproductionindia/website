@@ -5,6 +5,14 @@ if (!defined('APP_ENV')) {
     define('APP_ENV', $appEnv);
 }
 
+// Streaming safety: prevent PHP-side helper endpoints from timing out while
+// preparing redirects or metadata around long audio requests. Static MP3/WAV
+// bytes are still served directly by Apache with Range support.
+@set_time_limit(0);
+ini_set('max_execution_time', '0');
+ini_set('default_socket_timeout', '600');
+ini_set('zlib.output_compression', '0');
+
 if (APP_ENV === 'production') {
     error_reporting(E_ALL & ~E_DEPRECATED);
     ini_set('display_errors', '0');

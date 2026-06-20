@@ -1252,6 +1252,8 @@ function describeAudioError(audio) {
 
 function createPlayableAudio(src) {
   const audio = new Audio();
+  // Progressive streaming: load metadata first so mobile browsers can request
+  // byte ranges on demand instead of forcing a full file download up front.
   audio.preload = "metadata";
   audio.setAttribute("playsinline", "");
   audio.setAttribute("webkit-playsinline", "");
@@ -1848,6 +1850,8 @@ async function playTrack(track) {
     audio.muted = isMuted;
     let lastAudioTime = Math.max(0, resumeOffset);
     let earlyEndRecoveries = 0;
+    let streamRecoveryAttempts = 0;
+    let streamRecoveryActive = false;
     activeAudio = audio;
     activeAudioUrl = audioUrl;
     window.currentAudio = audio;
@@ -1863,12 +1867,92 @@ async function playTrack(track) {
       audio.addEventListener("error", resolve, { once: true });
     });
 
+    const recoverAudioStream = () => {
+      if (audioPlayToken !== token || activeAudio !== audio || streamRecoveryActive) {
+        return;
+      }
+
+      const errorCode = audio.error?.code || 0;
+      const shouldRecover = [1, 2, 3].includes(errorCode);
+      const resumeAt = Math.max(
+        0,
+        audio.currentTime || lastAudioTime || pausedAt || resumeOffset || 0
+      );
+
+      if (!shouldRecover || streamRecoveryAttempts >= 3) {
+        setAudioLoadingState(false);
+        return;
+      }
+
+      streamRecoveryAttempts += 1;
+      streamRecoveryActive = true;
+      pausedAt = resumeAt;
+      setAudioLoadingState(true);
+
+      let streamRecoveryResumeDone = false;
+      const resumeAfterReload = () => {
+        if (streamRecoveryResumeDone) {
+          return;
+        }
+        streamRecoveryResumeDone = true;
+
+        if (audioPlayToken !== token || activeAudio !== audio) {
+          return;
+        }
+
+        try {
+          if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            audio.currentTime = Math.min(resumeAt, Math.max(audio.duration - 0.25, 0));
+          } else {
+            audio.currentTime = resumeAt;
+          }
+
+          const recoveredPlay = audio.play();
+          if (recoveredPlay && typeof recoveredPlay.catch === "function") {
+            recoveredPlay.catch((error) => {
+              console.error("Audio recovery playback failed:", error);
+              setAudioLoadingState(false);
+            });
+          }
+
+          isPlaying = true;
+          playingTrackId = track.id;
+          updatePlayerTimer(resumeAt, true);
+          syncPlayer();
+          syncPlayingCards();
+        } catch (error) {
+          console.error("Audio recovery failed:", error);
+          setAudioLoadingState(false);
+        } finally {
+          streamRecoveryActive = false;
+        }
+      };
+
+      audio.addEventListener("loadedmetadata", resumeAfterReload, { once: true });
+      audio.addEventListener("canplay", resumeAfterReload, { once: true });
+
+      try {
+        // Re-initialize the same HTMLAudioElement stream. Setting currentTime
+        // after metadata forces a fresh Range request from the interrupted time.
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        audio.src = audioUrl;
+        audio.preload = "metadata";
+        audio.load();
+      } catch (error) {
+        streamRecoveryActive = false;
+        console.error("Audio stream reload failed:", error);
+        setAudioLoadingState(false);
+      }
+    };
+
     audio.addEventListener("error", () => {
       console.error("Audio error:", describeAudioError(audio), {
         src: audio.currentSrc || audio.src,
         error: audio.error
       });
-      setAudioLoadingState(false);
+      recoverAudioStream();
     });
 
     audio.addEventListener("stalled", () => {
